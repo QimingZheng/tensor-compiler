@@ -18,6 +18,7 @@ int main() {
     }
   }
 
+  prog.GenerateC();
   prog.IRGen();
   prog.Reorder("i", "j");
   prog.IRGen();
@@ -27,6 +28,8 @@ int main() {
   prog.IRGen();
   prog.Vectorize("j_inner", 2);
   prog.IRGen();
+
+  std::cout << prog.IsAffineProgram() << std::endl;
 
   return 0;
 }

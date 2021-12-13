@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <ostream>
 #include <assert.h>
 #include <algorithm>
 #include <assert.h>

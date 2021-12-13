@@ -3,8 +3,10 @@
 #include "common.h"
 #include "ir/ir.h"
 #include "ir/ir_visitor.h"
+#include "ir/ir_check_pass.h"
 #include "expr.h"
 #include "stmt.h"
+#include "codegen/codegen.h"
 
 namespace polly {
 
@@ -119,6 +121,17 @@ class Program {
     std::cout << "====================\n";
     visitor.visit(root_loop_);
     std::cout << "====================\n";
+  }
+
+  bool IsAffineProgram() {
+    IRCheckAffinePass check;
+    return check.checkFor(root_loop_);
+  }
+
+  void GenerateC() {
+    CodeGenC codegen(std::cout);
+    codegen.genCode(root_loop_);
+    // std::cout << std::string(codegen.oss);
   }
 };
 
