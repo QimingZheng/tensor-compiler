@@ -16,8 +16,16 @@ class IRCheckePass : public IRVisitor {
     visitAdd(add);
     return checkFlag;
   }
+  bool checkSub(SubNode *sub) {
+    visitSub(sub);
+    return checkFlag;
+  }
   bool checkMul(MulNode *mul) {
     visitMul(mul);
+    return checkFlag;
+  }
+  bool checkDiv(DivNode *div) {
+    visitDiv(div);
     return checkFlag;
   }
   bool checkVar(VarNode *var) {
@@ -38,6 +46,10 @@ class IRCheckePass : public IRVisitor {
   }
   bool checkFor(ForNode *loop) {
     visitFor(loop);
+    return checkFlag;
+  }
+  bool checkConst(ConstNode *con) {
+    visitConst(con);
     return checkFlag;
   }
 };
@@ -61,12 +73,39 @@ class IRCheckAffinePass : public IRCheckePass {
     if (!isAffine) return;
     isAffine = true;
   }
+  void visitSub(SubNode *sub) override {
+    isAffine = false;
+    this->visit(sub->lhs);
+    if (!isAffine) return;
+    isAffine = false;
+    this->visit(sub->rhs);
+    if (!isAffine) return;
+    isAffine = true;
+  }
   void visitMul(MulNode *mul) override {
     isAffine = false;
     this->visit(mul->lhs);
     if (!isAffine) return;
     isAffine = false;
     this->visit(mul->rhs);
+    if (!isAffine) return;
+    isAffine = true;
+  }
+  void visitDiv(DivNode *div) override {
+    isAffine = false;
+    this->visit(div->lhs);
+    if (!isAffine) return;
+    isAffine = false;
+    this->visit(div->rhs);
+    if (!isAffine) return;
+    isAffine = true;
+  }
+  void visitMod(ModNode *mod) override {
+    isAffine = false;
+    this->visit(mod->lhs);
+    if (!isAffine) return;
+    isAffine = false;
+    this->visit(mod->rhs);
     if (!isAffine) return;
     isAffine = true;
   }
@@ -113,6 +152,7 @@ class IRCheckAffinePass : public IRCheckePass {
     }
     isAffine = true;
   }
+  void visitConst(ConstNode *con) override { isAffine = true; }
 };
 
 }  // namespace polly

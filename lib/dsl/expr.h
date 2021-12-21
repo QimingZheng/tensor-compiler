@@ -36,6 +36,26 @@ class Mul : public Expr {
 
 Mul operator*(const Expr &a, const Expr &b);
 
+class Sub : public Expr {
+ public:
+  Sub() = delete;
+  Sub(const Expr &lhs, const Expr &rhs) {
+    expr_node_ = new SubNode(lhs.GetIRNode(), rhs.GetIRNode());
+  }
+};
+
+Sub operator-(const Expr &a, const Expr &b);
+
+class Div : public Expr {
+ public:
+  Div() = delete;
+  Div(const Expr &lhs, const Expr &rhs) {
+    expr_node_ = new DivNode(lhs.GetIRNode(), rhs.GetIRNode());
+  }
+};
+
+Div operator/(const Expr &a, const Expr &b);
+
 /// Looping itearator
 class Variable : public Expr {
  public:
@@ -64,18 +84,25 @@ class Access : public Expr {
 ///
 class Tensor : public Expr {
  public:
+  std::vector<int64_t> shape;
   std::string name;
-  Tensor(const std::string &name) : name(name) {
-    expr_node_ = new TensorNode(name);
-  }
+  Tensor(const std::string &name, std::vector<int64_t> shape);
 
   Access operator()(const std::vector<Expr> &indices) const {
     return Access(*this, indices);
   }
 
   template <typename... Index>
-  const Access operator()(const Index &... indices) const {
+  const Access operator()(const Index &...indices) const {
     return static_cast<const Tensor *>(this)->operator()({indices...});
+  }
+};
+
+class Constant : public Expr {
+ public:
+  std::string name;
+  Constant(const std::string &name) : name(name) {
+    expr_node_ = new ConstNode(name);
   }
 };
 

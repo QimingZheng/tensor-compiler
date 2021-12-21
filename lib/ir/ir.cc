@@ -9,7 +9,15 @@ void AddNode::accept(IRVisitor *visitor) { visitor->visit(this); }
 
 void MulNode::accept(IRVisitor *visitor) { visitor->visit(this); }
 
+void SubNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+
+void DivNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+
+void ModNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+
 void VarNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+
+void ConstNode::accept(IRVisitor *visitor) { visitor->visit(this); }
 
 void IntNode::accept(IRVisitor *visitor) { visitor->visit(this); }
 

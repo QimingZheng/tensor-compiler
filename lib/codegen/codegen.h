@@ -13,7 +13,6 @@ class CodeGen : public IRVisitor {
 const std::string C_Heaader = R"(
 #include <stdlib.h>
 #include <stdio.h>
-int main() {
 )";
 
 class CodeGenC : public IRVisitor {
@@ -29,15 +28,19 @@ class CodeGenC : public IRVisitor {
 
  public:
   CodeGenC(std::ostream &os) : oss(os) {}
-  void genCode(ForNode *program);
+  void genCode(ForNode *program, std::vector<TensorNode *> &tensors);
   void visitInt(IntNode *int_expr) override;
   void visitAdd(AddNode *add) override;
   void visitMul(MulNode *mul) override;
+  void visitSub(SubNode *sub) override;
+  void visitDiv(DivNode *div) override;
+  void visitMod(ModNode *mod) override;
   void visitVar(VarNode *var) override;
   void visitAccess(AccessNode *access) override;
   void visitAssign(AssignmentNode *assign) override;
   void visitTensor(TensorNode *tensor) override;
   void visitFor(ForNode *loop) override;
+  void visitConst(ConstNode *con) override;
 };
 
 class CodeGenCuda : public CodeGen {

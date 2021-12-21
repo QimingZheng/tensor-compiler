@@ -17,6 +17,10 @@ Add operator+(const Expr &a, const Expr &b) { return Add(a, b); }
 
 Mul operator*(const Expr &a, const Expr &b) { return Mul(a, b); }
 
+Sub operator-(const Expr &a, const Expr &b) { return Sub(a, b); }
+
+Div operator/(const Expr &a, const Expr &b) { return Div(a, b); }
+
 Access::Access(const Expr tensor, const std::vector<Expr> &indices) {
   std::vector<IRNode *> indicesIRNodes;
   indicesIRNodes.clear();
@@ -24,6 +28,12 @@ Access::Access(const Expr tensor, const std::vector<Expr> &indices) {
                  std::back_inserter(indicesIRNodes),
                  [](const Expr expr) -> IRNode * { return expr.GetIRNode(); });
   expr_node_ = new AccessNode(tensor.GetIRNode(), indicesIRNodes);
+}
+
+Tensor::Tensor(const std::string &name, std::vector<int64_t> shape)
+    : name(name), shape(shape) {
+  expr_node_ = new TensorNode(name, shape);
+  Program::GetInstance()->DeclareTensor(this);
 }
 
 }  // namespace polly

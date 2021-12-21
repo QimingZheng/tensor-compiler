@@ -11,9 +11,35 @@ void CodeGenC::visitAdd(AddNode *add) {
 }
 
 void CodeGenC::visitMul(MulNode *mul) {
+  oss << "(";
   mul->lhs->accept(this);
+  oss << ")";
   oss << " * ";
+  oss << "(";
   mul->rhs->accept(this);
+  oss << ")";
+}
+
+void CodeGenC::visitSub(SubNode *sub) {
+  sub->lhs->accept(this);
+  oss << " - ";
+  sub->rhs->accept(this);
+}
+
+void CodeGenC::visitDiv(DivNode *div) {
+  oss << "(";
+  div->lhs->accept(this);
+  oss << ")";
+  oss << " / ";
+  oss << "(";
+  div->rhs->accept(this);
+  oss << ")";
+}
+
+void CodeGenC::visitMod(ModNode *mod) {
+  mod->lhs->accept(this);
+  oss << " % ";
+  mod->rhs->accept(this);
 }
 
 void CodeGenC::visitVar(VarNode *var) { oss << var->name; }
@@ -63,8 +89,17 @@ void CodeGenC::visitFor(ForNode *loop) {
   oss << "}\n";
 }
 
-void CodeGenC::genCode(ForNode *program) {
+void CodeGenC::visitConst(ConstNode *con) { oss << con->name; }
+
+void CodeGenC::genCode(ForNode *program, std::vector<TensorNode*> &tensors) {
   oss << C_Heaader;
+  for (int i = 0; i < tensors.size(); i++) {
+    oss << "float " << tensors[i]->name;
+    for (int j = 0; j < tensors[i]->shape.size(); j++)
+      oss << "[" << tensors[i]->shape[j] << "]";
+    oss << ";\n";
+  }
+  oss << "int main() {\n";
   visit(program);
   oss << "}\n";
 }

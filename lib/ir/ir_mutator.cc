@@ -29,10 +29,28 @@ void IRMutatorVisitor::visitAdd(AddNode *add) {
   add->rhs = _replace_subnode_helper(add->rhs);
 }
 
+void IRMutatorVisitor::visitSub(SubNode *sub) {
+  assert(sub != nullptr);
+  sub->lhs = _replace_subnode_helper(sub->lhs);
+  sub->rhs = _replace_subnode_helper(sub->rhs);
+}
+
 void IRMutatorVisitor::visitMul(MulNode *mul) {
   assert(mul != nullptr);
   mul->lhs = _replace_subnode_helper(mul->lhs);
   mul->rhs = _replace_subnode_helper(mul->rhs);
+}
+
+void IRMutatorVisitor::visitDiv(DivNode *div) {
+  assert(div != nullptr);
+  div->lhs = _replace_subnode_helper(div->lhs);
+  div->rhs = _replace_subnode_helper(div->rhs);
+}
+
+void IRMutatorVisitor::visitMod(ModNode *mod) {
+  assert(mod != nullptr);
+  mod->lhs = _replace_subnode_helper(mod->lhs);
+  mod->rhs = _replace_subnode_helper(mod->rhs);
 }
 
 void IRMutatorVisitor::visitVar(VarNode *var) {
@@ -63,6 +81,10 @@ void IRMutatorVisitor::visitFor(ForNode *loop) {
   for (int i = 0; i < loop->body.size(); i++) {
     loop->body[i] = _replace_subnode_helper(loop->body[i]);
   }
+}
+
+void IRMutatorVisitor::visitConst(ConstNode *con) {
+  // PASS
 }
 
 }  // namespace polly

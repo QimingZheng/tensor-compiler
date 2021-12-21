@@ -7,31 +7,39 @@ namespace polly {
 enum IRNodeType {
   INT = 0,
   ADD = 1,
-  MUL = 2,
-  VAR = 3,
-  ACCESS = 4,
-  ASSIGN = 5,
-  TENSOR = 6,
+  SUB = 2,
+  MUL = 3,
+  DIV = 4,
+  MOD = 5,
+  VAR = 6,
+  ACCESS = 7,
+  ASSIGN = 8,
+  TENSOR = 9,
+  CONST = 10,
 
-  ////
-  FOR = 8,
+  FOR = 11,
 };
 
 class IntNode;
 class AddNode;
+class SubNode;
 class MulNode;
+class DivNode;
+class ModNode;
 class AssignmentNode;
 class VarNode;
 class AccessNode;
 class TensorNode;
 
-////
 class ForNode;
 
 class IRVisitor;
 
 class IRNode {
  public:
+  IRNode() {}
+  virtual ~IRNode() {}
+
   virtual void accept(IRVisitor *visitor) {
     throw std::runtime_error("Accept Not implemented");
   }
@@ -61,6 +69,22 @@ class AddNode : public IRNode {
   }
 };
 
+class SubNode : public IRNode {
+ public:
+  IRNode *lhs, *rhs;
+  SubNode() = delete;
+  SubNode(IRNode *lhs, IRNode *rhs) : lhs(lhs), rhs(rhs) {}
+
+  void accept(IRVisitor *visitor) override;
+  IRNodeType Type() const override { return IRNodeType::SUB; }
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return lhs->equals(static_cast<const SubNode *>(other)->lhs) &&
+           rhs->equals(static_cast<const SubNode *>(other)->rhs);
+  }
+};
+
 class MulNode : public IRNode {
  public:
   IRNode *lhs, *rhs;
@@ -74,6 +98,38 @@ class MulNode : public IRNode {
     if (Type() != other->Type()) return false;
     return lhs->equals(static_cast<const MulNode *>(other)->lhs) &&
            rhs->equals(static_cast<const MulNode *>(other)->rhs);
+  }
+};
+
+class DivNode : public IRNode {
+ public:
+  IRNode *lhs, *rhs;
+  DivNode() = delete;
+  DivNode(IRNode *lhs, IRNode *rhs) : lhs(lhs), rhs(rhs) {}
+
+  void accept(IRVisitor *visitor) override;
+  IRNodeType Type() const override { return IRNodeType::DIV; }
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return lhs->equals(static_cast<const DivNode *>(other)->lhs) &&
+           rhs->equals(static_cast<const DivNode *>(other)->rhs);
+  }
+};
+
+class ModNode : public IRNode {
+ public:
+  IRNode *lhs, *rhs;
+  ModNode() = delete;
+  ModNode(IRNode *lhs, IRNode *rhs) : lhs(lhs), rhs(rhs) {}
+
+  void accept(IRVisitor *visitor) override;
+  IRNodeType Type() const override { return IRNodeType::MOD; }
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return lhs->equals(static_cast<const ModNode *>(other)->lhs) &&
+           rhs->equals(static_cast<const ModNode *>(other)->rhs);
   }
 };
 
@@ -91,6 +147,22 @@ class VarNode : public IRNode {
     if (other == nullptr) return false;
     if (Type() != other->Type()) return false;
     return name == static_cast<const VarNode *>(other)->name;
+  }
+};
+
+class ConstNode : public IRNode {
+ public:
+  std::string name;
+  ConstNode() = delete;
+  ConstNode(const std::string name) : name(name) {}
+
+  void accept(IRVisitor *visitor) override;
+
+  IRNodeType Type() const override { return IRNodeType::CONST; }
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return name == static_cast<const ConstNode *>(other)->name;
   }
 };
 
@@ -112,8 +184,10 @@ class IntNode : public IRNode {
 class TensorNode : public IRNode {
  public:
   std::string name;
+  std::vector<int64_t> shape;
   TensorNode() = delete;
-  TensorNode(const std::string &name) : name(name) {}
+  TensorNode(const std::string &name, std::vector<int64_t> &shape)
+      : name(name), shape(shape) {}
 
   void accept(IRVisitor *visitor) override;
   IRNodeType Type() const override { return IRNodeType::TENSOR; }
