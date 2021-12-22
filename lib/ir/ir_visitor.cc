@@ -10,17 +10,8 @@ void IRVisitor::visit(IRNode *expr) {
     case IRNodeType::ADD:
       this->visitAdd(static_cast<AddNode *>(expr));
       break;
-    case IRNodeType::SUB:
-      this->visitSub(static_cast<SubNode *>(expr));
-      break;
     case IRNodeType::MUL:
       this->visitMul(static_cast<MulNode *>(expr));
-      break;
-    case IRNodeType::DIV:
-      this->visitDiv(static_cast<DivNode *>(expr));
-      break;
-    case IRNodeType::MOD:
-      this->visitMod(static_cast<ModNode *>(expr));
       break;
     case IRNodeType::INT:
       this->visitInt(static_cast<IntNode *>(expr));
@@ -40,9 +31,6 @@ void IRVisitor::visit(IRNode *expr) {
     case IRNodeType::FOR:
       this->visitFor(static_cast<ForNode *>(expr));
       break;
-    case IRNodeType::CONST:
-      this->visitConst(static_cast<ConstNode *>(expr));
-      break;
 
     default:
       throw std::runtime_error("visiting unknonw node");
@@ -57,25 +45,10 @@ void IRPrinterVisitor::visitAdd(AddNode *add) {
   std::cout << " + ";
   add->rhs->accept(this);
 }
-void IRPrinterVisitor::visitSub(SubNode *sub) {
-  sub->lhs->accept(this);
-  std::cout << " - ";
-  sub->rhs->accept(this);
-}
 void IRPrinterVisitor::visitMul(MulNode *mul) {
   mul->lhs->accept(this);
   std::cout << " * ";
   mul->rhs->accept(this);
-}
-void IRPrinterVisitor::visitDiv(DivNode *div) {
-  div->lhs->accept(this);
-  std::cout << " / ";
-  div->rhs->accept(this);
-}
-void IRPrinterVisitor::visitMod(ModNode *mod) {
-  mod->lhs->accept(this);
-  std::cout << " % ";
-  mod->rhs->accept(this);
 }
 void IRPrinterVisitor::visitVar(VarNode *var) { std::cout << var->name; }
 void IRPrinterVisitor::visitAccess(AccessNode *access) {
@@ -104,7 +77,4 @@ void IRPrinterVisitor::visitFor(ForNode *loop) {
   }
   std::cout << "}\n";
 }
-
-void IRPrinterVisitor::visitConst(ConstNode *con) { std::cout << con->name; }
-
 }  // namespace polly

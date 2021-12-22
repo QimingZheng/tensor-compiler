@@ -20,28 +20,6 @@ void CodeGenC::visitMul(MulNode *mul) {
   oss << ")";
 }
 
-void CodeGenC::visitSub(SubNode *sub) {
-  sub->lhs->accept(this);
-  oss << " - ";
-  sub->rhs->accept(this);
-}
-
-void CodeGenC::visitDiv(DivNode *div) {
-  oss << "(";
-  div->lhs->accept(this);
-  oss << ")";
-  oss << " / ";
-  oss << "(";
-  div->rhs->accept(this);
-  oss << ")";
-}
-
-void CodeGenC::visitMod(ModNode *mod) {
-  mod->lhs->accept(this);
-  oss << " % ";
-  mod->rhs->accept(this);
-}
-
 void CodeGenC::visitVar(VarNode *var) { oss << var->name; }
 
 void CodeGenC::visitAccess(AccessNode *access) {
@@ -88,10 +66,7 @@ void CodeGenC::visitFor(ForNode *loop) {
   oss << getIndent();
   oss << "}\n";
 }
-
-void CodeGenC::visitConst(ConstNode *con) { oss << con->name; }
-
-void CodeGenC::genCode(ForNode *program, std::vector<TensorNode*> &tensors) {
+void CodeGenC::genCode(ForNode *program, std::vector<TensorNode *> &tensors) {
   oss << C_Heaader;
   for (int i = 0; i < tensors.size(); i++) {
     oss << "float " << tensors[i]->name;

@@ -32,15 +32,11 @@ class CodeGenC : public IRVisitor {
   void visitInt(IntNode *int_expr) override;
   void visitAdd(AddNode *add) override;
   void visitMul(MulNode *mul) override;
-  void visitSub(SubNode *sub) override;
-  void visitDiv(DivNode *div) override;
-  void visitMod(ModNode *mod) override;
   void visitVar(VarNode *var) override;
   void visitAccess(AccessNode *access) override;
   void visitAssign(AssignmentNode *assign) override;
   void visitTensor(TensorNode *tensor) override;
   void visitFor(ForNode *loop) override;
-  void visitConst(ConstNode *con) override;
 };
 
 class CodeGenCuda : public CodeGen {
