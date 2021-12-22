@@ -22,32 +22,37 @@ enum IRNodeType {
 
 class IntNode;
 class AddNode;
+class SubNode;
 class MulNode;
+class DivNode;
+class ModNode;
 class AssignmentNode;
 class VarNode;
 class AccessNode;
 class TensorNode;
+class ConstNode;
 
 class ForNode;
 
 class IRVisitor;
 
-class IRNode : private Uncopyable {
+typedef std::shared_ptr<AddNode> AddHandle;
+typedef std::shared_ptr<SubNode> SubHandle;
+typedef std::shared_ptr<MulNode> MulHandle;
+typedef std::shared_ptr<DivNode> DivHandle;
+typedef std::shared_ptr<ModNode> ModHandle;
+typedef std::shared_ptr<VarNode> VarHandle;
+typedef std::shared_ptr<IntNode> IntHandle;
+typedef std::shared_ptr<TensorNode> TensorHandle;
+typedef std::shared_ptr<AccessNode> AccessHandle;
+typedef std::shared_ptr<AssignmentNode> AssignmentHandle;
+typedef std::shared_ptr<ForNode> ForHandle;
+typedef std::shared_ptr<ConstNode> ConstHandle;
+
+class IRNode {
  public:
   IRNode() {}
   virtual ~IRNode() {}
-
-  mutable long ref = 0;
-  friend void acquire(const IRNode *node) { ++(node->ref); }
-  friend void release(const IRNode *node) {
-    if (--(node->ref) == 0) {
-      delete node;
-    }
-  }
-
-  virtual void accept(IRVisitor *visitor) {
-    throw std::runtime_error("Accept Not implemented");
-  }
 
   virtual IRNodeType Type() const {
     throw std::runtime_error("Type Not implemented");
@@ -58,95 +63,147 @@ class IRNode : private Uncopyable {
   }
 };
 
-class BaseExprNode : public IRNode {
+class IRHandle {
+ private:
+  bool isNull() const { return ptr_ == nullptr; }
+
  public:
-};
-
-class BaseStmtNode : public IRNode {
- public:
-};
-
-class IRHandle {};
-
-template <typename T>
-class ExprNode : public BaseExprNode {
- public:
-  virtual ~ExprNode() = default;
-  void accept(IRVisitor *visitor) override;
-  IRNodeType Type() const override { return T::Type; }
-};
-
-class IRHandle : public IntrusivePtr<IRNode> {
-  IRHandle() : IntrusivePtr<IRNode>() {}
-  IRHandle(IRNode *p) : IntrusivePtr<IRNode>(p) {}
-
-  template <typename T>
-  T *as() const {
-    if (ptr != nullptr && T::Type == ptr->Type()) {
-      return std::static_cast<T *>(ptr);
-    } else {
-      return nullptr;
-    }
+  IRHandle() : ptr_(nullptr) {}
+  explicit IRHandle(IRNode *ptr) : ptr_(ptr) {}
+  IRHandle(const IRHandle &other) : ptr_(other.ptr_) {}
+  IRHandle &operator=(const IRHandle &other) { ptr_ = other.ptr_; }
+  IRHandle(IRHandle &&other) : ptr_(other.ptr_) { other.ptr_ = nullptr; }
+  IRHandle &operator=(IRHandle &&other) {
+    ptr_ = other.ptr_;
+    other.ptr_ = nullptr;
   }
 
-  void accept(IRVisitor *visitor) const { ptr->accept(visitor); }
+  IRNode *GetRaw() const { return ptr_.get(); }
+
+  template <typename T>
+  std::shared_ptr<T> as() const {
+    return std::static_pointer_cast<T>(ptr_);
+  }
+
+  bool operator!=(const IRHandle &other) { return !equals(other); }
+  bool operator==(const IRHandle &other) { return equals(other); }
+
+  mutable std::shared_ptr<IRNode> ptr_;
+
+  bool equals(const IRHandle other) const {
+    if (isNull() && other.isNull()) return true;
+    if (isNull()) return false;
+    if (other.isNull()) return false;
+    if (other.ptr_->Type() != ptr_->Type()) return false;
+    return ptr_->equals(other.GetRaw());
+  }
+
+  IRNodeType Type() const { return ptr_->Type(); }
+
+  void accept(IRVisitor *visitor);
 };
 
-class Expr : public IRHandle {
- public:
-  Expr() : IRHandle() {}
-  Expr(int x);
+static const IRHandle NullIRHandle = IRHandle();
 
-  Expr(BaseExprNode *expr) : IRHandle(expr) {}
-
-  IRNodeType Type() { return (BaseExprNode *)(ptr)->Type(); }
-};
-
-class AddNode : public ExprNode<AddNode> {
+class AddNode : public IRNode {
  private:
   AddNode() {}
 
  public:
-  Expr lhs, rhs;
+  IRHandle lhs, rhs;
 
-  static Expr make(Expr lhs, Expr rhs);
+  static IRHandle make(IRHandle lhs, IRHandle rhs);
 
   bool equals(const IRNode *other) override {
     if (other == nullptr) return false;
     if (Type() != other->Type()) return false;
-    return lhs->equals(static_cast<const AddNode *>(other)->lhs) &&
-           rhs->equals(static_cast<const AddNode *>(other)->rhs);
+    return lhs.equals(static_cast<const AddNode *>(other)->lhs) &&
+           rhs.equals(static_cast<const AddNode *>(other)->rhs);
   }
 
-  static const IRNodeType Type = IRNodeType::ADD;
+  IRNodeType Type() const override { return IRNodeType::ADD; }
 };
 
-class MulNode : public ExprNode<MulNode> {
+class SubNode : public IRNode {
+ private:
+  SubNode() {}
+
+ public:
+  IRHandle lhs, rhs;
+
+  static IRHandle make(IRHandle lhs, IRHandle rhs);
+
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return lhs.equals(static_cast<const SubNode *>(other)->lhs) &&
+           rhs.equals(static_cast<const SubNode *>(other)->rhs);
+  }
+
+  IRNodeType Type() const override { return IRNodeType::SUB; }
+};
+
+class MulNode : public IRNode {
  private:
   MulNode() {}
 
  public:
-  Expr lhs, rhs;
-  // MulNode(IRNode *lhs, IRNode *rhs) : lhs(lhs), rhs(rhs) {}
+  IRHandle lhs, rhs;
+  static IRHandle make(IRHandle lhs, IRHandle rhs);
 
-  // void accept(IRVisitor *visitor) override;
   IRNodeType Type() const override { return IRNodeType::MUL; }
   bool equals(const IRNode *other) override {
     if (other == nullptr) return false;
     if (Type() != other->Type()) return false;
-    return lhs->equals(static_cast<const MulNode *>(other)->lhs) &&
-           rhs->equals(static_cast<const MulNode *>(other)->rhs);
+    return lhs.equals(static_cast<const MulNode *>(other)->lhs) &&
+           rhs.equals(static_cast<const MulNode *>(other)->rhs);
+  }
+};
+
+class DivNode : public IRNode {
+ private:
+  DivNode() {}
+
+ public:
+  IRHandle lhs, rhs;
+  static IRHandle make(IRHandle lhs, IRHandle rhs);
+
+  IRNodeType Type() const override { return IRNodeType::DIV; }
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return lhs.equals(static_cast<const DivNode *>(other)->lhs) &&
+           rhs.equals(static_cast<const DivNode *>(other)->rhs);
+  }
+};
+
+class ModNode : public IRNode {
+ private:
+  ModNode() {}
+
+ public:
+  IRHandle lhs, rhs;
+  static IRHandle make(IRHandle lhs, IRHandle rhs);
+
+  IRNodeType Type() const override { return IRNodeType::MOD; }
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return lhs.equals(static_cast<const ModNode *>(other)->lhs) &&
+           rhs.equals(static_cast<const ModNode *>(other)->rhs);
   }
 };
 
 class VarNode : public IRNode {
+ private:
+  VarNode() {}
+
  public:
   std::string name;
-  IRNode *min, *max, *increment;
-  VarNode() = delete;
-  VarNode(const std::string name, IRNode *min, IRNode *max, IRNode *increment)
-      : name(name), min(min), max(max), increment(increment) {}
-  // void accept(IRVisitor *visitor) override;
+  IRHandle min, max, increment;
+
+  static IRHandle make(const std::string name, IRHandle min, IRHandle max,
+                       IRHandle increment);
 
   IRNodeType Type() const override { return IRNodeType::VAR; }
   bool equals(const IRNode *other) override {
@@ -157,11 +214,14 @@ class VarNode : public IRNode {
 };
 
 class IntNode : public IRNode {
+ private:
+  IntNode() {}
+  IntNode(int x) : value(x) {}
+
  public:
   int value;
-  IntNode() = delete;
-  IntNode(int x) : value(x) {}
-  // void accept(IRVisitor *visitor) override;
+
+  static IRHandle make(int x);
 
   IRNodeType Type() const override { return IRNodeType::INT; }
   bool equals(const IRNode *other) override {
@@ -172,14 +232,15 @@ class IntNode : public IRNode {
 };
 
 class TensorNode : public IRNode {
+ private:
+  TensorNode() {}
+
  public:
   std::string name;
   std::vector<int64_t> shape;
-  TensorNode() = delete;
-  TensorNode(const std::string &name, std::vector<int64_t> &shape)
-      : name(name), shape(shape) {}
 
-  // void accept(IRVisitor *visitor) override;
+  static IRHandle make(const std::string &name, std::vector<int64_t> &shape);
+
   IRNodeType Type() const override { return IRNodeType::TENSOR; }
   bool equals(const IRNode *other) override {
     if (other == nullptr) return false;
@@ -189,68 +250,88 @@ class TensorNode : public IRNode {
 };
 
 class AccessNode : public IRNode {
- public:
-  AccessNode() = delete;
-  IRNode *tensor;
-  std::vector<IRNode *> indices;
-  AccessNode(IRNode *tensor, std::vector<IRNode *> indices)
-      : tensor(tensor), indices(indices) {}
+ private:
+  AccessNode() {}
 
-  // void accept(IRVisitor *visitor) override;
+ public:
+  IRHandle tensor;
+  std::vector<IRHandle> indices;
+
+  static IRHandle make(IRHandle tensor, std::vector<IRHandle> indices);
+
   IRNodeType Type() const override { return IRNodeType::ACCESS; }
   bool equals(const IRNode *other) override {
     if (other == nullptr) return false;
     if (Type() != other->Type()) return false;
     const AccessNode *tmp = static_cast<const AccessNode *>(other);
     if (indices.size() != tmp->indices.size()) return false;
-    if (tensor->equals(tmp->tensor) == false) return false;
+    if (tensor.equals(tmp->tensor) == false) return false;
     for (int i = 0; i < indices.size(); i++) {
-      if (indices[i]->equals(tmp->indices[i]) == false) return false;
+      if (indices[i].equals(tmp->indices[i]) == false) return false;
     }
     return true;
   }
 };
 
 class AssignmentNode : public IRNode {
- public:
-  AssignmentNode() = delete;
-  IRNode *lhs, *rhs;
-  AssignmentNode(IRNode *lhs, IRNode *rhs) : lhs(lhs), rhs(rhs) {}
+ private:
+  AssignmentNode() {}
 
-  // void accept(IRVisitor *visitor) override;
+ public:
+  IRHandle lhs, rhs;
+  static IRHandle make(IRHandle lhs, IRHandle rhs);
 
   IRNodeType Type() const override { return IRNodeType::ASSIGN; }
   bool equals(const IRNode *other) override {
     if (other == nullptr) return false;
     if (Type() != other->Type()) return false;
     const AssignmentNode *tmp = static_cast<const AssignmentNode *>(other);
-    return lhs->equals(tmp->lhs) && rhs->equals(tmp->rhs);
+    return lhs.equals(tmp->lhs) && rhs.equals(tmp->rhs);
   }
 };
 
 class ForNode : public IRNode {
+ private:
+  ForNode() {}
+
  public:
-  IRNode *looping_var_;
-  ForNode *parent_loop_;
-  std::vector<IRNode *> body;
+  IRHandle looping_var_;
+  IRHandle parent_loop_;
+  std::vector<IRHandle> body;
 
-  ForNode(IRNode *looping_var, ForNode *parent_loop = nullptr)
-      : looping_var_(looping_var), parent_loop_(parent_loop) {}
+  static IRHandle make(IRHandle looping_var,
+                       IRHandle parent_loop = NullIRHandle);
 
-  void Insert(IRNode *node) { body.push_back(node); }
+  void Insert(IRHandle node) { body.push_back(node); }
 
-  // void accept(IRVisitor *visitor) override;
   IRNodeType Type() const override { return IRNodeType::FOR; }
   bool equals(const IRNode *other) override {
     if (other == nullptr) return false;
     if (Type() != other->Type()) return false;
     const ForNode *tmp = static_cast<const ForNode *>(other);
-    if (looping_var_->equals(tmp->looping_var_) == false) return false;
+    if (looping_var_.equals(tmp->looping_var_) == false) return false;
     if (body.size() != tmp->body.size()) return false;
     for (int i = 0; i < body.size(); i++) {
-      if (body[i]->equals(tmp->body[i]) == false) return false;
+      if (body[i].equals(tmp->body[i]) == false) return false;
     }
     return true;
+  }
+};
+
+class ConstNode : public IRNode {
+ private:
+  ConstNode() {}
+
+ public:
+  std::string name;
+
+  static IRHandle make(const std::string name);
+
+  IRNodeType Type() const override { return IRNodeType::CONST; }
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return static_cast<const ConstNode *>(other)->name == name;
   }
 };
 

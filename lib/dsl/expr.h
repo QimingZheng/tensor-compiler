@@ -10,17 +10,17 @@ namespace polly {
 class Expr {
  public:
   Expr() = default;
-  mutable IRNode *expr_node_;
-  IRNode *GetIRNode() const { return expr_node_; }
+  mutable IRHandle handle_;
+  IRHandle GetIRHandle() const { return handle_; }
 
-  Expr(int x) : expr_node_(new IntNode(x)) {}
+  Expr(int x) : handle_(IntNode::make(x)) {}
 };
 
 class Add : public Expr {
  public:
   Add() = delete;
   Add(const Expr &lhs, const Expr &rhs) {
-    expr_node_ = new AddNode(lhs.GetIRNode(), rhs.GetIRNode());
+    handle_ = AddNode::make(lhs.GetIRHandle(), rhs.GetIRHandle());
   }
 };
 
@@ -30,7 +30,7 @@ class Mul : public Expr {
  public:
   Mul() = delete;
   Mul(const Expr &lhs, const Expr &rhs) {
-    expr_node_ = new MulNode(lhs.GetIRNode(), rhs.GetIRNode());
+    handle_ = MulNode::make(lhs.GetIRHandle(), rhs.GetIRHandle());
   }
 };
 
@@ -76,6 +76,12 @@ class Tensor : public Expr {
   const Access operator()(const Index &...indices) const {
     return static_cast<const Tensor *>(this)->operator()({indices...});
   }
+};
+
+class Constant : public Expr {
+ public:
+  std::string name;
+  Constant(const std::string name);
 };
 
 }  // namespace polly

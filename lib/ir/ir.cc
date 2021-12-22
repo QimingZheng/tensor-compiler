@@ -3,31 +3,91 @@
 
 namespace polly {
 
-// void AccessNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+IRHandle AddNode::make(IRHandle lhs, IRHandle rhs) {
+  AddNode *add = new AddNode();
+  add->lhs = lhs;
+  add->rhs = rhs;
+  return IRHandle(add);
+}
 
-// void AddNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+IRHandle SubNode::make(IRHandle lhs, IRHandle rhs) {
+  SubNode *sub = new SubNode();
+  sub->lhs = lhs;
+  sub->rhs = rhs;
+  return IRHandle(sub);
+}
 
-// void MulNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+IRHandle MulNode::make(IRHandle lhs, IRHandle rhs) {
+  MulNode *mul = new MulNode();
+  mul->lhs = lhs;
+  mul->rhs = rhs;
+  return IRHandle(mul);
+}
 
-// void SubNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+IRHandle DivNode::make(IRHandle lhs, IRHandle rhs) {
+  DivNode *div = new DivNode();
+  div->lhs = lhs;
+  div->rhs = rhs;
+  return IRHandle(div);
+}
 
-// void DivNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+IRHandle ModNode::make(IRHandle lhs, IRHandle rhs) {
+  ModNode *div = new ModNode();
+  div->lhs = lhs;
+  div->rhs = rhs;
+  return IRHandle(div);
+}
 
-// void ModNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+IRHandle VarNode::make(const std::string name, IRHandle min, IRHandle max,
+                       IRHandle increment) {
+  VarNode *var = new VarNode();
+  var->name = name;
+  var->min = min;
+  var->max = max;
+  var->increment = increment;
+  return IRHandle(var);
+}
 
-// void VarNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+IRHandle IntNode::make(int x) {
+  IntNode *node = new IntNode(x);
+  return IRHandle(node);
+}
 
-// void ConstNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+IRHandle TensorNode::make(const std::string &name,
+                          std::vector<int64_t> &shape) {
+  TensorNode *tensor = new TensorNode();
+  tensor->name = name;
+  tensor->shape = shape;
+  return IRHandle(tensor);
+}
 
-// void IntNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+IRHandle AccessNode::make(IRHandle tensor, std::vector<IRHandle> indices) {
+  AccessNode *node = new AccessNode;
+  node->tensor = tensor;
+  node->indices = indices;
+  return IRHandle(node);
+}
 
-// void TensorNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+IRHandle AssignmentNode::make(IRHandle lhs, IRHandle rhs) {
+  AssignmentNode *node = new AssignmentNode();
+  node->lhs = lhs;
+  node->rhs = rhs;
+  return IRHandle(node);
+}
 
-// void AssignmentNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+IRHandle ForNode::make(IRHandle looping_var, IRHandle parent_loop) {
+  ForNode *node = new ForNode();
+  node->looping_var_ = looping_var;
+  node->parent_loop_ = parent_loop;
+  return IRHandle(node);
+}
 
-// void ForNode::accept(IRVisitor *visitor) { visitor->visit(this); }
+IRHandle ConstNode::make(std::string name) {
+  ConstNode *node = new ConstNode();
+  node->name = name;
+  return IRHandle(node);
+}
 
-
-
+void IRHandle::accept(IRVisitor *visitor) { visitor->visit(*this); }
 
 }  // namespace polly

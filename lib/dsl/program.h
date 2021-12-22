@@ -13,33 +13,35 @@ namespace polly {
 /// Should be Singleton.
 class Program {
  private:
-  std::vector<TensorNode *> tensors;
+  std::vector<IRHandle> tensors;
 
-  ForNode *root_loop_ = nullptr;
-  ForNode *current_loop_ = nullptr;
+  IRHandle root_loop_;
+  IRHandle current_loop_;
 
   /// Find the for-loop that uses var `loop_var_name` as its looping var.
-  ForNode *find_loop_var(ForNode *cur, const std::string loop_var_name) {
-    if (cur == nullptr) return nullptr;
-    if (static_cast<VarNode *>(cur->looping_var_)->name == loop_var_name) {
+  IRHandle find_loop_var(IRHandle cur, const std::string loop_var_name) {
+    ForHandle curFor = cur.as<ForNode>();
+    if (curFor == nullptr) return NullIRHandle;
+    if (curFor->looping_var_.as<VarNode>()->name == loop_var_name) {
       return cur;
     }
-    for (int i = 0; i < cur->body.size(); i++) {
-      if (cur->body[i]->Type() == IRNodeType::FOR) {
-        ForNode *ret =
-            find_loop_var(static_cast<ForNode *>(cur->body[i]), loop_var_name);
-        if (ret != nullptr) return ret;
+    for (int i = 0; i < curFor->body.size(); i++) {
+      if (curFor->body[i].Type() == IRNodeType::FOR) {
+        IRHandle ret = find_loop_var(curFor->body[i], loop_var_name);
+        if (ret != NullIRHandle) return ret;
       }
     }
-    return nullptr;
+    return NullIRHandle;
   }
 
-  int isNestedLoop(ForNode *outter, ForNode *inner) {
-    if (outter == nullptr) return false;
-    if (inner == nullptr) return false;
-    for (int i = 0; i < outter->body.size(); i++) {
-      if (outter->body[i]->Type() == IRNodeType::FOR) {
-        if (outter->body[i]->equals(inner)) return i;
+  int isNestedLoop(IRHandle outter, IRHandle inner) {
+    ForHandle outterFor = outter.as<ForNode>();
+    ForHandle innerFor = inner.as<ForNode>();
+    if (outterFor == nullptr) return false;
+    if (innerFor == nullptr) return false;
+    for (int i = 0; i < outterFor->body.size(); i++) {
+      if (outterFor->body[i].Type() == IRNodeType::FOR) {
+        if (outterFor->body[i].equals(inner)) return i;
       }
     }
     return -1;
@@ -63,12 +65,12 @@ class Program {
   static Program *GetInstance();
 
   bool EnterLoop(const Variable *var) {
-    if (root_loop_ == nullptr) {
-      root_loop_ = new ForNode(var->GetIRNode());
+    if (root_loop_ == NullIRHandle) {
+      root_loop_ = ForNode::make(var->GetIRHandle());
       current_loop_ = root_loop_;
     } else {
-      ForNode *loop = new ForNode(var->GetIRNode(), current_loop_);
-      current_loop_->Insert(loop);
+      IRHandle loop = ForNode::make(var->GetIRHandle(), current_loop_);
+      current_loop_.as<ForNode>()->Insert(loop);
       current_loop_ = loop;
     }
     return false;
@@ -76,63 +78,74 @@ class Program {
 
   bool AddStmt(Stmt *stmt) {
     IRPrinterVisitor visitor;
-    current_loop_->Insert(stmt->GetIRNode());
+    current_loop_.as<ForNode>()->Insert(stmt->GetIRHandle());
     return false;
   }
 
   bool ExitLoop(const Variable *var) {
-    current_loop_ = current_loop_->parent_loop_;
+    current_loop_ = current_loop_.as<ForNode>()->parent_loop_;
     return false;
   }
 
   bool Reorder(const std::string i, const std::string j) {
-    ForNode *i_loop = find_loop_var(root_loop_, i);
-    ForNode *j_loop = find_loop_var(root_loop_, j);
-    assert(i_loop != nullptr);
-    assert(j_loop != nullptr);
-    std::swap(i_loop->looping_var_, j_loop->looping_var_);
+    IRHandle i_loop = find_loop_var(root_loop_, i);
+    IRHandle j_loop = find_loop_var(root_loop_, j);
+    assert(i_loop != NullIRHandle);
+    assert(j_loop != NullIRHandle);
+    std::swap(i_loop.as<ForNode>()->looping_var_,
+              j_loop.as<ForNode>()->looping_var_);
     return true;
   }
 
   bool Fuse(const std::string i, const std::string j) {
-    ForNode *outter_loop = find_loop_var(root_loop_, i);
-    ForNode *inner_loop = find_loop_var(root_loop_, j);
-    assert(outter_loop != nullptr);
-    assert(inner_loop != nullptr);
+    IRHandle outter_loop = find_loop_var(root_loop_, i);
+    IRHandle inner_loop = find_loop_var(root_loop_, j);
+    assert(outter_loop != NullIRHandle);
+    assert(inner_loop != NullIRHandle);
     int inner_loop_pos = isNestedLoop(outter_loop, inner_loop);
     assert(inner_loop_pos >= 0);
 
-    VarNode *outter = static_cast<VarNode *>(outter_loop->looping_var_);
-    VarNode *inner = static_cast<VarNode *>(inner_loop->looping_var_);
-    IRNode *outter_lower = outter->min, *outter_upper = outter->max,
-           *outter_inc = outter->increment;
-    IRNode *inner_lower = inner->min, *inner_upper = inner->max,
-           *inner_inc = inner->increment;
+    VarHandle outter = outter_loop.as<ForNode>()->looping_var_.as<VarNode>();
+    VarHandle inner = inner_loop.as<ForNode>()->looping_var_.as<VarNode>();
+    IRHandle outter_lower = outter->min, outter_upper = outter->max,
+             outter_inc = outter->increment;
+    IRHandle inner_lower = inner->min, inner_upper = inner->max,
+             inner_inc = inner->increment;
 
     outter->name += inner->name;
 
     // get rid off the inner loop, now we only have the fused loop
-    for (int i = 0; i < inner_loop->body.size(); i++) {
-      outter_loop->body.insert(outter_loop->body.begin() + inner_loop_pos++,
-                               inner_loop->body[i]);
+    for (int i = 0; i < inner_loop.as<ForNode>()->body.size(); i++) {
+      outter_loop.as<ForNode>()->body.insert(
+          outter_loop.as<ForNode>()->body.begin() + inner_loop_pos++,
+          inner_loop.as<ForNode>()->body[i]);
     }
-    outter_loop->body.erase(outter_loop->body.begin() + inner_loop_pos);
+    outter_loop.as<ForNode>()->body.erase(
+        outter_loop.as<ForNode>()->body.begin() + inner_loop_pos);
 
-    outter->min = new IntNode(0);
-    outter->max = new MulNode(new SubNode(outter_upper, outter_lower),
-                              new SubNode(inner_upper, inner_lower));
-    outter->increment = new MulNode(outter_inc, inner_inc);
+    outter->min = IntNode::make(0);
+    outter->max = MulNode::make(SubNode::make(outter_upper, outter_lower),
+                                SubNode::make(inner_upper, inner_lower));
+    outter->increment = MulNode::make(outter_inc, inner_inc);
 
-    MulNode *common =
-        new MulNode(new SubNode(inner_upper, outter_upper), outter_inc);
+    IRHandle common =
+        MulNode::make(SubNode::make(inner_upper, outter_upper), outter_inc);
     IRMutatorVisitor outter_mutator(
-        outter,
-        new AddNode(new MulNode(outter_inc, new DivNode(outter, common)),
-                    outter_lower));
+        outter_loop.as<ForNode>()->looping_var_,
+        AddNode::make(
+            MulNode::make(
+                outter_inc,
+                DivNode::make(outter_loop.as<ForNode>()->looping_var_, common)),
+            outter_lower));
     outter_mutator.visit(root_loop_);
+
     IRMutatorVisitor inner_mutator(
-        inner, new AddNode(new MulNode(inner_inc, new ModNode(outter, common)),
-                           inner_lower));
+        inner_loop.as<ForNode>()->looping_var_,
+        AddNode::make(
+            MulNode::make(
+                inner_inc,
+                ModNode::make(outter_loop.as<ForNode>()->looping_var_, common)),
+            inner_lower));
     inner_mutator.visit(root_loop_);
 
     return true;
@@ -142,35 +155,38 @@ class Program {
   // each of size splitFactor.
   // bool Split(const std::string i, int splitFactor) {
   bool Split(const std::string i, Expr tiles) {
-    IRNode *tileNode = tiles.expr_node_;
-    ForNode *outter_loop = find_loop_var(root_loop_, i);
-    assert(outter_loop != nullptr);
+    IRHandle tileNode = tiles.GetIRHandle();
+    IRHandle outter_loop = find_loop_var(root_loop_, i);
+    assert(outter_loop != NullIRHandle);
 
-    VarNode *originLoopVar = static_cast<VarNode *>(outter_loop->looping_var_);
+    VarHandle originLoopVar =
+        outter_loop.as<ForNode>()->looping_var_.as<VarNode>();
 
     originLoopVar->name = i + "_outter";
-    DivNode *stride =
-        new DivNode(new SubNode(originLoopVar->max, originLoopVar->min),
-                    new MulNode(tileNode, originLoopVar->increment));
-    ForNode *inner_loop = new ForNode(
-        new VarNode(i + "_inner", new IntNode(0), stride, new IntNode(1)),
+    IRHandle stride =
+        DivNode::make(SubNode::make(originLoopVar->max, originLoopVar->min),
+                      MulNode::make(tileNode, originLoopVar->increment));
+    IRHandle inner_loop = ForNode::make(
+        VarNode::make(i + "_inner", IntNode::make(0), stride, IntNode::make(1)),
         outter_loop);
 
-    originLoopVar->min = new IntNode(0);
+    originLoopVar->min = IntNode::make(0);
     originLoopVar->max = tileNode;
-    originLoopVar->increment = new IntNode(1);
+    originLoopVar->increment = IntNode::make(1);
 
-    std::swap(inner_loop->body, outter_loop->body);
-    outter_loop->Insert(inner_loop);
+    std::swap(inner_loop.as<ForNode>()->body, outter_loop.as<ForNode>()->body);
+    outter_loop.as<ForNode>()->Insert(inner_loop);
 
     // replace all the reference to `i` to `i_outter * tiles + i_inner`
     // AddNode *intermediate = new AddNode(
     //     new MulNode(outter_loop->looping_var_, new IntNode(tiles)),
     //     inner_loop->looping_var_);
-    AddNode *intermediate = new AddNode(new MulNode(originLoopVar, stride),
-                                        inner_loop->looping_var_);
+    IRHandle intermediate = AddNode::make(
+        MulNode::make(outter_loop.as<ForNode>()->looping_var_, stride),
+        inner_loop.as<ForNode>()->looping_var_);
 
-    IRMutatorVisitor mutator(originLoopVar, intermediate);
+    IRMutatorVisitor mutator(outter_loop.as<ForNode>()->looping_var_,
+                             intermediate);
     /// Root-Loop is a ForNode, so it cannot be replaced in any cases, so we
     /// always replace from the descendants of the Root-For-Loop-Node.
 
@@ -195,7 +211,7 @@ class Program {
 
   bool IsAffineProgram() {
     IRCheckAffinePass check;
-    return check.checkFor(root_loop_);
+    return check.checkFor(root_loop_.as<ForNode>());
   }
 
   void GenerateC() {
@@ -205,7 +221,7 @@ class Program {
   }
 
   void DeclareTensor(Tensor *tensor) {
-    tensors.push_back(static_cast<TensorNode *>(tensor->GetIRNode()));
+    tensors.push_back(static_cast<IRHandle>(tensor->GetIRHandle()));
   }
 };
 

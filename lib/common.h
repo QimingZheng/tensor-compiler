@@ -8,6 +8,7 @@
 #include <vector>
 #include <stack>
 #include <map>
+#include <memory>
 #include <unordered_map>
 #include <set>
 #include <unordered_set>

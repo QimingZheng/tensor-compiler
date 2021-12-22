@@ -28,15 +28,19 @@ class CodeGenC : public IRVisitor {
 
  public:
   CodeGenC(std::ostream &os) : oss(os) {}
-  void genCode(ForNode *program, std::vector<TensorNode *> &tensors);
-  void visitInt(IntNode *int_expr) override;
-  void visitAdd(AddNode *add) override;
-  void visitMul(MulNode *mul) override;
-  void visitVar(VarNode *var) override;
-  void visitAccess(AccessNode *access) override;
-  void visitAssign(AssignmentNode *assign) override;
-  void visitTensor(TensorNode *tensor) override;
-  void visitFor(ForNode *loop) override;
+  void genCode(IRHandle program, std::vector<IRHandle> &tensors);
+  void visitInt(IntHandle int_expr) override;
+  void visitAdd(AddHandle add) override;
+  void visitSub(SubHandle sub) override;
+  void visitMul(MulHandle mul) override;
+  void visitDiv(DivHandle div) override;
+  void visitMod(ModHandle mod) override;
+  void visitVar(VarHandle var) override;
+  void visitAccess(AccessHandle access) override;
+  void visitAssign(AssignmentHandle assign) override;
+  void visitTensor(TensorHandle tensor) override;
+  void visitFor(ForHandle loop) override;
+  void visitConst(ConstHandle con) override;
 };
 
 class CodeGenCuda : public CodeGen {

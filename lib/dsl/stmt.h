@@ -8,8 +8,8 @@ class Expr;
 
 class Stmt {
  public:
-  mutable IRNode *stmt_node_;
-  IRNode *GetIRNode() const { return stmt_node_; }
+  mutable IRHandle handle_;
+  IRHandle GetIRHandle() const { return handle_; }
 };
 
 /// All Assignments will be registered into the ast tree.

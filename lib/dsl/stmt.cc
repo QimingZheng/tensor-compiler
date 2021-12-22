@@ -4,8 +4,8 @@
 namespace polly {
 
 Assignment::Assignment(const Expr lhs, const Expr &rhs) {
-  stmt_node_ = new AssignmentNode(lhs.GetIRNode(), rhs.GetIRNode());
+  handle_ = AssignmentNode::make(lhs.GetIRHandle(), rhs.GetIRHandle());
   Program::GetInstance()->AddStmt(this);
 }
 
-}
+}  // namespace polly

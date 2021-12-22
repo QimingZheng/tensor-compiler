@@ -7,47 +7,59 @@ namespace polly {
 
 class IRVisitor {
  public:
-  virtual void visit(IRNode *expr);
-  virtual void visitInt(IntNode *int_expr) = 0;
-  virtual void visitAdd(AddNode *add) = 0;
-  virtual void visitMul(MulNode *mul) = 0;
-  virtual void visitVar(VarNode *var) = 0;
-  virtual void visitAssign(AssignmentNode *assign) = 0;
-  virtual void visitAccess(AccessNode *access) = 0;
-  virtual void visitTensor(TensorNode *tensor) = 0;
-  virtual void visitFor(ForNode *loop) = 0;
+  virtual void visit(IRHandle expr);
+  virtual void visitInt(IntHandle int_expr) = 0;
+  virtual void visitAdd(AddHandle add) = 0;
+  virtual void visitSub(SubHandle sub) = 0;
+  virtual void visitMul(MulHandle mul) = 0;
+  virtual void visitDiv(DivHandle div) = 0;
+  virtual void visitMod(ModHandle mod) = 0;
+  virtual void visitVar(VarHandle var) = 0;
+  virtual void visitAssign(AssignmentHandle assign) = 0;
+  virtual void visitAccess(AccessHandle access) = 0;
+  virtual void visitTensor(TensorHandle tensor) = 0;
+  virtual void visitFor(ForHandle loop) = 0;
+  virtual void visitConst(ConstHandle con) = 0;
 };
 
 class IRPrinterVisitor : public IRVisitor {
  public:
-  void visitInt(IntNode *int_expr) override;
-  void visitAdd(AddNode *add) override;
-  void visitMul(MulNode *mul) override;
-  void visitVar(VarNode *var) override;
-  void visitAccess(AccessNode *access) override;
-  void visitAssign(AssignmentNode *assign) override;
-  void visitTensor(TensorNode *tensor) override;
-  void visitFor(ForNode *loop) override;
+  void visitInt(IntHandle int_expr) override;
+  void visitAdd(AddHandle add) override;
+  void visitSub(SubHandle sub) override;
+  void visitMul(MulHandle mul) override;
+  void visitDiv(DivHandle div) override;
+  void visitMod(ModHandle mod) override;
+  void visitVar(VarHandle var) override;
+  void visitAccess(AccessHandle access) override;
+  void visitAssign(AssignmentHandle assign) override;
+  void visitTensor(TensorHandle tensor) override;
+  void visitFor(ForHandle loop) override;
+  void visitConst(ConstHandle con) override;
 };
 
 class IRMutatorVisitor : public IRVisitor {
  public:
-  IRNode *replaceFrom = nullptr;
-  IRNode *replaceTo = nullptr;
-  IRMutatorVisitor(IRNode *replaceFrom, IRNode *replaceTo)
+  IRHandle replaceFrom;
+  IRHandle replaceTo;
+  IRMutatorVisitor(IRHandle replaceFrom, IRHandle replaceTo)
       : replaceFrom(replaceFrom), replaceTo(replaceTo) {}
 
   template <typename T>
-  T *_replace_subnode_helper(T *op_node, bool skipReplace = false);
+  T _replace_subnode_helper(T op_node, bool skipReplace = false);
 
-  void visitInt(IntNode *int_expr) override;
-  void visitAdd(AddNode *add) override;
-  void visitMul(MulNode *mul) override;
-  void visitVar(VarNode *var) override;
-  void visitAccess(AccessNode *access) override;
-  void visitAssign(AssignmentNode *assign) override;
-  void visitTensor(TensorNode *tensor) override;
-  void visitFor(ForNode *loop) override;
+  void visitInt(IntHandle int_expr) override;
+  void visitAdd(AddHandle add) override;
+  void visitSub(SubHandle sub) override;
+  void visitMul(MulHandle mul) override;
+  void visitDiv(DivHandle div) override;
+  void visitMod(ModHandle mod) override;
+  void visitVar(VarHandle var) override;
+  void visitAccess(AccessHandle access) override;
+  void visitAssign(AssignmentHandle assign) override;
+  void visitTensor(TensorHandle tensor) override;
+  void visitFor(ForHandle loop) override;
+  void visitConst(ConstHandle con) override;
 };
 
 }  // namespace polly
