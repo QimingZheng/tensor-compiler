@@ -5,3 +5,23 @@ cc_binary(
         "//lib:polly",
     ],
 )
+
+cc_binary(
+    name = "auto_scheduler",
+    srcs = ["test_auto_scheduler.cc"], 
+    deps = [
+        "//lib:polly",
+    ],
+)
+
+cc_test (
+    name = "check_pass_test",
+    srcs = [
+        "test_check_pass.cc",
+    ],
+    deps = [
+        "//lib:polly",
+        "@gtest//:gtest",
+        "@gtest//:gtest_main"
+    ],
+)

@@ -77,7 +77,7 @@ void CodeGenC::visitFor(ForHandle loop) {
   loop_var->min.accept(this);
   oss << ";";
   loop->looping_var_.accept(this);
-  oss << " <= ";
+  oss << " < ";
   loop_var->max.accept(this);
   oss << ";";
   loop->looping_var_.accept(this);
@@ -101,7 +101,11 @@ void CodeGenC::genCode(IRHandle program, std::vector<IRHandle> &tensors) {
     oss << ";\n";
   }
   oss << "int main() {\n";
+  oss << "  clock_t tStart = clock();\n";
   visit(program);
+  // timing unit: ms
+  oss << "  printf(\"%.6f\\n\", (double)(clock() - "
+         "tStart)/(CLOCKS_PER_SEC/1000.0));\n";
   oss << "}\n";
 }
 

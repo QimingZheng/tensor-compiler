@@ -11,30 +11,16 @@ class Expr {
  public:
   Expr() = default;
   mutable IRHandle handle_;
+  explicit Expr(IRHandle handle) : handle_(handle) {}
   IRHandle GetIRHandle() const { return handle_; }
 
   Expr(int x) : handle_(IntNode::make(x)) {}
 };
 
-class Add : public Expr {
- public:
-  Add() = delete;
-  Add(const Expr &lhs, const Expr &rhs) {
-    handle_ = AddNode::make(lhs.GetIRHandle(), rhs.GetIRHandle());
-  }
-};
-
-Add operator+(const Expr &a, const Expr &b);
-
-class Mul : public Expr {
- public:
-  Mul() = delete;
-  Mul(const Expr &lhs, const Expr &rhs) {
-    handle_ = MulNode::make(lhs.GetIRHandle(), rhs.GetIRHandle());
-  }
-};
-
-Mul operator*(const Expr &a, const Expr &b);
+Expr operator+(const Expr &a, const Expr &b);
+Expr operator-(const Expr &a, const Expr &b);
+Expr operator*(const Expr &a, const Expr &b);
+Expr operator/(const Expr &a, const Expr &b);
 
 /// Looping itearator
 class Variable : public Expr {

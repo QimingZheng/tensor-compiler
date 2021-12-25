@@ -13,6 +13,7 @@ class CodeGen : public IRVisitor {
 const std::string C_Heaader = R"(
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 )";
 
 class CodeGenC : public IRVisitor {

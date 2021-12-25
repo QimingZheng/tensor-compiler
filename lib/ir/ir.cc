@@ -3,6 +3,111 @@
 
 namespace polly {
 
+IRHandle IRHandle::clone(std::map<std::string, IRHandle> &irHandleDict) {
+  if (isNull()) return IRHandle();
+  IRHandle ret;
+  switch (Type()) {
+    case IRNodeType::ADD: {
+      ret = AddNode::make(as<AddNode>()->lhs.clone(irHandleDict),
+                          as<AddNode>()->rhs.clone(irHandleDict));
+      break;
+    }
+    case IRNodeType::SUB: {
+      ret = SubNode::make(as<SubNode>()->lhs.clone(irHandleDict),
+                          as<SubNode>()->rhs.clone(irHandleDict));
+      break;
+    }
+    case IRNodeType::MUL: {
+      ret = MulNode::make(as<MulNode>()->lhs.clone(irHandleDict),
+                          as<MulNode>()->rhs.clone(irHandleDict));
+      break;
+    }
+    case IRNodeType::DIV: {
+      ret = DivNode::make(as<DivNode>()->lhs.clone(irHandleDict),
+                          as<DivNode>()->rhs.clone(irHandleDict));
+      break;
+    }
+    case IRNodeType::MOD: {
+      ret = ModNode::make(as<ModNode>()->lhs.clone(irHandleDict),
+                          as<ModNode>()->rhs.clone(irHandleDict));
+      break;
+    }
+    case IRNodeType::TENSOR: {
+      if (irHandleDict.find(as<TensorNode>()->name) != irHandleDict.end()) {
+        ret = irHandleDict[as<TensorNode>()->name];
+      } else {
+        ret = TensorNode::make(as<TensorNode>()->name, as<TensorNode>()->shape);
+        irHandleDict.insert(std::make_pair(as<TensorNode>()->name, ret));
+      }
+      break;
+    }
+    case IRNodeType::VAR: {
+      if (irHandleDict.find(as<VarNode>()->name) != irHandleDict.end()) {
+        ret = irHandleDict[as<VarNode>()->name];
+      } else {
+        ret = VarNode::make(as<VarNode>()->name,
+                            as<VarNode>()->min.clone(irHandleDict),
+                            as<VarNode>()->max.clone(irHandleDict),
+                            as<VarNode>()->increment.clone(irHandleDict));
+        irHandleDict.insert(std::make_pair(as<VarNode>()->name, ret));
+      }
+      break;
+    }
+    case IRNodeType::ACCESS: {
+      std::vector<IRHandle> indices;
+      auto ind = as<AccessNode>()->indices;
+      std::transform(ind.begin(), ind.end(), std::back_inserter(indices),
+                     [&](IRHandle handle) -> IRHandle {
+                       return handle.clone(irHandleDict);
+                     });
+      ret = AccessNode::make(as<AccessNode>()->tensor.clone(irHandleDict),
+                             indices);
+      break;
+    }
+    case IRNodeType::ASSIGN: {
+      ret = AssignmentNode::make(as<AssignmentNode>()->lhs.clone(irHandleDict),
+                                 as<AssignmentNode>()->rhs.clone(irHandleDict));
+      break;
+    }
+    case IRNodeType::CONST: {
+      if (irHandleDict.find(as<ConstNode>()->name) != irHandleDict.end()) {
+        ret = irHandleDict[as<ConstNode>()->name];
+      } else {
+        ret = ConstNode::make(as<ConstNode>()->name);
+        irHandleDict.insert(std::make_pair(as<ConstNode>()->name, ret));
+      }
+      break;
+    }
+    case IRNodeType::FOR: {
+      // For node name: "for"-`var-name`
+      if (irHandleDict.find("For-" +
+                            as<ForNode>()->looping_var_.as<VarNode>()->name) !=
+          irHandleDict.end()) {
+        ret = irHandleDict["For-" +
+                           as<ForNode>()->looping_var_.as<VarNode>()->name];
+      } else {
+        ret = ForNode::make(as<ForNode>()->looping_var_.clone(irHandleDict),
+                            as<ForNode>()->parent_loop_.clone(irHandleDict));
+        irHandleDict.insert(std::make_pair(
+            "For-" + as<ForNode>()->looping_var_.as<VarNode>()->name, ret));
+        auto forNode = as<ForNode>();
+        for (int i = 0; i < forNode->body.size(); i++) {
+          ret.as<ForNode>()->Insert(forNode->body[i].clone(irHandleDict));
+        }
+      }
+      break;
+    }
+    case IRNodeType::INT: {
+      ret = IntNode::make(as<IntNode>()->value);
+      break;
+    }
+
+    default:
+      throw std::runtime_error("Unknown IRHandle Type, cannot clone");
+  }
+  return ret;
+}
+
 IRHandle AddNode::make(IRHandle lhs, IRHandle rhs) {
   AddNode *add = new AddNode();
   add->lhs = lhs;

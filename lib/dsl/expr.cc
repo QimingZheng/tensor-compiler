@@ -13,13 +13,22 @@ Variable::Variable(const std::string &name, const Expr &min, const Expr &max,
 
 Variable::~Variable() { Program::GetInstance()->ExitLoop(this); }
 
-Add operator+(const Expr &a, const Expr &b) { return Add(a, b); }
+Expr operator+(const Expr &a, const Expr &b) {
+  return Expr(AddNode::make(a.GetIRHandle(), b.GetIRHandle()));
+}
 
-Mul operator*(const Expr &a, const Expr &b) { return Mul(a, b); }
-
-// Sub operator-(const Expr &a, const Expr &b) { return Sub(a, b); }
-
-// Div operator/(const Expr &a, const Expr &b) { return Div(a, b); }
+Expr operator-(const Expr &a, const Expr &b) {
+  return Expr(SubNode::make(a.GetIRHandle(), b.GetIRHandle()));
+}
+Expr operator*(const Expr &a, const Expr &b) {
+  return Expr(MulNode::make(a.GetIRHandle(), b.GetIRHandle()));
+}
+Expr operator/(const Expr &a, const Expr &b) {
+  return Expr(DivNode::make(a.GetIRHandle(), b.GetIRHandle()));
+}
+Expr operator%(const Expr &a, const Expr &b) {
+  return Expr(ModNode::make(a.GetIRHandle(), b.GetIRHandle()));
+}
 
 Access::Access(const Expr tensor, const std::vector<Expr> &indices) {
   std::vector<IRHandle> indicesIRNodes;

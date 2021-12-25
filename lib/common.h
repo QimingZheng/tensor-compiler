@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <ostream>
+#include <fstream>
 #include <assert.h>
 #include <algorithm>
 #include <assert.h>
@@ -15,6 +16,8 @@
 #include <utility>
 #include <atomic>
 #include <cstdlib>
+#include <sys/time.h>
+
 
 namespace polly {
 

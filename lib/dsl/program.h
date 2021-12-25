@@ -7,16 +7,20 @@
 #include "expr.h"
 #include "stmt.h"
 #include "codegen/codegen.h"
+#include "ir/ir_workspace.h"
+
+#include "auto_scheduler/auto_scheduler.h"
 
 namespace polly {
 
 /// Should be Singleton.
 class Program {
  private:
-  std::vector<IRHandle> tensors;
+  IRWorkSpace workspace_;
 
-  IRHandle root_loop_;
   IRHandle current_loop_;
+
+  AutoScheduler scheduler_;
 
   /// Find the for-loop that uses var `loop_var_name` as its looping var.
   IRHandle find_loop_var(IRHandle cur, const std::string loop_var_name) {
@@ -65,9 +69,9 @@ class Program {
   static Program *GetInstance();
 
   bool EnterLoop(const Variable *var) {
-    if (root_loop_ == NullIRHandle) {
-      root_loop_ = ForNode::make(var->GetIRHandle());
-      current_loop_ = root_loop_;
+    if (workspace_.GetRoot() == NullIRHandle) {
+      workspace_.GetRoot() = ForNode::make(var->GetIRHandle());
+      current_loop_ = workspace_.GetRoot();
     } else {
       IRHandle loop = ForNode::make(var->GetIRHandle(), current_loop_);
       current_loop_.as<ForNode>()->Insert(loop);
@@ -87,141 +91,66 @@ class Program {
     return false;
   }
 
-  bool Reorder(const std::string i, const std::string j) {
-    IRHandle i_loop = find_loop_var(root_loop_, i);
-    IRHandle j_loop = find_loop_var(root_loop_, j);
-    assert(i_loop != NullIRHandle);
-    assert(j_loop != NullIRHandle);
-    std::swap(i_loop.as<ForNode>()->looping_var_,
-              j_loop.as<ForNode>()->looping_var_);
-    return true;
-  }
+  /// The following interfaces create schedules
+  bool SetReorder(const std::string i, const std::string j);
 
-  bool Fuse(const std::string i, const std::string j) {
-    IRHandle outter_loop = find_loop_var(root_loop_, i);
-    IRHandle inner_loop = find_loop_var(root_loop_, j);
-    assert(outter_loop != NullIRHandle);
-    assert(inner_loop != NullIRHandle);
-    int inner_loop_pos = isNestedLoop(outter_loop, inner_loop);
-    assert(inner_loop_pos >= 0);
-
-    VarHandle outter = outter_loop.as<ForNode>()->looping_var_.as<VarNode>();
-    VarHandle inner = inner_loop.as<ForNode>()->looping_var_.as<VarNode>();
-    IRHandle outter_lower = outter->min, outter_upper = outter->max,
-             outter_inc = outter->increment;
-    IRHandle inner_lower = inner->min, inner_upper = inner->max,
-             inner_inc = inner->increment;
-
-    outter->name += inner->name;
-
-    // get rid off the inner loop, now we only have the fused loop
-    for (int i = 0; i < inner_loop.as<ForNode>()->body.size(); i++) {
-      outter_loop.as<ForNode>()->body.insert(
-          outter_loop.as<ForNode>()->body.begin() + inner_loop_pos++,
-          inner_loop.as<ForNode>()->body[i]);
-    }
-    outter_loop.as<ForNode>()->body.erase(
-        outter_loop.as<ForNode>()->body.begin() + inner_loop_pos);
-
-    outter->min = IntNode::make(0);
-    outter->max = MulNode::make(SubNode::make(outter_upper, outter_lower),
-                                SubNode::make(inner_upper, inner_lower));
-    outter->increment = MulNode::make(outter_inc, inner_inc);
-
-    IRHandle common =
-        MulNode::make(SubNode::make(inner_upper, outter_upper), outter_inc);
-    IRMutatorVisitor outter_mutator(
-        outter_loop.as<ForNode>()->looping_var_,
-        AddNode::make(
-            MulNode::make(
-                outter_inc,
-                DivNode::make(outter_loop.as<ForNode>()->looping_var_, common)),
-            outter_lower));
-    outter_mutator.visit(root_loop_);
-
-    IRMutatorVisitor inner_mutator(
-        inner_loop.as<ForNode>()->looping_var_,
-        AddNode::make(
-            MulNode::make(
-                inner_inc,
-                ModNode::make(outter_loop.as<ForNode>()->looping_var_, common)),
-            inner_lower));
-    inner_mutator.visit(root_loop_);
-
-    return true;
-  }
+  bool SetFuse(const std::string i, const std::string j);
 
   // Divide the i loop into `tiles` tiles.
-  // each of size splitFactor.
-  // bool Split(const std::string i, int splitFactor) {
-  bool Split(const std::string i, Expr tiles) {
-    IRHandle tileNode = tiles.GetIRHandle();
-    IRHandle outter_loop = find_loop_var(root_loop_, i);
-    assert(outter_loop != NullIRHandle);
+  bool SetSplit(const std::string i);
 
-    VarHandle originLoopVar =
-        outter_loop.as<ForNode>()->looping_var_.as<VarNode>();
+  bool SetParallel(const std::string i) { return false; }
 
-    originLoopVar->name = i + "_outter";
-    IRHandle stride =
-        DivNode::make(SubNode::make(originLoopVar->max, originLoopVar->min),
-                      MulNode::make(tileNode, originLoopVar->increment));
-    IRHandle inner_loop = ForNode::make(
-        VarNode::make(i + "_inner", IntNode::make(0), stride, IntNode::make(1)),
-        outter_loop);
+  bool SetVectorize(const std::string i, int vectorLength) { return false; }
 
-    originLoopVar->min = IntNode::make(0);
-    originLoopVar->max = tileNode;
-    originLoopVar->increment = IntNode::make(1);
+  /// The following interfaces directly execute schedules.
+  bool Reorder(const std::string i, const std::string j);
 
-    std::swap(inner_loop.as<ForNode>()->body, outter_loop.as<ForNode>()->body);
-    outter_loop.as<ForNode>()->Insert(inner_loop);
+  bool Fuse(const std::string i, const std::string j);
 
-    // replace all the reference to `i` to `i_outter * tiles + i_inner`
-    // AddNode *intermediate = new AddNode(
-    //     new MulNode(outter_loop->looping_var_, new IntNode(tiles)),
-    //     inner_loop->looping_var_);
-    IRHandle intermediate = AddNode::make(
-        MulNode::make(outter_loop.as<ForNode>()->looping_var_, stride),
-        inner_loop.as<ForNode>()->looping_var_);
+  // Divide the i loop into `tiles` tiles.
+  bool Split(const std::string i, Expr tiles);
 
-    IRMutatorVisitor mutator(outter_loop.as<ForNode>()->looping_var_,
-                             intermediate);
-    /// Root-Loop is a ForNode, so it cannot be replaced in any cases, so we
-    /// always replace from the descendants of the Root-For-Loop-Node.
+  bool Vectorize(const std::string i, int vectorLength) { return false; }
 
-    mutator.visit(root_loop_);
-
-    return true;
-  }
-
-  bool Parallel(const std::string i) { return false; }
-
-  bool Vectorize(const std::string i, int vectorLength) {
-    Split(i, vectorLength);
-    return true;
+  void AutoTune() {
+    scheduler_.Search(workspace_);
+    for (int i = 0; i < 10; i++) {
+      scheduler_.Search();
+    }
+    workspace_ = scheduler_.best_workspace_;
   }
 
   void IRGen() {
     IRPrinterVisitor visitor;
-    std::cout << "====================\n";
-    visitor.visit(root_loop_);
-    std::cout << "====================\n";
+    visitor.visit(workspace_.GetRoot());
   }
 
   bool IsAffineProgram() {
     IRCheckAffinePass check;
-    return check.checkFor(root_loop_.as<ForNode>());
+    return check.checkFor(workspace_.GetRoot().as<ForNode>());
+  }
+
+  bool IsConstantBoundary() {
+    IRConstantBoundaryCheckVisitor checker;
+    return checker.checkFor(workspace_.GetRoot().as<ForNode>());
+  }
+
+  bool IsBoundaryDivisible(std::string i, int divisor) {
+    auto loop = workspace_.GetLoop(i);
+    assert(loop != NullIRHandle);
+    IRDivisibleBoundaryCheckVisitor checker(divisor);
+    return checker.checkFor(loop.as<ForNode>());
   }
 
   void GenerateC() {
     CodeGenC codegen(std::cout);
-    codegen.genCode(root_loop_, tensors);
-    // std::cout << std::string(codegen.oss);
+    codegen.genCode(workspace_.GetRoot(), workspace_.GetTensors());
   }
 
   void DeclareTensor(Tensor *tensor) {
-    tensors.push_back(static_cast<IRHandle>(tensor->GetIRHandle()));
+    workspace_.GetTensors().push_back(
+        static_cast<IRHandle>(tensor->GetIRHandle()));
   }
 };
 

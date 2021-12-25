@@ -98,6 +98,10 @@ class IRHandle {
     return ptr_->equals(other.GetRaw());
   }
 
+  /// Clone this IRNode
+  /// Used by the IRModule
+  IRHandle clone(std::map<std::string, IRHandle> &irHandleDict);
+
   IRNodeType Type() const { return ptr_->Type(); }
 
   void accept(IRVisitor *visitor);
