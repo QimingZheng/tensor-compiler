@@ -1,8 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "dsl/program.h"
-#include "dsl/expr.h"
-#include "ir/ir_check_pass.h"
+#include "lang/program.h"
+#include "lang/expr.h"
 
 using namespace polly;
 

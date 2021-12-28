@@ -1,5 +1,5 @@
-#include "dsl/program.h"
-#include "dsl/expr.h"
+#include "lang/program.h"
+#include "lang/expr.h"
 
 using namespace polly;
 

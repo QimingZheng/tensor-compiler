@@ -1,35 +1,21 @@
 #pragma once
 
 #include "common.h"
-#include "ir/ir.h"
-#include "ir/ir_visitor.h"
+#include "check_pass.h"
 
 namespace polly {
 
-class CodeGen : public IRVisitor {
+class ConstantBoundaryCheck : public CheckPass, public IRVisitor {
  public:
-};
+  bool isConstantBoundary;
+  int value = -1;
+  ConstantBoundaryCheck(IRHandle program) : program_(program) {}
 
-const std::string C_Heaader = R"(
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
-)";
-
-class CodeGenC : public IRVisitor {
-  std::string getIndent() {
-    std::string ret = "";
-    for (int i = 0; i < indent; i++) {
-      ret += '\t';
-    }
-    return ret;
+  bool Check() override {
+    this->visit(program_);
+    return isConstantBoundary;
   }
-  std::ostream &oss;
-  int indent = 1;
 
- public:
-  CodeGenC(std::ostream &os) : oss(os) {}
-  void genCode(IRHandle program, std::vector<IRHandle> &tensors);
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
@@ -43,10 +29,9 @@ class CodeGenC : public IRVisitor {
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
-};
 
-class CodeGenCuda : public CodeGen {
- public:
+ private:
+  IRHandle program_;
 };
 
 }  // namespace polly

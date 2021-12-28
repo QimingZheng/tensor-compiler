@@ -75,11 +75,11 @@ void CodeGenC::visitFor(ForHandle loop) {
   loop->looping_var_.accept(this);
   oss << " = ";
   loop_var->min.accept(this);
-  oss << ";";
+  oss << "; ";
   loop->looping_var_.accept(this);
   oss << " < ";
   loop_var->max.accept(this);
-  oss << ";";
+  oss << "; ";
   loop->looping_var_.accept(this);
   oss << " += ";
   loop_var->increment.accept(this);
@@ -110,5 +110,12 @@ void CodeGenC::genCode(IRHandle program, std::vector<IRHandle> &tensors) {
 }
 
 void CodeGenC::visitConst(ConstHandle con) { oss << con->name; }
+
+void CodeGenC::visitPrint(PrintHandle print) {
+  oss << getIndent();
+  oss << "std::cout << ";
+  print->print.accept(this);
+  oss << " << \"\\n\";\n";
+}
 
 }  // namespace polly

@@ -18,4 +18,9 @@ class Assignment : public Stmt {
   Assignment(const Expr lhs, const Expr &rhs);
 };
 
+class Print : public Stmt {
+ public:
+  Print(const Expr print);
+};
+
 }  // namespace polly

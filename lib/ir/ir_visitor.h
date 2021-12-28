@@ -20,6 +20,7 @@ class IRVisitor {
   virtual void visitTensor(TensorHandle tensor) = 0;
   virtual void visitFor(ForHandle loop) = 0;
   virtual void visitConst(ConstHandle con) = 0;
+  virtual void visitPrint(PrintHandle print) = 0;
 };
 
 class IRPrinterVisitor : public IRVisitor {
@@ -36,6 +37,7 @@ class IRPrinterVisitor : public IRVisitor {
   void visitTensor(TensorHandle tensor) override;
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
+  void visitPrint(PrintHandle print) override;
 };
 
 class IRMutatorVisitor : public IRVisitor {
@@ -60,6 +62,7 @@ class IRMutatorVisitor : public IRVisitor {
   void visitTensor(TensorHandle tensor) override;
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
+  void visitPrint(PrintHandle print) override;
 };
 
 }  // namespace polly

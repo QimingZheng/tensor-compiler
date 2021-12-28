@@ -42,6 +42,9 @@ void IRVisitor::visit(IRHandle expr) {
     case IRNodeType::CONST:
       this->visitConst(expr.as<ConstNode>());
       break;
+    case IRNodeType::PRINT:
+      this->visitPrint(expr.as<PrintNode>());
+      break;
 
     default:
       throw std::runtime_error("visiting unknonw node");
@@ -104,4 +107,9 @@ void IRPrinterVisitor::visitFor(ForHandle loop) {
   std::cout << "}\n";
 }
 void IRPrinterVisitor::visitConst(ConstHandle con) { std::cout << con->name; }
+void IRPrinterVisitor::visitPrint(PrintHandle print) {
+  std::cout << "print ";
+  print->print.accept(this);
+  std::cout << ";\n";
+}
 }  // namespace polly

@@ -86,8 +86,7 @@ IRHandle IRHandle::clone(std::map<std::string, IRHandle> &irHandleDict) {
         ret = irHandleDict["For-" +
                            as<ForNode>()->looping_var_.as<VarNode>()->name];
       } else {
-        ret = ForNode::make(as<ForNode>()->looping_var_.clone(irHandleDict),
-                            as<ForNode>()->parent_loop_.clone(irHandleDict));
+        ret = ForNode::make(as<ForNode>()->looping_var_.clone(irHandleDict));
         irHandleDict.insert(std::make_pair(
             "For-" + as<ForNode>()->looping_var_.as<VarNode>()->name, ret));
         auto forNode = as<ForNode>();
@@ -99,6 +98,10 @@ IRHandle IRHandle::clone(std::map<std::string, IRHandle> &irHandleDict) {
     }
     case IRNodeType::INT: {
       ret = IntNode::make(as<IntNode>()->value);
+      break;
+    }
+    case IRNodeType::PRINT: {
+      ret = PrintNode::make(as<PrintNode>()->print.clone(irHandleDict));
       break;
     }
 
@@ -180,16 +183,21 @@ IRHandle AssignmentNode::make(IRHandle lhs, IRHandle rhs) {
   return IRHandle(node);
 }
 
-IRHandle ForNode::make(IRHandle looping_var, IRHandle parent_loop) {
+IRHandle ForNode::make(IRHandle looping_var) {
   ForNode *node = new ForNode();
   node->looping_var_ = looping_var;
-  node->parent_loop_ = parent_loop;
   return IRHandle(node);
 }
 
 IRHandle ConstNode::make(std::string name) {
   ConstNode *node = new ConstNode();
   node->name = name;
+  return IRHandle(node);
+}
+
+IRHandle PrintNode::make(IRHandle print) {
+  PrintNode *node = new PrintNode();
+  node->print = print;
   return IRHandle(node);
 }
 

@@ -1,35 +1,19 @@
 #pragma once
 
 #include "common.h"
+#include "transform_pass.h"
 #include "ir/ir.h"
 #include "ir/ir_visitor.h"
 
 namespace polly {
 
-class CodeGen : public IRVisitor {
+/// Before unrolling a loop, check its boundary is contant first.
+class LoopUnroll : public TransformPass, public IRVisitor {
  public:
-};
+  LoopUnroll(IRHandle program, int unroll_limit = 8) : program_(program) {}
 
-const std::string C_Heaader = R"(
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
-)";
+  void Transform() override { this->visit(program_); }
 
-class CodeGenC : public IRVisitor {
-  std::string getIndent() {
-    std::string ret = "";
-    for (int i = 0; i < indent; i++) {
-      ret += '\t';
-    }
-    return ret;
-  }
-  std::ostream &oss;
-  int indent = 1;
-
- public:
-  CodeGenC(std::ostream &os) : oss(os) {}
-  void genCode(IRHandle program, std::vector<IRHandle> &tensors);
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
@@ -43,10 +27,13 @@ class CodeGenC : public IRVisitor {
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
-};
 
-class CodeGenCuda : public CodeGen {
- public:
+ private:
+  IRHandle replaceVarWithInt(IRHandle node, IRHandle var, IRHandle int_expr);
+  std::stack<IRHandle> tape_;
+  IRHandle var, int_expr;
+  IRHandle program_;
+  bool reachInnerMostLoop = false;
 };
 
 }  // namespace polly

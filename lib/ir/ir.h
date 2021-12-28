@@ -6,6 +6,7 @@ namespace polly {
 
 enum IRNodeType {
   INT = 0,
+  // FLOAT = 13,
   ADD = 1,
   SUB = 2,
   MUL = 3,
@@ -18,9 +19,12 @@ enum IRNodeType {
   CONST = 10,
 
   FOR = 11,
+
+  PRINT = 12,
 };
 
 class IntNode;
+// class Floatnode;
 class AddNode;
 class SubNode;
 class MulNode;
@@ -33,6 +37,7 @@ class TensorNode;
 class ConstNode;
 
 class ForNode;
+class PrintNode;
 
 class IRVisitor;
 
@@ -48,6 +53,7 @@ typedef std::shared_ptr<AccessNode> AccessHandle;
 typedef std::shared_ptr<AssignmentNode> AssignmentHandle;
 typedef std::shared_ptr<ForNode> ForHandle;
 typedef std::shared_ptr<ConstNode> ConstHandle;
+typedef std::shared_ptr<PrintNode> PrintHandle;
 
 class IRNode {
  public:
@@ -68,6 +74,7 @@ class IRHandle {
   bool isNull() const { return ptr_ == nullptr; }
 
  public:
+  IRHandle(std::shared_ptr<IRNode> ptr) : ptr_(ptr) {}
   IRHandle() : ptr_(nullptr) {}
   explicit IRHandle(IRNode *ptr) : ptr_(ptr) {}
   IRHandle(const IRHandle &other) : ptr_(other.ptr_) {}
@@ -300,11 +307,9 @@ class ForNode : public IRNode {
 
  public:
   IRHandle looping_var_;
-  IRHandle parent_loop_;
   std::vector<IRHandle> body;
 
-  static IRHandle make(IRHandle looping_var,
-                       IRHandle parent_loop = NullIRHandle);
+  static IRHandle make(IRHandle looping_var);
 
   void Insert(IRHandle node) { body.push_back(node); }
 
@@ -338,5 +343,25 @@ class ConstNode : public IRNode {
     return static_cast<const ConstNode *>(other)->name == name;
   }
 };
+
+class PrintNode : public IRNode {
+ private:
+  PrintNode() {}
+
+ public:
+  IRHandle print;
+
+  static IRHandle make(IRHandle print);
+
+  IRNodeType Type() const override { return IRNodeType::PRINT; }
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return print.equals(static_cast<const PrintNode *>(other)->print);
+  }
+};
+
+/// TODO: add FuncNode
+// class FuncNode : public IRNode {};
 
 }  // namespace polly

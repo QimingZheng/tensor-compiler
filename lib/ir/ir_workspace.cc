@@ -1,5 +1,6 @@
 #include "ir_workspace.h"
 #include "ir_visitor.h"
+#include "pass/transform/unroll.h"
 
 namespace polly {
 
@@ -238,8 +239,7 @@ bool IRWorkSpace::Split(const std::string i, IRHandle tiles,
                     MulNode::make(tiles, originLoopVar->increment));
   IRHandle inner_loop =
       ForNode::make(VarNode::make(/* i + "_inner" */ i_inner, IntNode::make(0),
-                                  stride, IntNode::make(1)),
-                    outter_loop);
+                                  stride, IntNode::make(1)) /* ,outter_loop */);
 
   originLoopVar->min = IntNode::make(0);
   originLoopVar->max = tiles;
@@ -261,6 +261,11 @@ bool IRWorkSpace::Split(const std::string i, IRHandle tiles,
   mutator.visit(root_);
   evolveSplitSchedules(i, i_outter, i_inner);
   return true;
+}
+
+bool IRWorkSpace::Unroll() {
+  LoopUnroll unroll(GetRoot());
+  unroll.Transform();
 }
 
 int IRWorkSpace::isNestedLoop(IRHandle outter, IRHandle inner) {

@@ -87,4 +87,8 @@ void IRMutatorVisitor::visitConst(ConstHandle con) {
   // Pass
 }
 
+void IRMutatorVisitor::visitPrint(PrintHandle print) {
+  print->print.accept(this);
+}
+
 }  // namespace polly

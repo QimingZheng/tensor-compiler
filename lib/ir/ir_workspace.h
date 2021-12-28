@@ -2,7 +2,7 @@
 
 #include "common.h"
 #include "ir.h"
-#include "ir_check_pass.h"
+#include "pass/check/divisible_boundary_check.h"
 
 namespace polly {
 
@@ -73,6 +73,7 @@ class IRWorkSpace {
   // Divide the i loop into `tiles` tiles.
   bool Split(const std::string i, IRHandle tiles, const std::string i_outter,
              const std::string i_inner);
+  bool Unroll();
 
   /// Create Schedules With these Interfaces.
   bool CreateSplitSchedule(std::string axis);
@@ -100,8 +101,8 @@ class IRWorkSpace {
     auto rng = std::default_random_engine{rand()};
     std::shuffle(divisors.begin(), divisors.end(), rng);
     for (auto i : divisors) {
-      IRDivisibleBoundaryCheckVisitor checker(i);
-      if (!checker.checkFor(GetLoop(splitAxis).as<ForNode>())) continue;
+      DivisibleBoundaryCheck checker(GetLoop(splitAxis), i);
+      if (!checker.Check()) continue;
       IRHandle tiles = IntNode::make(i);
       Split(splitAxis, tiles, splitAxis + "_outter", splitAxis + "_inner");
       return;

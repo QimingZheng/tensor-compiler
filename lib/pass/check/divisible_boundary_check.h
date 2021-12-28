@@ -1,35 +1,26 @@
 #pragma once
 
 #include "common.h"
-#include "ir/ir.h"
-#include "ir/ir_visitor.h"
+#include "check_pass.h"
 
 namespace polly {
 
-class CodeGen : public IRVisitor {
+/// DivisibleBoundaryCheck checks whether the boundary of a loop can be
+/// divided by a certain divisor. Please make sure that the boundary of it is
+/// checked by the IRConstantBoundaryCheckVisitor checker first.
+class DivisibleBoundaryCheck : public CheckPass, public IRVisitor {
  public:
-};
+  bool isDivisibleBoundary;
+  int divisor;
+  int value = -1;
+  DivisibleBoundaryCheck(IRHandle loop, int divisor)
+      : loop_(loop), divisor(divisor) {}
 
-const std::string C_Heaader = R"(
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
-)";
-
-class CodeGenC : public IRVisitor {
-  std::string getIndent() {
-    std::string ret = "";
-    for (int i = 0; i < indent; i++) {
-      ret += '\t';
-    }
-    return ret;
+  bool Check() override {
+    this->visit(loop_);
+    return isDivisibleBoundary;
   }
-  std::ostream &oss;
-  int indent = 1;
 
- public:
-  CodeGenC(std::ostream &os) : oss(os) {}
-  void genCode(IRHandle program, std::vector<IRHandle> &tensors);
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
@@ -43,10 +34,8 @@ class CodeGenC : public IRVisitor {
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
-};
 
-class CodeGenCuda : public CodeGen {
- public:
+ private:
+  IRHandle loop_;
 };
-
 }  // namespace polly

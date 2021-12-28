@@ -1,5 +1,5 @@
-#include "dsl/program.h"
-#include "dsl/expr.h"
+#include "lang/program.h"
+#include "lang/expr.h"
 
 using namespace polly;
 
@@ -13,7 +13,7 @@ int main() {
       {
         Variable j("j", 1, 1023, 1);
         {
-          Variable k("k", 1, 1023, 1);
+          Variable k("k", 1, 1024, 1);
           auto x = C(i, i) + i + j;
           C(i, j) = C(i, j) + A(i, k) * B(k, j);
         }
@@ -55,6 +55,7 @@ int main() {
       }
     }
 
+    prog.Unroll();
     prog.GenerateC();
 
     std::cout << prog.IsAffineProgram() << std::endl;

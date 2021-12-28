@@ -1,35 +1,17 @@
 #pragma once
 
 #include "common.h"
+#include "optimization_pass.h"
 #include "ir/ir.h"
 #include "ir/ir_visitor.h"
 
 namespace polly {
 
-class CodeGen : public IRVisitor {
+class ConstantFoldingPass : public OptimizationPass, public IRVisitor {
  public:
-};
+  ConstantFoldingPass(IRHandle program) : program_(program) {}
+  void Optimize() override;
 
-const std::string C_Heaader = R"(
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
-)";
-
-class CodeGenC : public IRVisitor {
-  std::string getIndent() {
-    std::string ret = "";
-    for (int i = 0; i < indent; i++) {
-      ret += '\t';
-    }
-    return ret;
-  }
-  std::ostream &oss;
-  int indent = 1;
-
- public:
-  CodeGenC(std::ostream &os) : oss(os) {}
-  void genCode(IRHandle program, std::vector<IRHandle> &tensors);
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
@@ -43,10 +25,9 @@ class CodeGenC : public IRVisitor {
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
-};
 
-class CodeGenCuda : public CodeGen {
- public:
+ private:
+  IRHandle program_;
 };
 
 }  // namespace polly

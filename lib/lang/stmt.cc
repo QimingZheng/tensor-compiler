@@ -8,4 +8,9 @@ Assignment::Assignment(const Expr lhs, const Expr &rhs) {
   Program::GetInstance()->AddStmt(this);
 }
 
+Print::Print(const Expr print) {
+  handle_ = PrintNode::make(print.GetIRHandle());
+  Program::GetInstance()->AddStmt(this);
+}
+
 }  // namespace polly

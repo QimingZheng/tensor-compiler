@@ -42,6 +42,8 @@ bool Program::Split(const std::string i, Expr tiles) {
   return true;
 }
 
+bool Program::Unroll() { workspace_.Unroll(); }
+
 Program *Program::singleton_ = nullptr;
 
 }  // namespace polly

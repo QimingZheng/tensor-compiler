@@ -3,11 +3,18 @@
 #include "common.h"
 #include "ir/ir.h"
 #include "ir/ir_visitor.h"
-#include "ir/ir_check_pass.h"
+// #include "ir/ir_check_pass.h"
 #include "expr.h"
 #include "stmt.h"
 #include "codegen/codegen.h"
 #include "ir/ir_workspace.h"
+#include "jit/jit_module.h"
+
+#include "pass/pass.h"
+#include "pass/optimization/constant_folding.h"
+#include "pass/check/affine_check.h"
+#include "pass/check/constant_boundary_check.h"
+#include "pass/check/divisible_boundary_check.h"
 
 #include "auto_scheduler/auto_scheduler.h"
 
@@ -16,6 +23,8 @@ namespace polly {
 /// Should be Singleton.
 class Program {
  private:
+  std::stack<IRHandle> loopScopes_;
+
   IRWorkSpace workspace_;
 
   IRHandle current_loop_;
@@ -71,12 +80,13 @@ class Program {
   bool EnterLoop(const Variable *var) {
     if (workspace_.GetRoot() == NullIRHandle) {
       workspace_.GetRoot() = ForNode::make(var->GetIRHandle());
-      current_loop_ = workspace_.GetRoot();
+      loopScopes_.push(workspace_.GetRoot());
     } else {
-      IRHandle loop = ForNode::make(var->GetIRHandle(), current_loop_);
+      IRHandle loop = ForNode::make(var->GetIRHandle());
+      loopScopes_.push(loop);
       current_loop_.as<ForNode>()->Insert(loop);
-      current_loop_ = loop;
     }
+    current_loop_ = loopScopes_.top();
     return false;
   }
 
@@ -87,7 +97,8 @@ class Program {
   }
 
   bool ExitLoop(const Variable *var) {
-    current_loop_ = current_loop_.as<ForNode>()->parent_loop_;
+    loopScopes_.pop();
+    if (!loopScopes_.empty()) current_loop_ = loopScopes_.top();
     return false;
   }
 
@@ -103,6 +114,8 @@ class Program {
 
   bool SetVectorize(const std::string i, int vectorLength) { return false; }
 
+  bool SetUnroll();
+
   /// The following interfaces directly execute schedules.
   bool Reorder(const std::string i, const std::string j);
 
@@ -110,6 +123,8 @@ class Program {
 
   // Divide the i loop into `tiles` tiles.
   bool Split(const std::string i, Expr tiles);
+
+  bool Unroll();
 
   bool Vectorize(const std::string i, int vectorLength) { return false; }
 
@@ -127,23 +142,25 @@ class Program {
   }
 
   bool IsAffineProgram() {
-    IRCheckAffinePass check;
-    return check.checkFor(workspace_.GetRoot().as<ForNode>());
+    AffineCheck check(workspace_.GetRoot());
+    return check.Check();
   }
 
   bool IsConstantBoundary() {
-    IRConstantBoundaryCheckVisitor checker;
-    return checker.checkFor(workspace_.GetRoot().as<ForNode>());
+    ConstantBoundaryCheck checker(workspace_.GetRoot());
+    return checker.Check();
   }
 
   bool IsBoundaryDivisible(std::string i, int divisor) {
     auto loop = workspace_.GetLoop(i);
     assert(loop != NullIRHandle);
-    IRDivisibleBoundaryCheckVisitor checker(divisor);
-    return checker.checkFor(loop.as<ForNode>());
+    DivisibleBoundaryCheck checker(loop, divisor);
+    return checker.Check();
   }
 
   void GenerateC() {
+    ConstantFoldingPass confold(workspace_.GetRoot());
+    confold.Optimize();
     CodeGenC codegen(std::cout);
     codegen.genCode(workspace_.GetRoot(), workspace_.GetTensors());
   }
@@ -151,6 +168,11 @@ class Program {
   void DeclareTensor(Tensor *tensor) {
     workspace_.GetTensors().push_back(
         static_cast<IRHandle>(tensor->GetIRHandle()));
+  }
+
+  void RunJit() {
+    JitModule jit(workspace_);
+    jit.execute();
   }
 };
 
