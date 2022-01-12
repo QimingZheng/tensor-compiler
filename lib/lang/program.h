@@ -7,7 +7,7 @@
 #include "expr.h"
 #include "stmt.h"
 #include "codegen/codegen.h"
-#include "ir/ir_workspace.h"
+#include "ir/ir_module.h"
 #include "jit/jit_module.h"
 
 #include "pass/pass.h"
@@ -25,27 +25,27 @@ class Program {
  private:
   std::stack<IRHandle> loopScopes_;
 
-  IRWorkSpace workspace_;
+  IRModule module_;
 
   IRHandle current_loop_;
 
   AutoScheduler scheduler_;
 
   /// Find the for-loop that uses var `loop_var_name` as its looping var.
-  IRHandle find_loop_var(IRHandle cur, const std::string loop_var_name) {
-    ForHandle curFor = cur.as<ForNode>();
-    if (curFor == nullptr) return NullIRHandle;
-    if (curFor->looping_var_.as<VarNode>()->name == loop_var_name) {
-      return cur;
-    }
-    for (int i = 0; i < curFor->body.size(); i++) {
-      if (curFor->body[i].Type() == IRNodeType::FOR) {
-        IRHandle ret = find_loop_var(curFor->body[i], loop_var_name);
-        if (ret != NullIRHandle) return ret;
-      }
-    }
-    return NullIRHandle;
-  }
+  // IRHandle find_loop_var(IRHandle cur, const std::string loop_var_name) {
+  //   ForHandle curFor = cur.as<ForNode>();
+  //   if (curFor == nullptr) return NullIRHandle;
+  //   if (curFor->looping_var_.as<VarNode>()->name == loop_var_name) {
+  //     return cur;
+  //   }
+  //   for (int i = 0; i < curFor->body.size(); i++) {
+  //     if (curFor->body[i].Type() == IRNodeType::FOR) {
+  //       IRHandle ret = find_loop_var(curFor->body[i], loop_var_name);
+  //       if (ret != NullIRHandle) return ret;
+  //     }
+  //   }
+  //   return NullIRHandle;
+  // }
 
   int isNestedLoop(IRHandle outter, IRHandle inner) {
     ForHandle outterFor = outter.as<ForNode>();
@@ -78,21 +78,41 @@ class Program {
   static Program *GetInstance();
 
   bool EnterLoop(const Variable *var) {
-    if (workspace_.GetRoot() == NullIRHandle) {
-      workspace_.GetRoot() = ForNode::make(var->GetIRHandle());
-      loopScopes_.push(workspace_.GetRoot());
+    if (module_.GetRoot() == NullIRHandle) {
+      module_.GetRoot() = FuncNode::make({});
+    }
+    if (loopScopes_.empty()) {
+      IRHandle loop = ForNode::make(var->GetIRHandle());
+      module_.GetRoot().as<FuncNode>()->body.push_back(loop);
+      loopScopes_.push(loop);
     } else {
       IRHandle loop = ForNode::make(var->GetIRHandle());
       loopScopes_.push(loop);
       current_loop_.as<ForNode>()->Insert(loop);
     }
     current_loop_ = loopScopes_.top();
+
+    // if (workspace_.GetRoot() == NullIRHandle) {
+    //   workspace_.GetRoot() = ForNode::make(var->GetIRHandle());
+    //   loopScopes_.push(workspace_.GetRoot());
+    // } else {
+    //   IRHandle loop = ForNode::make(var->GetIRHandle());
+    //   loopScopes_.push(loop);
+    //   current_loop_.as<ForNode>()->Insert(loop);
+    // }
+    // current_loop_ = loopScopes_.top();
     return false;
   }
 
   bool AddStmt(Stmt *stmt) {
-    IRPrinterVisitor visitor;
-    current_loop_.as<ForNode>()->Insert(stmt->GetIRHandle());
+    if (module_.GetRoot() == NullIRHandle) {
+      module_.GetRoot() = FuncNode::make({});
+    }
+    if (loopScopes_.empty()) {
+      module_.GetRoot().as<FuncNode>()->body.push_back(stmt->GetIRHandle());
+    } else {
+      current_loop_.as<ForNode>()->Insert(stmt->GetIRHandle());
+    }
     return false;
   }
 
@@ -129,49 +149,49 @@ class Program {
   bool Vectorize(const std::string i, int vectorLength) { return false; }
 
   void AutoTune() {
-    scheduler_.Search(workspace_);
+    scheduler_.Search(module_);
     for (int i = 0; i < 10; i++) {
       scheduler_.Search();
     }
-    workspace_ = scheduler_.best_workspace_;
+    module_ = scheduler_.best_module_;
   }
 
   void IRGen() {
     IRPrinterVisitor visitor;
-    visitor.visit(workspace_.GetRoot());
+    visitor.visit(module_.GetRoot());
   }
 
   bool IsAffineProgram() {
-    AffineCheck check(workspace_.GetRoot());
+    AffineCheck check(module_.GetRoot());
     return check.Check();
   }
 
   bool IsConstantBoundary() {
-    ConstantBoundaryCheck checker(workspace_.GetRoot());
+    ConstantBoundaryCheck checker(module_.GetRoot());
     return checker.Check();
   }
 
   bool IsBoundaryDivisible(std::string i, int divisor) {
-    auto loop = workspace_.GetLoop(i);
+    auto loop = module_.GetLoop(i);
     assert(loop != NullIRHandle);
     DivisibleBoundaryCheck checker(loop, divisor);
     return checker.Check();
   }
 
   void GenerateC() {
-    ConstantFoldingPass confold(workspace_.GetRoot());
+    ConstantFoldingPass confold(module_.GetRoot());
     confold.Optimize();
     CodeGenC codegen(std::cout);
-    codegen.genCode(workspace_.GetRoot(), workspace_.GetTensors());
+    codegen.genCode(module_.GetRoot(), module_.GetTensors());
   }
 
   void DeclareTensor(Tensor *tensor) {
-    workspace_.GetTensors().push_back(
+    module_.GetTensors().push_back(
         static_cast<IRHandle>(tensor->GetIRHandle()));
   }
 
   void RunJit() {
-    JitModule jit(workspace_);
+    JitModule jit(module_);
     jit.execute();
   }
 };

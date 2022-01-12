@@ -118,4 +118,10 @@ void CodeGenC::visitPrint(PrintHandle print) {
   oss << " << \"\\n\";\n";
 }
 
+void CodeGenC::visitFunc(FuncHandle func) {
+  for (int i = 0; i < func->body.size(); i++) {
+    func->body[i].accept(this);
+  }
+}
+
 }  // namespace polly

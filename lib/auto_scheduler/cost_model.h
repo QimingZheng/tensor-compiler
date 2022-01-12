@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common.h"
-#include "ir/ir_workspace.h"
+#include "ir/ir_module.h"
 
 namespace polly {
 
@@ -10,7 +10,7 @@ class CostModel {
  public:
   CostModel() {}
 
-  float Evaluate(IRWorkSpace space) {
+  float Evaluate(IRModule space) {
     std::string costModelFileName = ".polly_cost_model.cc";
     std::ofstream f;
     f.open(costModelFileName);

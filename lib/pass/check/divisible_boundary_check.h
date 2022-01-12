@@ -34,6 +34,7 @@ class DivisibleBoundaryCheck : public CheckPass, public IRVisitor {
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
+  void visitFunc(FuncHandle func) override;
 
  private:
   IRHandle loop_;

@@ -45,8 +45,12 @@ void IRVisitor::visit(IRHandle expr) {
     case IRNodeType::PRINT:
       this->visitPrint(expr.as<PrintNode>());
       break;
+    case IRNodeType::FUNC:
+      this->visitFunc(expr.as<FuncNode>());
+      break;
 
     default:
+      std::cout << expr.Type() << '\n';
       throw std::runtime_error("visiting unknonw node");
   }
 }
@@ -106,10 +110,19 @@ void IRPrinterVisitor::visitFor(ForHandle loop) {
   }
   std::cout << "}\n";
 }
+
 void IRPrinterVisitor::visitConst(ConstHandle con) { std::cout << con->name; }
+
 void IRPrinterVisitor::visitPrint(PrintHandle print) {
   std::cout << "print ";
   print->print.accept(this);
   std::cout << ";\n";
 }
+
+void IRPrinterVisitor::visitFunc(FuncHandle func) {
+  for (int i = 0; i < func->body.size(); i++) {
+    func->body[i].accept(this);
+  }
+}
+
 }  // namespace polly

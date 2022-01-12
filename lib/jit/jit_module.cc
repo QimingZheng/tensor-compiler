@@ -220,4 +220,10 @@ void JitModule::visitPrint(PrintHandle print) {
   }
 }
 
+void JitModule::visitFunc(FuncHandle func) {
+  for (int i = 0; i < func->body.size(); i++) {
+    func->body[i].accept(this);
+  }
+}
+
 }  // namespace polly

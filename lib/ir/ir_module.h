@@ -6,14 +6,14 @@
 
 namespace polly {
 
-/// IRWorkSpace is a resource manager for the extracted IR Tree.
+/// IRModule is a resource manager for the extracted IR Tree.
 /// It contains the representation for the whole program.
-class IRWorkSpace {
+class IRModule {
  public:
-  IRWorkSpace() { root_ = NullIRHandle; }
+  IRModule() { root_ = NullIRHandle; }
 
-  IRWorkSpace(IRHandle root, std::vector<IRHandle> tensors,
-              std::vector<IRHandle> constants) {
+  IRModule(IRHandle root, std::vector<IRHandle> tensors,
+           std::vector<IRHandle> constants) {
     for (int i = 0; i < tensors.size(); i++) {
       tensors_.push_back(tensors[i].clone(irHandleDict_));
     }
@@ -22,9 +22,9 @@ class IRWorkSpace {
     }
     root_ = root.clone(irHandleDict_);
   }
-  ~IRWorkSpace() {}
+  ~IRModule() {}
 
-  IRWorkSpace(const IRWorkSpace& other) {
+  IRModule(const IRModule& other) {
     root_ = other.root_;
     tensors_ = other.tensors_;
     constants_ = other.constants_;
@@ -32,7 +32,7 @@ class IRWorkSpace {
     fuseSchedules = other.fuseSchedules;
     splitSchedules = other.splitSchedules;
   }
-  IRWorkSpace& operator=(const IRWorkSpace& other) {
+  IRModule& operator=(const IRModule& other) {
     root_ = other.root_;
     tensors_ = other.tensors_;
     constants_ = other.constants_;
@@ -40,7 +40,7 @@ class IRWorkSpace {
     fuseSchedules = other.fuseSchedules;
     splitSchedules = other.splitSchedules;
   }
-  IRWorkSpace(IRWorkSpace&& other) {
+  IRModule(IRModule&& other) {
     root_ = std::move(other.root_);
     tensors_ = std::move(other.tensors_);
     constants_ = std::move(other.constants_);
@@ -48,7 +48,7 @@ class IRWorkSpace {
     fuseSchedules = other.fuseSchedules;
     splitSchedules = other.splitSchedules;
   }
-  IRWorkSpace& operator=(IRWorkSpace&& other) {
+  IRModule& operator=(IRModule&& other) {
     root_ = std::move(other.root_);
     tensors_ = std::move(other.tensors_);
     constants_ = std::move(other.constants_);
@@ -57,8 +57,8 @@ class IRWorkSpace {
     splitSchedules = other.splitSchedules;
   }
 
-  IRWorkSpace CreateSubSpace() {
-    IRWorkSpace subspace(root_, tensors_, constants_);
+  IRModule CreateSubSpace() {
+    IRModule subspace(root_, tensors_, constants_);
     subspace.reorderSchedules = reorderSchedules;
     subspace.fuseSchedules = fuseSchedules;
     subspace.splitSchedules = splitSchedules;
@@ -110,12 +110,14 @@ class IRWorkSpace {
   }
 
   IRHandle GetLoop(std::string loopVarName) {
-    return find_loop_var(root_, loopVarName);
+    return find_loop_var(loopVarName);
   }
 
  private:
+  IRHandle find_loop_var(const std::string loop_var_name);
+
   /// Find the for-loop that uses var `loop_var_name` as its looping var.
-  IRHandle find_loop_var(IRHandle cur, const std::string loop_var_name);
+  IRHandle _find_loop_var(IRHandle cur, const std::string loop_var_name);
 
   int isNestedLoop(IRHandle outter, IRHandle inner);
 

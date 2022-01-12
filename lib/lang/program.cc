@@ -10,39 +10,36 @@ Program *Program::GetInstance() {
 }
 
 bool Program::SetReorder(const std::string i, const std::string j) {
-  workspace_.CreateReorderSchedule(i, j);
+  module_.CreateReorderSchedule(i, j);
   return true;
 }
 
 bool Program::SetFuse(const std::string i, const std::string j) {
-  workspace_.CreateFuseSchedule(i, j);
+  module_.CreateFuseSchedule(i, j);
   return true;
 }
 
 bool Program::SetSplit(const std::string i) {
-  workspace_.CreateSplitSchedule(i);
+  module_.CreateSplitSchedule(i);
   return true;
 }
 
 bool Program::Reorder(const std::string i, const std::string j) {
-  // workspace_.CreateReorderSchedule(i, j);
-  workspace_.Reorder(i, j);
+  module_.Reorder(i, j);
   return true;
 }
 
 bool Program::Fuse(const std::string i, const std::string j) {
-  // workspace_.CreateFuseSchedule(i, j);
-  workspace_.Fuse(i, j, i + "_" + j);
+  module_.Fuse(i, j, i + "_" + j);
   return true;
 }
 
 bool Program::Split(const std::string i, Expr tiles) {
-  // workspace_.CreateSplitSchedule(i);
-  workspace_.Split(i, tiles.GetIRHandle(), i + "_outter", i + "_inner");
+  module_.Split(i, tiles.GetIRHandle(), i + "_outter", i + "_inner");
   return true;
 }
 
-bool Program::Unroll() { workspace_.Unroll(); }
+bool Program::Unroll() { module_.Unroll(); }
 
 Program *Program::singleton_ = nullptr;
 

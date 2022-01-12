@@ -104,6 +104,14 @@ IRHandle IRHandle::clone(std::map<std::string, IRHandle> &irHandleDict) {
       ret = PrintNode::make(as<PrintNode>()->print.clone(irHandleDict));
       break;
     }
+    case IRNodeType::FUNC: {
+      std::vector<IRHandle> body;
+      for (int i = 0; i < as<FuncNode>()->body.size(); i++) {
+        body.push_back(as<FuncNode>()->body[i].clone(irHandleDict));
+      }
+      ret = FuncNode::make(body);
+      break;
+    }
 
     default:
       throw std::runtime_error("Unknown IRHandle Type, cannot clone");
@@ -198,6 +206,12 @@ IRHandle ConstNode::make(std::string name) {
 IRHandle PrintNode::make(IRHandle print) {
   PrintNode *node = new PrintNode();
   node->print = print;
+  return IRHandle(node);
+}
+
+IRHandle FuncNode::make(std::vector<IRHandle> body) {
+  FuncNode *node = new FuncNode();
+  node->body = body;
   return IRHandle(node);
 }
 

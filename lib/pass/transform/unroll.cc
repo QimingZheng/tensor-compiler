@@ -155,6 +155,7 @@ class UnrollEvaluator : public IRVisitor {
   void visitFor(ForHandle loop) { t = value_type::DEFAULT; }
   void visitConst(ConstHandle con) { t = value_type::DEFAULT; }
   void visitPrint(PrintHandle print) { t = value_type::DEFAULT; }
+  void visitFunc(FuncHandle func) { t = value_type::DEFAULT; }
 };
 
 void LoopUnroll::visitInt(IntHandle int_expr) {
@@ -294,6 +295,12 @@ void LoopUnroll::visitPrint(PrintHandle print) {
   auto pr = tape_.top();
   tape_.pop();
   tape_.push(PrintNode::make(pr));
+}
+
+void LoopUnroll::visitFunc(FuncHandle func) {
+  for (int i = 0; i < func->body.size(); i++) {
+    func->body[i].accept(this);
+  }
 }
 
 IRHandle LoopUnroll::replaceVarWithInt(IRHandle node, IRHandle var,

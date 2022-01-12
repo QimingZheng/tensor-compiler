@@ -101,4 +101,11 @@ void AffineCheck::visitPrint(PrintHandle print) {
   isAffine = true;
 }
 
+void AffineCheck::visitFunc(FuncHandle func) {
+  for (int i = 0; i < func->body.size(); i++) {
+    func->body[i].accept(this);
+    if (!isAffine) return;
+  }
+  isAffine = true;
+}
 }

@@ -21,6 +21,7 @@ class IRVisitor {
   virtual void visitFor(ForHandle loop) = 0;
   virtual void visitConst(ConstHandle con) = 0;
   virtual void visitPrint(PrintHandle print) = 0;
+  virtual void visitFunc(FuncHandle func) = 0;
 };
 
 class IRPrinterVisitor : public IRVisitor {
@@ -38,6 +39,7 @@ class IRPrinterVisitor : public IRVisitor {
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
+  void visitFunc(FuncHandle func) override;
 };
 
 class IRMutatorVisitor : public IRVisitor {
@@ -63,6 +65,7 @@ class IRMutatorVisitor : public IRVisitor {
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
+  void visitFunc(FuncHandle func) override;
 };
 
 }  // namespace polly

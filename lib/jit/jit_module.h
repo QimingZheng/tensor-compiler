@@ -1,20 +1,20 @@
 #pragma once
 
 #include "ir/ir.h"
-#include "ir/ir_workspace.h"
+#include "ir/ir_module.h"
 
 namespace polly {
 
 /// Jitter Module that executes a program.
 class JitModule : public IRVisitor {
  public:
-  JitModule(const IRWorkSpace &workspace) : workspace_(workspace) {}
+  JitModule(const IRModule &workspace) : module_(workspace) {}
   ~JitModule() {
     for (auto tensor : tensors_) {
       delete[] tensor.second;
     }
   }
-  void execute() { visit(workspace_.GetRoot()); }
+  void execute() { visit(module_.GetRoot()); }
 
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
@@ -29,6 +29,7 @@ class JitModule : public IRVisitor {
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
+  void visitFunc(FuncHandle func) override;
 
  private:
   union value {
@@ -42,7 +43,7 @@ class JitModule : public IRVisitor {
   float *tensor_ptr;
   value v;
   value_type t;
-  IRWorkSpace workspace_;
+  IRModule module_;
   std::map<std::string, value> symbols_;
   std::map<std::string, float *> tensors_;
   std::map<std::string, std::vector<int>> tensor_shapes_;

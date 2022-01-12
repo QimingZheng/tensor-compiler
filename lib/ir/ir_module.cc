@@ -1,10 +1,10 @@
-#include "ir_workspace.h"
+#include "ir_module.h"
 #include "ir_visitor.h"
 #include "pass/transform/unroll.h"
 
 namespace polly {
 
-bool IRWorkSpace::CreateSplitSchedule(std::string axis) {
+bool IRModule::CreateSplitSchedule(std::string axis) {
   auto it = std::find_if(splitSchedules.begin(), splitSchedules.end(),
                          [&](const std::string &ax) { return ax == axis; });
   if (it == splitSchedules.end()) {
@@ -13,7 +13,7 @@ bool IRWorkSpace::CreateSplitSchedule(std::string axis) {
   }
   return false;
 }
-bool IRWorkSpace::CreateReorderSchedule(std::string axis1, std::string axis2) {
+bool IRModule::CreateReorderSchedule(std::string axis1, std::string axis2) {
   auto it = std::find_if(reorderSchedules.begin(), reorderSchedules.end(),
                          [&](const std::pair<std::string, std::string> &ax) {
                            return ax.first == axis1 && ax.second == axis2;
@@ -24,7 +24,7 @@ bool IRWorkSpace::CreateReorderSchedule(std::string axis1, std::string axis2) {
   }
   return false;
 }
-bool IRWorkSpace::CreateFuseSchedule(std::string axis1, std::string axis2) {
+bool IRModule::CreateFuseSchedule(std::string axis1, std::string axis2) {
   auto it = std::find_if(fuseSchedules.begin(), fuseSchedules.end(),
                          [&](const std::pair<std::string, std::string> &ax) {
                            return ax.first == axis1 && ax.second == axis2;
@@ -36,8 +36,8 @@ bool IRWorkSpace::CreateFuseSchedule(std::string axis1, std::string axis2) {
   return false;
 }
 
-void IRWorkSpace::evolveSplitSchedules(std::string axis, std::string axis1,
-                                       std::string axis2) {
+void IRModule::evolveSplitSchedules(std::string axis, std::string axis1,
+                                    std::string axis2) {
   {
     auto it = std::find_if(splitSchedules.begin(), splitSchedules.end(),
                            [&](const std::string &ax) { return ax == axis; });
@@ -87,12 +87,12 @@ void IRWorkSpace::evolveSplitSchedules(std::string axis, std::string axis1,
   }
 }
 
-void IRWorkSpace::evolveReorderSchedules(std::string axis1, std::string axis2) {
+void IRModule::evolveReorderSchedules(std::string axis1, std::string axis2) {
   /// Pass
 }
 
-void IRWorkSpace::evolveFuseSchedules(std::string axis1, std::string axis2,
-                                      std::string axis) {
+void IRModule::evolveFuseSchedules(std::string axis1, std::string axis2,
+                                   std::string axis) {
   {
     auto it = std::find_if(
         splitSchedules.begin(), splitSchedules.end(),
@@ -153,9 +153,9 @@ void IRWorkSpace::evolveFuseSchedules(std::string axis1, std::string axis2,
   }
 }
 
-bool IRWorkSpace::Reorder(const std::string i, const std::string j) {
-  IRHandle i_loop = find_loop_var(root_, i);
-  IRHandle j_loop = find_loop_var(root_, j);
+bool IRModule::Reorder(const std::string i, const std::string j) {
+  IRHandle i_loop = find_loop_var(i);
+  IRHandle j_loop = find_loop_var(j);
   assert(i_loop != NullIRHandle);
   assert(j_loop != NullIRHandle);
   std::swap(i_loop.as<ForNode>()->looping_var_,
@@ -164,10 +164,10 @@ bool IRWorkSpace::Reorder(const std::string i, const std::string j) {
   return true;
 }
 
-bool IRWorkSpace::Fuse(const std::string i, const std::string j,
-                       const std::string fuse) {
-  IRHandle outter_loop = find_loop_var(root_, i);
-  IRHandle inner_loop = find_loop_var(root_, j);
+bool IRModule::Fuse(const std::string i, const std::string j,
+                    const std::string fuse) {
+  IRHandle outter_loop = find_loop_var(i);
+  IRHandle inner_loop = find_loop_var(j);
   assert(outter_loop != NullIRHandle);
   assert(inner_loop != NullIRHandle);
   int inner_loop_pos = isNestedLoop(outter_loop, inner_loop);
@@ -223,9 +223,9 @@ bool IRWorkSpace::Fuse(const std::string i, const std::string j,
   return true;
 }
 
-bool IRWorkSpace::Split(const std::string i, IRHandle tiles,
-                        const std::string i_outter, const std::string i_inner) {
-  IRHandle outter_loop = find_loop_var(root_, i);
+bool IRModule::Split(const std::string i, IRHandle tiles,
+                     const std::string i_outter, const std::string i_inner) {
+  IRHandle outter_loop = find_loop_var(i);
   assert(outter_loop != NullIRHandle);
 
   VarHandle originLoopVar =
@@ -263,12 +263,12 @@ bool IRWorkSpace::Split(const std::string i, IRHandle tiles,
   return true;
 }
 
-bool IRWorkSpace::Unroll() {
+bool IRModule::Unroll() {
   LoopUnroll unroll(GetRoot());
   unroll.Transform();
 }
 
-int IRWorkSpace::isNestedLoop(IRHandle outter, IRHandle inner) {
+int IRModule::isNestedLoop(IRHandle outter, IRHandle inner) {
   ForHandle outterFor = outter.as<ForNode>();
   ForHandle innerFor = inner.as<ForNode>();
   if (outterFor == nullptr) return false;
@@ -281,8 +281,8 @@ int IRWorkSpace::isNestedLoop(IRHandle outter, IRHandle inner) {
   return -1;
 }
 
-IRHandle IRWorkSpace::find_loop_var(IRHandle cur,
-                                    const std::string loop_var_name) {
+IRHandle IRModule::_find_loop_var(IRHandle cur,
+                                  const std::string loop_var_name) {
   ForHandle curFor = cur.as<ForNode>();
   if (curFor == nullptr) return NullIRHandle;
   if (curFor->looping_var_.as<VarNode>()->name == loop_var_name) {
@@ -290,7 +290,18 @@ IRHandle IRWorkSpace::find_loop_var(IRHandle cur,
   }
   for (int i = 0; i < curFor->body.size(); i++) {
     if (curFor->body[i].Type() == IRNodeType::FOR) {
-      IRHandle ret = find_loop_var(curFor->body[i], loop_var_name);
+      IRHandle ret = _find_loop_var(curFor->body[i], loop_var_name);
+      if (ret != NullIRHandle) return ret;
+    }
+  }
+  return NullIRHandle;
+}
+
+IRHandle IRModule::find_loop_var(const std::string loop_var_name) {
+  for (int i = 0; i < root_.as<FuncNode>()->body.size(); i++) {
+    auto handle = root_.as<FuncNode>()->body[i];
+    if (handle.Type() == IRNodeType::FOR) {
+      auto ret = _find_loop_var(handle, loop_var_name);
       if (ret != NullIRHandle) return ret;
     }
   }

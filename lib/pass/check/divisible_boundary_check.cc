@@ -72,4 +72,9 @@ void DivisibleBoundaryCheck::visitPrint(PrintHandle print) {
   throw std::runtime_error("Should not visit a print node");
 }
 
+void DivisibleBoundaryCheck::visitFunc(FuncHandle func) {
+  /// PASS
+  throw std::runtime_error("Should not visit a func node");
 }
+
+}  // namespace polly

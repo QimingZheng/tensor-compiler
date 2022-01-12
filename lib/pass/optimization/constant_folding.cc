@@ -156,6 +156,7 @@ class ConstantFoldingEvaluator : public IRVisitor {
   void visitFor(ForHandle loop) { t = value_type::DEFAULT; }
   void visitConst(ConstHandle con) { t = value_type::DEFAULT; }
   void visitPrint(PrintHandle print) { t = value_type::DEFAULT; }
+  void visitFunc(FuncHandle func) { t = value_type::DEFAULT; }
 };
 
 void ConstantFoldingPass::Optimize() { visit(program_); }
@@ -292,6 +293,12 @@ void ConstantFoldingPass::visitPrint(PrintHandle print) {
   auto pr = evaluator.Evaluate(print->print);
   if (pr != NullIRHandle) {
     print->print = pr;
+  }
+}
+
+void ConstantFoldingPass::visitFunc(FuncHandle func) {
+  for (int i = 0; i < func->body.size(); i++) {
+    func->body[i].accept(this);
   }
 }
 

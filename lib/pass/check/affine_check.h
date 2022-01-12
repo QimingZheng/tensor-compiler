@@ -30,6 +30,7 @@ class AffineCheck : public IRVisitor, public CheckPass {
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
+  void visitFunc(FuncHandle func) override;
 
  private:
   IRHandle program_;

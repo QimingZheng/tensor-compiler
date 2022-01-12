@@ -27,6 +27,7 @@ class LoopUnroll : public TransformPass, public IRVisitor {
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
+  void visitFunc(FuncHandle func) override;
 
  private:
   IRHandle replaceVarWithInt(IRHandle node, IRHandle var, IRHandle int_expr);

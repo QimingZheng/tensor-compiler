@@ -2,7 +2,7 @@
 
 #include "common.h"
 #include "cost_model.h"
-#include "ir/ir_workspace.h"
+#include "ir/ir_module.h"
 
 namespace polly {
 
@@ -13,9 +13,9 @@ class AutoScheduler {
       : beam_search_width_(beam_search_width),
         candidate_size_(candidate_size) {}
 
-  std::vector<IRWorkSpace> candidates;
+  std::vector<IRModule> candidates;
 
-  IRWorkSpace best_workspace_;
+  IRModule best_module_;
   float best_performance_ = 1000000;
 
   /// how many sub-space to be search from each candidate
@@ -24,13 +24,13 @@ class AutoScheduler {
   int candidate_size_;
 
   /// One search step.
-  void Search(IRWorkSpace workspace = IRWorkSpace()) {
-    if (workspace.GetRoot() != NullIRHandle) {
-      best_workspace_ = workspace;
+  void Search(IRModule module = IRModule()) {
+    if (module.GetRoot() != NullIRHandle) {
+      best_module_ = module;
       candidates.clear();
-      candidates.push_back(best_workspace_);
+      candidates.push_back(best_module_);
     }
-    std::vector<std::pair<IRWorkSpace, float>> childrens;
+    std::vector<std::pair<IRModule, float>> childrens;
     for (int i = 0; i < candidates.size(); i++) {
       for (int j = 0; j < beam_search_width_; j++) {
         childrens.push_back({candidates[i].CreateSubSpace(), 100.0});
@@ -56,23 +56,23 @@ class AutoScheduler {
       }
     }
     CostModel model;
-    std::transform(childrens.begin(), childrens.end(), childrens.begin(),
-                   [&](const std::pair<IRWorkSpace, float> &x)
-                       -> std::pair<IRWorkSpace, float> {
-                     return {x.first, model.Evaluate(x.first)};
-                   });
+    std::transform(
+        childrens.begin(), childrens.end(), childrens.begin(),
+        [&](const std::pair<IRModule, float> &x) -> std::pair<IRModule, float> {
+          return {x.first, model.Evaluate(x.first)};
+        });
     std::sort(childrens.begin(), childrens.end(),
-              [&](const std::pair<IRWorkSpace, float> &x,
-                  const std::pair<IRWorkSpace, float> &y) {
+              [&](const std::pair<IRModule, float> &x,
+                  const std::pair<IRModule, float> &y) {
                 return x.second < y.second;
               });
     if (childrens.begin()->second < best_performance_) {
-      best_workspace_ = childrens.begin()->first.CreateSubSpace();
+      best_module_ = childrens.begin()->first.CreateSubSpace();
     }
     candidates.clear();
-    std::transform(
-        childrens.begin(), childrens.end(), std::back_inserter(candidates),
-        [](const std::pair<IRWorkSpace, float> &x) { return x.first; });
+    std::transform(childrens.begin(), childrens.end(),
+                   std::back_inserter(candidates),
+                   [](const std::pair<IRModule, float> &x) { return x.first; });
     candidates.resize(candidate_size_);
     return;
   }

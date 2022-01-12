@@ -103,4 +103,15 @@ void ConstantBoundaryCheck::visitPrint(PrintHandle print) {
   isConstantBoundary = true;
 }
 
+void ConstantBoundaryCheck::visitFunc(FuncHandle func) {
+  for (int i = 0; i < func->body.size(); i++) {
+    func->body[i].accept(this);
+    if (!isConstantBoundary) {
+      return;
+    }
+  }
+  isConstantBoundary = true;
+  return;
+}
+
 }  // namespace polly

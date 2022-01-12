@@ -21,6 +21,7 @@ enum IRNodeType {
   FOR = 11,
 
   PRINT = 12,
+  FUNC = 13,
 };
 
 class IntNode;
@@ -38,6 +39,7 @@ class ConstNode;
 
 class ForNode;
 class PrintNode;
+class FuncNode;
 
 class IRVisitor;
 
@@ -54,6 +56,7 @@ typedef std::shared_ptr<AssignmentNode> AssignmentHandle;
 typedef std::shared_ptr<ForNode> ForHandle;
 typedef std::shared_ptr<ConstNode> ConstHandle;
 typedef std::shared_ptr<PrintNode> PrintHandle;
+typedef std::shared_ptr<FuncNode> FuncHandle;
 
 class IRNode {
  public:
@@ -361,7 +364,26 @@ class PrintNode : public IRNode {
   }
 };
 
-/// TODO: add FuncNode
-// class FuncNode : public IRNode {};
+class FuncNode : public IRNode {
+ private:
+  FuncNode() {}
+
+ public:
+  std::vector<IRHandle> body;
+
+  static IRHandle make(std::vector<IRHandle> body);
+  IRNodeType Type() const override { return IRNodeType::FUNC; }
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    if (body.size() != static_cast<const FuncNode *>(other)->body.size())
+      return false;
+    for (int i = 0; i < body.size(); i++) {
+      if (!body[i].equals(static_cast<const FuncNode *>(other)->body[i]))
+        return false;
+    }
+    return true;
+  }
+};
 
 }  // namespace polly
