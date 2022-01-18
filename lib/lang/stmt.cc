@@ -4,12 +4,14 @@
 namespace polly {
 
 Assignment::Assignment(const Expr lhs, const Expr &rhs) {
-  handle_ = AssignmentNode::make(lhs.GetIRHandle(), rhs.GetIRHandle());
+  handle_ = AssignmentNode::make("S" + IRNodeKeyGen::GetInstance()->yield(),
+                                 lhs.GetIRHandle(), rhs.GetIRHandle());
   Program::GetInstance()->AddStmt(this);
 }
 
 Print::Print(const Expr print) {
-  handle_ = PrintNode::make(print.GetIRHandle());
+  handle_ = PrintNode::make("S" + IRNodeKeyGen::GetInstance()->yield(),
+                            print.GetIRHandle());
   Program::GetInstance()->AddStmt(this);
 }
 

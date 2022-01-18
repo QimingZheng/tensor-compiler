@@ -216,7 +216,7 @@ void LoopUnroll::visitVar(VarHandle var) {
   if (IRHandle(var).equals(this->var)) {
     tape_.push(int_expr);
   } else {
-    tape_.push(VarNode::make(var->name, var->min, var->max, var->increment));
+    tape_.push(VarNode::make(var->id, var->min, var->max, var->increment));
   }
 }
 
@@ -241,11 +241,12 @@ void LoopUnroll::visitAssign(AssignmentHandle assign) {
   tape_.pop();
   auto lhs = tape_.top();
   tape_.pop();
-  tape_.push(AssignmentNode::make(lhs, rhs));
+  tape_.push(AssignmentNode::make("S" + IRNodeKeyGen::GetInstance()->yield(),
+                                  lhs, rhs));
 }
 
 void LoopUnroll::visitTensor(TensorHandle tensor) {
-  tape_.push(TensorNode::make(tensor->name, tensor->shape));
+  tape_.push(TensorNode::make(tensor->id, tensor->shape));
 }
 
 void LoopUnroll::visitFor(ForHandle loop) {
@@ -294,7 +295,7 @@ void LoopUnroll::visitPrint(PrintHandle print) {
   print->print.accept(this);
   auto pr = tape_.top();
   tape_.pop();
-  tape_.push(PrintNode::make(pr));
+  tape_.push(PrintNode::make("S" + IRNodeKeyGen::GetInstance()->yield(), pr));
 }
 
 void LoopUnroll::visitFunc(FuncHandle func) {

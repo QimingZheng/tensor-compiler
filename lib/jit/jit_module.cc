@@ -124,14 +124,14 @@ void JitModule::visitMod(ModHandle mod) {
 }
 
 void JitModule::visitVar(VarHandle var) {
-  if (symbols_.find(var->name) == symbols_.end()) {
+  if (symbols_.find(var->id) == symbols_.end()) {
     // Initialize variable
     var->min.accept(this);
     assert(t == value_type::INT);
-    symbols_[var->name] = v;
+    symbols_[var->id] = v;
   }
   t = value_type::INT;
-  v = symbols_[var->name];
+  v = symbols_[var->id];
 }
 
 void JitModule::visitAccess(AccessHandle access) {
@@ -142,7 +142,7 @@ void JitModule::visitAccess(AccessHandle access) {
     if (t != value_type::INT) {
       throw std::runtime_error("cannot access a tensor with float indices");
     }
-    offset = offset * tensor_shapes_[access->tensor.as<TensorNode>()->name][i] +
+    offset = offset * tensor_shapes_[access->tensor.as<TensorNode>()->id][i] +
              v.int_value;
   }
   t = value_type::FLOAT;
@@ -163,7 +163,7 @@ void JitModule::visitAssign(AssignmentHandle assign) {
     if (t != value_type::INT) {
       throw std::runtime_error("cannot access a tensor with float indices");
     }
-    offset = offset * tensor_shapes_[access->tensor.as<TensorNode>()->name][i] +
+    offset = offset * tensor_shapes_[access->tensor.as<TensorNode>()->id][i] +
              v.int_value;
   }
   assign->lhs.as<AccessNode>()->tensor.accept(this);
@@ -171,16 +171,16 @@ void JitModule::visitAssign(AssignmentHandle assign) {
 }
 
 void JitModule::visitTensor(TensorHandle tensor) {
-  if (tensors_.find(tensor->name) == tensors_.end()) {
-    tensor_shapes_[tensor->name] = {};
+  if (tensors_.find(tensor->id) == tensors_.end()) {
+    tensor_shapes_[tensor->id] = {};
     size_t size = 1;
     for (int i = 0; i < tensor->shape.size(); i++) {
-      tensor_shapes_[tensor->name].push_back(tensor->shape[i]);
+      tensor_shapes_[tensor->id].push_back(tensor->shape[i]);
       size *= tensor->shape[i];
     }
-    tensors_[tensor->name] = new float[size];
+    tensors_[tensor->id] = new float[size];
   }
-  tensor_ptr = tensors_[tensor->name];
+  tensor_ptr = tensors_[tensor->id];
 }
 
 void JitModule::visitFor(ForHandle loop) {
@@ -188,18 +188,18 @@ void JitModule::visitFor(ForHandle loop) {
   VarHandle looping_var = loop->looping_var_.as<VarNode>();
   looping_var->max.accept(this);
   assert(t == value_type::INT);
-  while (symbols_[looping_var->name].int_value < v.int_value) {
+  while (symbols_[looping_var->id].int_value < v.int_value) {
     for (int i = 0; i < loop->body.size(); i++) {
       loop->body[i].accept(this);
     }
     looping_var->increment.accept(this);
     assert(t == value_type::INT);
-    symbols_[looping_var->name].int_value += v.int_value;
+    symbols_[looping_var->id].int_value += v.int_value;
     looping_var->max.accept(this);
     assert(t == value_type::INT);
   }
   // when leave the for-loop scope, erase its var;
-  symbols_.erase(looping_var->name);
+  symbols_.erase(looping_var->id);
 }
 
 void JitModule::visitConst(ConstHandle con) {

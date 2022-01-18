@@ -46,7 +46,7 @@ void CodeGenC::visitMod(ModHandle mod) {
   oss << ")";
 }
 
-void CodeGenC::visitVar(VarHandle var) { oss << var->name; }
+void CodeGenC::visitVar(VarHandle var) { oss << var->id; }
 
 void CodeGenC::visitAccess(AccessHandle access) {
   access->tensor.accept(this);
@@ -66,7 +66,7 @@ void CodeGenC::visitAssign(AssignmentHandle assign) {
   oss << ";\n";
 }
 
-void CodeGenC::visitTensor(TensorHandle tensor) { oss << tensor->name; }
+void CodeGenC::visitTensor(TensorHandle tensor) { oss << tensor->id; }
 
 void CodeGenC::visitFor(ForHandle loop) {
   VarHandle loop_var = loop->looping_var_.as<VarNode>();
@@ -95,7 +95,7 @@ void CodeGenC::visitFor(ForHandle loop) {
 void CodeGenC::genCode(IRHandle program, std::vector<IRHandle> &tensors) {
   oss << C_Heaader;
   for (int i = 0; i < tensors.size(); i++) {
-    oss << "float " << tensors[i].as<TensorNode>()->name;
+    oss << "float " << tensors[i].as<TensorNode>()->id;
     for (int j = 0; j < tensors[i].as<TensorNode>()->shape.size(); j++)
       oss << "[" << tensors[i].as<TensorNode>()->shape[j] << "]";
     oss << ";\n";

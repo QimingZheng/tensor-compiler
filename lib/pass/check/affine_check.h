@@ -1,20 +1,41 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:31:50 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:31:50 
+ * @CopyRight: Qiming Zheng 
+ */
+
 #pragma once
 
 #include "common.h"
-#include "check_pass.h"
+#include "pass/pass.h"
+#include "ir/ir.h"
+#include "ir/ir_visitor.h"
 
 namespace polly {
 
-class AffineCheck : public IRVisitor, public CheckPass {
+class AffineCheck : public IRVisitor, public Pass {
  public:
   bool isAffine;
   bool containsTensorExpr;
+
+  AffineCheck() {}
+
   AffineCheck(IRHandle program)
       : program_(program), containsTensorExpr(false) {}
 
-  bool Check() override {
+  PassRetHandle runPass(PassArgHandle arg) override {
+    IRHandle program = PassArg::as<Arg>(arg)->program;
+    program_ = program;
+    containsTensorExpr = false;
+
     this->visit(program_);
-    return isAffine;
+    SetStatus(Pass::PassStatus::VALID);
+    auto ret = std::shared_ptr<Ret>(new Ret);
+    ret->isAffine = isAffine;
+    return ret;
   }
 
   void visitInt(IntHandle int_expr) override;
@@ -31,6 +52,16 @@ class AffineCheck : public IRVisitor, public CheckPass {
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
+
+  struct Arg : public PassArg {
+    IRHandle program;
+    Arg() {}
+    Arg(IRHandle p) : program(p) {}
+  };
+
+  struct Ret : public PassRet {
+    bool isAffine;
+  };
 
  private:
   IRHandle program_;

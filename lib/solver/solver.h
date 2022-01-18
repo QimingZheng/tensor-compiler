@@ -1,3 +1,12 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:30:14 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:30:14 
+ * @CopyRight: Qiming Zheng 
+ */
+
 #pragma once
 
 #include "isl/common.h"
@@ -59,6 +68,10 @@ class IterSet {
   }
   constraint_list GetBounds(std::string loop);
 
+  std::vector<constraint> GetUpperBounds(std::string loop);
+
+  std::vector<constraint> GetLowerBounds(std::string loop);
+
   void reorder(std::string i, std::string j) {
     std::swap(nestings[i], nestings[j]);
   }
@@ -69,6 +82,7 @@ class IterSet {
     }
     return ret;
   }
+
   friend class AccessMap;
 
  private:
@@ -117,7 +131,15 @@ class AccessMap {
 class ScheduleMap {
  public:
   ScheduleMap(context &ctx, std::string statement_name,
-              std::map<std::string, int> nestings);
+              std::vector<std::string> iter_name, std::vector<int> prog_context,
+              int schedule_dim);
+
+  static union_map PreceedMap(context &ctx, int schedule_dim);
+
+  static union_map OneOneMap(context &ctx, std::vector<std::string> ori_iter,
+                             std::vector<int> ori_prog,
+                             std::vector<std::string> tr_iter,
+                             std::vector<int> tr_prog, int schedule_dim);
 
   union_map schedule;
 };
@@ -126,8 +148,13 @@ class ScheduleMap {
 /// i.e. Given: groupA -> X[], groupB -> X[];
 class DependencyMap {
  public:
+  DependencyMap() {}
   DependencyMap(context &ctx, std::vector<AccessMap> groupA,
-                std::vector<AccessMap> groupB)
+                std::vector<AccessMap> groupB,
+                std::vector<std::vector<std::string>> groupAIters,
+                std::vector<std::vector<std::string>> groupBIters,
+                std::vector<std::vector<int>> groupAProgs,
+                std::vector<std::vector<int>> groupBProgs, int schedule_dim)
       : groupA(groupA), groupB(groupB) {
     union_map A(ctx, "{}");
     for (int i = 0; i < groupA.size(); i++) {
@@ -141,16 +168,23 @@ class DependencyMap {
     union_map schedule(ctx, "{}");
     for (int i = 0; i < groupA.size(); i++) {
       schedule =
-          schedule |
-          ScheduleMap(ctx, groupA[i].statement_name_, groupA[i].iters).schedule;
+          schedule | ScheduleMap(ctx, groupA[i].statement_name_, groupAIters[i],
+                                 groupAProgs[i], schedule_dim)
+                         .schedule;
     }
     for (int i = 0; i < groupB.size(); i++) {
       schedule =
-          schedule |
-          ScheduleMap(ctx, groupB[i].statement_name_, groupB[i].iters).schedule;
+          schedule | ScheduleMap(ctx, groupB[i].statement_name_, groupBIters[i],
+                                 groupBProgs[i], schedule_dim)
+                         .schedule;
     }
     dependency_flow = (((dependency_flow ^ (-1))(schedule)) ^ (-1))(schedule);
+    dependency_flow =
+        dependency_flow & solver::ScheduleMap::PreceedMap(ctx, schedule_dim);
+    dependency = dependency_flow;
   }
+
+  union_map dependency;
 
  private:
   std::vector<AccessMap> groupA;

@@ -1,3 +1,11 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:32:21 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:32:21 
+ * @CopyRight: Qiming Zheng 
+ */
 
 #pragma once
 
@@ -26,9 +34,8 @@ Expr operator/(const Expr &a, const Expr &b);
 class Variable : public Expr {
  public:
   Variable() = delete;
-  /// For (i = min; i < max; i+= increament)
-  Variable(const std::string &name, const Expr &min, const Expr &max,
-           const Expr &increament);
+  /// For (i = min; i < max; i+= increment)
+  Variable(const Expr &min, const Expr &max, const Expr &increment);
   ~Variable();
   Variable(const Variable &other) {
     // Don't register when copy
@@ -37,7 +44,7 @@ class Variable : public Expr {
     // Don't register when copy
   }
 
-  std::string name;
+  IRNodeKey id;
 };
 
 class Access : public Expr {
@@ -51,8 +58,8 @@ class Access : public Expr {
 class Tensor : public Expr {
  public:
   std::vector<int64_t> shape;
-  std::string name;
-  Tensor(const std::string &name, std::vector<int64_t> shape);
+  IRNodeKey id;
+  Tensor(std::vector<int64_t> shape);
 
   Access operator()(const std::vector<Expr> &indices) const {
     return Access(*this, indices);

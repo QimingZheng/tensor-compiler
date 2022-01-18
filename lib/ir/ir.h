@@ -1,3 +1,11 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:32:50 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:32:50 
+ * @CopyRight: Qiming Zheng 
+ */
 #pragma once
 
 #include "common.h"
@@ -57,6 +65,21 @@ typedef std::shared_ptr<ForNode> ForHandle;
 typedef std::shared_ptr<ConstNode> ConstHandle;
 typedef std::shared_ptr<PrintNode> PrintHandle;
 typedef std::shared_ptr<FuncNode> FuncHandle;
+
+/// IRNodeKey is used to identify a certain IR-Node.
+typedef std::string IRNodeKey;
+
+class IRNodeKeyGen {
+  IRNodeKeyGen() {}
+  int id = 0;
+
+ protected:
+  static IRNodeKeyGen *generator;
+
+ public:
+  static IRNodeKeyGen *GetInstance();
+  std::string yield() { return std::to_string(id++); }
+};
 
 class IRNode {
  public:
@@ -213,17 +236,17 @@ class VarNode : public IRNode {
   VarNode() {}
 
  public:
-  std::string name;
+  IRNodeKey id;
   IRHandle min, max, increment;
 
-  static IRHandle make(const std::string name, IRHandle min, IRHandle max,
+  static IRHandle make(const IRNodeKey id, IRHandle min, IRHandle max,
                        IRHandle increment);
 
   IRNodeType Type() const override { return IRNodeType::VAR; }
   bool equals(const IRNode *other) override {
     if (other == nullptr) return false;
     if (Type() != other->Type()) return false;
-    return name == static_cast<const VarNode *>(other)->name;
+    return id == static_cast<const VarNode *>(other)->id;
   }
 };
 
@@ -250,16 +273,16 @@ class TensorNode : public IRNode {
   TensorNode() {}
 
  public:
-  std::string name;
+  IRNodeKey id;
   std::vector<int64_t> shape;
 
-  static IRHandle make(const std::string &name, std::vector<int64_t> &shape);
+  static IRHandle make(const IRNodeKey id, std::vector<int64_t> &shape);
 
   IRNodeType Type() const override { return IRNodeType::TENSOR; }
   bool equals(const IRNode *other) override {
     if (other == nullptr) return false;
     if (Type() != other->Type()) return false;
-    return name == static_cast<const TensorNode *>(other)->name;
+    return id == static_cast<const TensorNode *>(other)->id;
   }
 };
 
@@ -292,15 +315,17 @@ class AssignmentNode : public IRNode {
   AssignmentNode() {}
 
  public:
+  IRNodeKey id;
   IRHandle lhs, rhs;
-  static IRHandle make(IRHandle lhs, IRHandle rhs);
+  static IRHandle make(IRNodeKey id, IRHandle lhs, IRHandle rhs);
 
   IRNodeType Type() const override { return IRNodeType::ASSIGN; }
   bool equals(const IRNode *other) override {
     if (other == nullptr) return false;
     if (Type() != other->Type()) return false;
     const AssignmentNode *tmp = static_cast<const AssignmentNode *>(other);
-    return lhs.equals(tmp->lhs) && rhs.equals(tmp->rhs);
+
+    return lhs.equals(tmp->lhs) && rhs.equals(tmp->rhs) && id == tmp->id;
   }
 };
 
@@ -352,9 +377,10 @@ class PrintNode : public IRNode {
   PrintNode() {}
 
  public:
+  IRNodeKey id;
   IRHandle print;
 
-  static IRHandle make(IRHandle print);
+  static IRHandle make(IRNodeKey id, IRHandle print);
 
   IRNodeType Type() const override { return IRNodeType::PRINT; }
   bool equals(const IRNode *other) override {

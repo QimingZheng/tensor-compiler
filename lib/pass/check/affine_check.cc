@@ -94,6 +94,7 @@ void AffineCheck::visitFor(ForHandle loop) {
   }
   isAffine = true;
 }
+
 void AffineCheck::visitConst(ConstHandle con) { isAffine = true; }
 
 void AffineCheck::visitPrint(PrintHandle print) {

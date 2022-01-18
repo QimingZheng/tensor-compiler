@@ -1,18 +1,23 @@
 #include "lang/program.h"
 #include "lang/expr.h"
-
+#include "pass/transform/fission.h"
+#include "pass/transform/fussion.h"
 using namespace polly;
 
 int main() {
   Program prog;
-  Tensor A("A", {1024, 1024}), B("B", {1024, 1024}), C("C", {1024, 1024});
-  Constant M("M"), N("N"), K("K");
+  Tensor A({1024, 1024}), B({1024, 1024}), C({1024, 1024});
+  // Constant M("M"), N("N"), K("K");
+  IRNodeKey I, J, K;
   {
-    Variable i("i", 0, 1024, 1);
+    Variable i(0, 1024, 1);
+    I = i.id;
     {
-      Variable j("j", 0, 1024, 1);
+      Variable j(0, 1024, 1);
+      J = j.id;
       {
-        Variable k("k", 0, 1024, 1);
+        Variable k(0, 1024, 1);
+        K = k.id;
         auto x = C(i, i) + i + j;
         C(i, j) = C(i, j) + A(i, k) * B(k, j);
       }
@@ -20,11 +25,11 @@ int main() {
   }
   srand((unsigned)time(NULL));
 
-  prog.SetSplit("i");
-  prog.SetSplit("j");
-  prog.SetSplit("k");
-  prog.SetReorder("i", "j");
-  prog.SetReorder("j", "k");
+   prog.SetSplit(I);
+  prog.SetSplit(J);
+  prog.SetSplit(K);
+  prog.SetReorder(I, J);
+  prog.SetReorder(J, K);
   prog.AutoTune();
 
   prog.GenerateC();

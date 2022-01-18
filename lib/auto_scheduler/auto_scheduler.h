@@ -1,3 +1,12 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:29:40
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-18 20:33:05
+ * @CopyRight: Qiming Zheng
+ */
+
 #pragma once
 
 #include "common.h"

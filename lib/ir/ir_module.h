@@ -1,3 +1,11 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:32:39 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:32:39 
+ * @CopyRight: Qiming Zheng 
+ */
 #pragma once
 
 #include "common.h"
@@ -101,23 +109,24 @@ class IRModule {
     auto rng = std::default_random_engine{rand()};
     std::shuffle(divisors.begin(), divisors.end(), rng);
     for (auto i : divisors) {
-      DivisibleBoundaryCheck checker(GetLoop(splitAxis), i);
-      if (!checker.Check()) continue;
+      DivisibleBoundaryCheck checker;
+      auto ret = checker.runPass(std::shared_ptr<DivisibleBoundaryCheck::Arg>(
+          new DivisibleBoundaryCheck::Arg(GetLoop(splitAxis), i)));
+      if (!PassRet::as<DivisibleBoundaryCheck::Ret>(ret)->isDivisibleBoundary)
+        continue;
       IRHandle tiles = IntNode::make(i);
       Split(splitAxis, tiles, splitAxis + "_outter", splitAxis + "_inner");
       return;
     }
   }
 
-  IRHandle GetLoop(std::string loopVarName) {
-    return find_loop_var(loopVarName);
-  }
+  IRHandle GetLoop(std::string loopVarId) { return find_loop_var(loopVarId); }
 
  private:
-  IRHandle find_loop_var(const std::string loop_var_name);
+  IRHandle find_loop_var(const std::string loop_var_id);
 
-  /// Find the for-loop that uses var `loop_var_name` as its looping var.
-  IRHandle _find_loop_var(IRHandle cur, const std::string loop_var_name);
+  /// Find the for-loop that uses var `loop_var_id` as its looping var.
+  IRHandle _find_loop_var(IRHandle cur, const std::string loop_var_id);
 
   int isNestedLoop(IRHandle outter, IRHandle inner);
 

@@ -1,3 +1,9 @@
+/**
+ * @Author: Qiming Zheng
+ * @Date:   2022-01-09 21:49:39
+ * @Last Modified by:   Qiming Zheng
+ * @Last Modified time: 2022-01-18 12:22:26
+ */
 #pragma once
 
 #include "common.h"
@@ -28,6 +34,12 @@ class constraint : public object<isl_constraint> {
   }
 
   bool is_equality() const { return isl_constraint_is_equality(get()); }
+
+  int get_dim(isl_dim_type dim) { return isl_constraint_dim(m_object, dim); }
+
+  std::string get_dim_name(isl_dim_type dim, int i) {
+    return std::string(isl_constraint_get_dim_name(m_object, dim, i));
+  }
 
   value get_constant() { return isl_constraint_get_constant_val(m_object); }
 
@@ -113,4 +125,4 @@ inline constraint operator==(const expression &lhs, int rhs_int) {
 }
 
 }  // namespace isl
-}
+}  // namespace polly

@@ -1,3 +1,9 @@
+/*
+ * Created Date: 17th January 2022
+ * Author: Qiming Zheng
+ * Copyright (c) 2022 Qiming Zheng
+ */
+
 #include "polyhedral_extraction.h"
 
 namespace polly {
@@ -111,7 +117,7 @@ void PolyhedralExtraction::visitMod(ModHandle mod) {
 
 void PolyhedralExtraction::visitVar(VarHandle var) {
   expr.clear();
-  expr.coeffs[var->name] = 1;
+  expr.coeffs[var->id] = 1;
 }
 
 void PolyhedralExtraction::visitAccess(AccessHandle access) {
@@ -122,12 +128,11 @@ void PolyhedralExtraction::visitAccess(AccessHandle access) {
     access->indices[i].accept(this);
     placeholder.push_back(expr);
   }
-  affineAccesses.push_back(
-      {access->tensor.as<TensorNode>()->name, placeholder});
+  affineAccesses.push_back({access->tensor.as<TensorNode>()->id, placeholder});
 }
 
 void PolyhedralExtraction::visitAssign(AssignmentHandle assign) {
-  StatementKey statementName = "S" + std::to_string(model.statements_.size());
+  StatementKey statementName = assign->id;
   std::vector<ArrayAccess> accesses;
 
   affineAccesses.clear();
@@ -163,8 +168,7 @@ void PolyhedralExtraction::visitFor(ForHandle loop) {
   loop->looping_var_.as<VarNode>()->max.accept(this);
   auto max_ = expr;
 
-  loops.push_back(
-      Iteration(loop->looping_var_.as<VarNode>()->name, min_, max_));
+  loops.push_back(Iteration(loop->looping_var_.as<VarNode>()->id, min_, max_));
   for (int i = 0; i < loop->body.size(); i++) {
     progContext.push_back(i);
     loop->body[i].accept(this);
@@ -179,6 +183,21 @@ void PolyhedralExtraction::visitConst(ConstHandle con) {
 
 void PolyhedralExtraction::visitPrint(PrintHandle print) {
   /// Pass
+  StatementKey statementName = print->id;
+
+  std::vector<ArrayAccess> accesses;
+
+  affineAccesses.clear();
+  print->print.accept(this);
+  for (int i = 0; i < affineAccesses.size(); i++) {
+    accesses.push_back(ArrayAccess(
+        ArrayDomain(ArrayDomain::AccessType::READ, affineAccesses[i].first,
+                    affineAccesses[i].second),
+        statementName));
+  }
+
+  model.statements_.push_back(Statement(
+      statementName, accesses, IterDomain(loops), ProgDomain(progContext)));
 }
 
 void PolyhedralExtraction::visitFunc(FuncHandle func) {

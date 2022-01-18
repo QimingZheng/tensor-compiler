@@ -1,19 +1,37 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:31:55 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:31:55 
+ * @CopyRight: Qiming Zheng 
+ */
+
 #pragma once
 
 #include "common.h"
-#include "check_pass.h"
+#include "pass/pass.h"
+#include "ir/ir.h"
+#include "ir/ir_visitor.h"
 
 namespace polly {
 
-class ConstantBoundaryCheck : public CheckPass, public IRVisitor {
+class ConstantBoundaryCheck : public Pass, public IRVisitor {
  public:
   bool isConstantBoundary;
   int value = -1;
+
+  ConstantBoundaryCheck() {}
+
   ConstantBoundaryCheck(IRHandle program) : program_(program) {}
 
-  bool Check() override {
+  PassRetHandle runPass(PassArgHandle arg) override {
+    program_ = PassArg::as<Arg>(arg)->program;
     this->visit(program_);
-    return isConstantBoundary;
+    SetStatus(Pass::PassStatus::VALID);
+    auto ret = std::shared_ptr<Ret>(new Ret);
+    ret->isConstantBoundary = isConstantBoundary;
+    return ret;
   }
 
   void visitInt(IntHandle int_expr) override;
@@ -30,6 +48,16 @@ class ConstantBoundaryCheck : public CheckPass, public IRVisitor {
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
+
+  struct Arg : public PassArg {
+    IRHandle program;
+    Arg() {}
+    Arg(IRHandle p) : program(p) {}
+  };
+
+  struct Ret : public PassRet {
+    bool isConstantBoundary;
+  };
 
  private:
   IRHandle program_;

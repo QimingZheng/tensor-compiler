@@ -1,11 +1,18 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:31:15 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:31:15 
+ * @CopyRight: Qiming Zheng 
+ */
+
 #pragma once
 
 #include "common.h"
 #include "pass/analysis/polyhedral_model.h"
 
 namespace polly {
-
-// using namespace polyhedral;
 
 class Dependency {
  public:

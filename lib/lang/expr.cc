@@ -3,10 +3,9 @@
 
 namespace polly {
 
-Variable::Variable(const std::string &name, const Expr &min, const Expr &max,
-                   const Expr &increament)
-    : name(name) {
-  handle_ = VarNode::make(name, min.GetIRHandle(), max.GetIRHandle(),
+Variable::Variable(const Expr &min, const Expr &max, const Expr &increament) {
+  id = "i" + IRNodeKeyGen::GetInstance()->yield();
+  handle_ = VarNode::make(id, min.GetIRHandle(), max.GetIRHandle(),
                           increament.GetIRHandle());
   Program::GetInstance()->EnterLoop(this);
 }
@@ -39,9 +38,9 @@ Access::Access(const Expr tensor, const std::vector<Expr> &indices) {
   handle_ = AccessNode::make(tensor.GetIRHandle(), indicesIRNodes);
 }
 
-Tensor::Tensor(const std::string &name, std::vector<int64_t> shape)
-    : name(name), shape(shape) {
-  handle_ = TensorNode::make(name, shape);
+Tensor::Tensor(std::vector<int64_t> shape) : shape(shape) {
+  id = "t" + IRNodeKeyGen::GetInstance()->yield();
+  handle_ = TensorNode::make(id, shape);
   Program::GetInstance()->DeclareTensor(this);
 }
 

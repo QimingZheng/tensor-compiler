@@ -1,3 +1,12 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:32:45 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:32:45 
+ * @CopyRight: Qiming Zheng 
+ */
+
 #pragma once
 
 #include "common.h"
@@ -22,6 +31,49 @@ class IRVisitor {
   virtual void visitConst(ConstHandle con) = 0;
   virtual void visitPrint(PrintHandle print) = 0;
   virtual void visitFunc(FuncHandle func) = 0;
+};
+
+class IRSimpleVisitor : public IRVisitor {
+ public:
+  void visitInt(IntHandle int_expr) override { /* Pass */ }
+    void visitAdd(AddHandle add) override { /* Pass */ }
+    void visitSub(SubHandle sub) override { /* Pass */ }
+    void visitMul(MulHandle mul) override { /* Pass */ }
+    void visitDiv(DivHandle div) override { /* Pass */ }
+    void visitMod(ModHandle mod) override { /* Pass */ }
+    void visitVar(VarHandle var) override { /* Pass */ }
+    void visitAccess(AccessHandle access) override { /* Pass */ }
+    void visitAssign(AssignmentHandle assign) override { /* Pass */ }
+    void visitTensor(TensorHandle tensor) override { /* Pass */ }
+    void visitFor(ForHandle loop) override { /* Pass */ }
+    void visitConst(ConstHandle con) override { /* Pass */ }
+    void visitPrint(PrintHandle print) override { /* Pass */ }
+    void visitFunc(FuncHandle func) override { /* Pass */ }
+};
+
+class IRNotImplementedVisitor : public IRVisitor {
+ public:
+  void visitInt(IntHandle int_expr) override { throw_exception("Int"); }
+  void visitAdd(AddHandle add) override { throw_exception("Add"); }
+  void visitSub(SubHandle sub) override { throw_exception("Sub"); }
+  void visitMul(MulHandle mul) override { throw_exception("Mul"); }
+  void visitDiv(DivHandle div) override { throw_exception("Div"); }
+  void visitMod(ModHandle mod) override { throw_exception("Mod"); }
+  void visitVar(VarHandle var) override { throw_exception("Var"); }
+  void visitAccess(AccessHandle access) override { throw_exception("Access"); }
+  void visitAssign(AssignmentHandle assign) override {
+    throw_exception("Assignment");
+  }
+  void visitTensor(TensorHandle tensor) override { throw_exception("Tensor"); }
+  void visitFor(ForHandle loop) override { throw_exception("Loop"); }
+  void visitConst(ConstHandle con) override { throw_exception("Constant"); }
+  void visitPrint(PrintHandle print) override { throw_exception("Print"); }
+  void visitFunc(FuncHandle func) override { throw_exception("Func"); }
+
+ private:
+  void throw_exception(std::string msg) {
+    throw std::runtime_error(msg + "Node visit method Not Implemented");
+  }
 };
 
 class IRPrinterVisitor : public IRVisitor {

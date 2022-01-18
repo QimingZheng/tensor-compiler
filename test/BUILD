@@ -3,7 +3,9 @@ cc_binary(
     srcs=["example.cc"],
     deps=[
         "//lib:polly",
+        "@isl//:isl",
     ],
+    linkopts = ["-lgmp"],
 )
 
 cc_binary(
@@ -34,4 +36,16 @@ cc_test(
         "@isl//:isl",
     ],
 )
- 
+
+cc_test(
+    name = "analysis_pass_test",
+    srcs = [
+        "test_analysis_pass.cc",
+    ],
+    deps=[
+        "//lib:polly",
+        "@gtest//:gtest",
+        "@gtest//:gtest_main",
+        "@isl//:isl",
+    ],
+)

@@ -83,7 +83,7 @@ void IRPrinterVisitor::visitMod(ModHandle mod) {
   std::cout << " % ";
   mod->rhs.accept(this);
 }
-void IRPrinterVisitor::visitVar(VarHandle var) { std::cout << var->name; }
+void IRPrinterVisitor::visitVar(VarHandle var) { std::cout << var->id; }
 void IRPrinterVisitor::visitAccess(AccessHandle access) {
   access->tensor.accept(this);
   std::cout << "(";
@@ -100,7 +100,7 @@ void IRPrinterVisitor::visitAssign(AssignmentHandle assign) {
   std::cout << "\n";
 }
 void IRPrinterVisitor::visitTensor(TensorHandle tensor) {
-  std::cout << tensor->name;
+  std::cout << tensor->id;
 }
 void IRPrinterVisitor::visitFor(ForHandle loop) {
   loop->looping_var_.accept(this);

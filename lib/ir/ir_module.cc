@@ -180,9 +180,8 @@ bool IRModule::Fuse(const std::string i, const std::string j,
   IRHandle inner_lower = inner->min, inner_upper = inner->max,
            inner_inc = inner->increment;
 
-  //   outter->name += inner->name;
   /// change the outter axis name to `fuse`
-  outter->name = fuse;
+  outter->id = fuse;
 
   // get rid off the inner loop, now we only have the fused loop
   for (int i = 0; i < inner_loop.as<ForNode>()->body.size(); i++) {
@@ -231,9 +230,8 @@ bool IRModule::Split(const std::string i, IRHandle tiles,
   VarHandle originLoopVar =
       outter_loop.as<ForNode>()->looping_var_.as<VarNode>();
 
-  //   originLoopVar->name = i + "_outter";
   // name the outter loop as `i_outter`
-  originLoopVar->name = i_outter;
+  originLoopVar->id = i_outter;
   IRHandle stride =
       DivNode::make(SubNode::make(originLoopVar->max, originLoopVar->min),
                     MulNode::make(tiles, originLoopVar->increment));
@@ -264,8 +262,9 @@ bool IRModule::Split(const std::string i, IRHandle tiles,
 }
 
 bool IRModule::Unroll() {
-  LoopUnroll unroll(GetRoot());
-  unroll.Transform();
+  LoopUnroll unroll;
+  unroll.runPass(
+      std::shared_ptr<LoopUnroll::Arg>(new LoopUnroll::Arg(GetRoot())));
 }
 
 int IRModule::isNestedLoop(IRHandle outter, IRHandle inner) {
@@ -281,27 +280,26 @@ int IRModule::isNestedLoop(IRHandle outter, IRHandle inner) {
   return -1;
 }
 
-IRHandle IRModule::_find_loop_var(IRHandle cur,
-                                  const std::string loop_var_name) {
+IRHandle IRModule::_find_loop_var(IRHandle cur, const std::string loop_var_id) {
   ForHandle curFor = cur.as<ForNode>();
   if (curFor == nullptr) return NullIRHandle;
-  if (curFor->looping_var_.as<VarNode>()->name == loop_var_name) {
+  if (curFor->looping_var_.as<VarNode>()->id == loop_var_id) {
     return cur;
   }
   for (int i = 0; i < curFor->body.size(); i++) {
     if (curFor->body[i].Type() == IRNodeType::FOR) {
-      IRHandle ret = _find_loop_var(curFor->body[i], loop_var_name);
+      IRHandle ret = _find_loop_var(curFor->body[i], loop_var_id);
       if (ret != NullIRHandle) return ret;
     }
   }
   return NullIRHandle;
 }
 
-IRHandle IRModule::find_loop_var(const std::string loop_var_name) {
+IRHandle IRModule::find_loop_var(const std::string loop_var_id) {
   for (int i = 0; i < root_.as<FuncNode>()->body.size(); i++) {
     auto handle = root_.as<FuncNode>()->body[i];
     if (handle.Type() == IRNodeType::FOR) {
-      auto ret = _find_loop_var(handle, loop_var_name);
+      auto ret = _find_loop_var(handle, loop_var_id);
       if (ret != NullIRHandle) return ret;
     }
   }

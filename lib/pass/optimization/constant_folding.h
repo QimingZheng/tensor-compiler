@@ -1,16 +1,36 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:29:26 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:29:26 
+ * @CopyRight: Qiming Zheng 
+ */
+
 #pragma once
 
 #include "common.h"
-#include "optimization_pass.h"
+#include "pass/pass.h"
 #include "ir/ir.h"
 #include "ir/ir_visitor.h"
 
 namespace polly {
 
-class ConstantFoldingPass : public OptimizationPass, public IRVisitor {
+class ConstantFoldingPass : public Pass, public IRVisitor {
  public:
+  constexpr static PassKey id = ConstantFoldingPassID;
+
+  ConstantFoldingPass() {}
   ConstantFoldingPass(IRHandle program) : program_(program) {}
-  void Optimize() override;
+
+  PassRetHandle runPass(PassArgHandle arg) override {
+    program_ = PassArg::as<Arg>(arg)->program;
+
+    this->program_.accept(this);
+    SetStatus(Pass::PassStatus::VALID);
+    auto ret = std::shared_ptr<Ret>(new Ret);
+    return ret;
+  }
 
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
@@ -26,6 +46,14 @@ class ConstantFoldingPass : public OptimizationPass, public IRVisitor {
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
+
+  struct Arg : public PassArg {
+    IRHandle program;
+    Arg() {}
+    Arg(IRHandle p) : program(p) {}
+  };
+
+  struct Ret : public PassRet {};
 
  private:
   IRHandle program_;

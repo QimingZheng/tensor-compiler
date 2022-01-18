@@ -1,16 +1,21 @@
+/*
+ * Created Date: 17th January 2022
+ * Author: Qiming Zheng
+ * Copyright (c) 2022 Qiming Zheng
+ */
+
 #include "fission.h"
 
 namespace polly {
-
-void FissionTransform::Transform() { module_.GetRoot().accept(this); }
 
 void FissionTransform::visitInt(IntHandle int_expr) {
   /// Pass
 }
 
 IRHandle FissionTransform::replace_if_match(IRHandle origin) {
-  if (origin.equals(loop_)) {
-    return replace_loop_;
+  origin.accept(this);
+  if (origin.equals(loop_.as<ForNode>()->looping_var_)) {
+    return replace_loop_.as<ForNode>()->looping_var_;
   } else {
     return origin;
   }
@@ -82,12 +87,13 @@ void FissionTransform::visitFor(ForHandle loop) {
   if (searching_) {
     for (int i = 0; i < loop->body.size(); i++) {
       if (loop->body[i].equals(loop_)) {
-        searching_ = true;
+        searching_ = false;
         auto targetLoop = loop->body[i].as<ForNode>();
         std::vector<IRHandle> fissionLoops;
         for (int j = 0; j < targetLoop->body.size(); j++) {
           fissionLoops.push_back(ForNode::make(VarNode::make(
-              targetLoop->looping_var_.as<VarNode>()->name,
+              /* targetLoop->looping_var_.as<VarNode>()->id, */
+              "i" + IRNodeKeyGen::GetInstance()->yield(),
               targetLoop->looping_var_.as<VarNode>()->min,
               targetLoop->looping_var_.as<VarNode>()->max,
               targetLoop->looping_var_.as<VarNode>()->increment)));
@@ -109,7 +115,9 @@ void FissionTransform::visitFor(ForHandle loop) {
         loop->body[i].accept(this);
       }
     }
-  } else {
+  }
+
+  if (!searching_) {
     loop->looping_var_.accept(this);
     for (int i = 0; i < loop->body.size(); i++) {
       loop->body[i].accept(this);
@@ -134,12 +142,13 @@ void FissionTransform::visitPrint(PrintHandle print) {
 void FissionTransform::visitFunc(FuncHandle func) {
   for (int i = 0; i < func->body.size(); i++) {
     if (func->body[i].equals(loop_)) {
-      searching_ = true;
+      searching_ = false;
       auto loop = func->body[i].as<ForNode>();
       std::vector<IRHandle> fissionLoops;
       for (int j = 0; j < loop->body.size(); j++) {
         fissionLoops.push_back(ForNode::make(
-            VarNode::make(loop->looping_var_.as<VarNode>()->name,
+            VarNode::make(/* loop->looping_var_.as<VarNode>()->id */
+                          "i" + IRNodeKeyGen::GetInstance()->yield(),
                           loop->looping_var_.as<VarNode>()->min,
                           loop->looping_var_.as<VarNode>()->max,
                           loop->looping_var_.as<VarNode>()->increment)));
@@ -156,7 +165,7 @@ void FissionTransform::visitFunc(FuncHandle func) {
       break;
     }
   }
-  if (!searching_) {
+  if (searching_) {
     for (int i = 0; i < func->body.size(); i++) {
       func->body[i].accept(this);
     }

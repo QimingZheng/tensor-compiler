@@ -1,3 +1,11 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:32:24 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:32:24 
+ * @CopyRight: Qiming Zheng 
+ */
 #pragma once
 
 #include "common.h"
@@ -22,10 +30,11 @@ namespace polly {
 
 /// Should be Singleton.
 class Program {
+ public:
+  IRModule module_;
+
  private:
   std::stack<IRHandle> loopScopes_;
-
-  IRModule module_;
 
   IRHandle current_loop_;
 
@@ -162,25 +171,32 @@ class Program {
   }
 
   bool IsAffineProgram() {
-    AffineCheck check(module_.GetRoot());
-    return check.Check();
+    AffineCheck check;
+    auto ret = check.runPass(std::shared_ptr<AffineCheck::Arg>(
+        new AffineCheck::Arg(module_.GetRoot())));
+    return PassRet::as<AffineCheck::Ret>(ret)->isAffine;
   }
 
   bool IsConstantBoundary() {
-    ConstantBoundaryCheck checker(module_.GetRoot());
-    return checker.Check();
+    ConstantBoundaryCheck checker;
+    auto ret = checker.runPass(std::shared_ptr<ConstantBoundaryCheck::Arg>(
+        new ConstantBoundaryCheck::Arg(module_.GetRoot())));
+    return PassRet::as<ConstantBoundaryCheck::Ret>(ret)->isConstantBoundary;
   }
 
   bool IsBoundaryDivisible(std::string i, int divisor) {
     auto loop = module_.GetLoop(i);
     assert(loop != NullIRHandle);
-    DivisibleBoundaryCheck checker(loop, divisor);
-    return checker.Check();
+    DivisibleBoundaryCheck checker;
+    auto ret = checker.runPass(std::shared_ptr<DivisibleBoundaryCheck::Arg>(
+        new DivisibleBoundaryCheck::Arg(loop, divisor)));
+    return PassRet::as<DivisibleBoundaryCheck::Ret>(ret)->isDivisibleBoundary;
   }
 
   void GenerateC() {
-    ConstantFoldingPass confold(module_.GetRoot());
-    confold.Optimize();
+    ConstantFoldingPass confold;
+    confold.runPass(std::shared_ptr<ConstantFoldingPass::Arg>(
+        new ConstantFoldingPass::Arg(module_.GetRoot())));
     CodeGenC codegen(std::cout);
     codegen.genCode(module_.GetRoot(), module_.GetTensors());
   }

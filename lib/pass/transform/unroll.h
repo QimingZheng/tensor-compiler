@@ -1,18 +1,36 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:30:32 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:30:32 
+ * @CopyRight: Qiming Zheng 
+ */
 #pragma once
 
 #include "common.h"
-#include "transform_pass.h"
+#include "pass/pass.h"
 #include "ir/ir.h"
 #include "ir/ir_visitor.h"
 
 namespace polly {
 
 /// Before unrolling a loop, check its boundary is contant first.
-class LoopUnroll : public TransformPass, public IRVisitor {
+class LoopUnroll : public Pass, public IRVisitor {
  public:
-  LoopUnroll(IRHandle program, int unroll_limit = 8) : program_(program) {}
+  constexpr static PassKey id = UnrollPassID;
 
-  void Transform() override { this->visit(program_); }
+  LoopUnroll() {}
+
+  LoopUnroll(IRHandle program) : program_(program) {}
+
+  PassRetHandle runPass(PassArgHandle arg) override {
+    program_ = PassArg::as<Arg>(arg)->program;
+    this->visit(program_);
+
+    auto ret = std::shared_ptr<Ret>(new Ret);
+    return ret;
+  }
 
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
@@ -28,6 +46,13 @@ class LoopUnroll : public TransformPass, public IRVisitor {
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
+
+  struct Arg : public PassArg {
+    IRHandle program;
+    Arg() {}
+    Arg(IRHandle p) : program(p) {}
+  };
+  struct Ret : public PassRet {};
 
  private:
   IRHandle replaceVarWithInt(IRHandle node, IRHandle var, IRHandle int_expr);

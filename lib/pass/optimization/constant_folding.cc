@@ -159,8 +159,6 @@ class ConstantFoldingEvaluator : public IRVisitor {
   void visitFunc(FuncHandle func) { t = value_type::DEFAULT; }
 };
 
-void ConstantFoldingPass::Optimize() { visit(program_); }
-
 void ConstantFoldingPass::visitInt(IntHandle int_expr) {
   /// Pass
 }

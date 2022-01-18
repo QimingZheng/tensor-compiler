@@ -3,7 +3,14 @@
 
 namespace polly {
 
-IRHandle IRHandle::clone(std::map<std::string, IRHandle> &irHandleDict) {
+IRNodeKeyGen *IRNodeKeyGen::GetInstance() {
+  if (generator == nullptr) generator = new IRNodeKeyGen;
+  return generator;
+}
+
+IRNodeKeyGen *IRNodeKeyGen::generator = nullptr;
+
+IRHandle IRHandle::clone(std::map<IRNodeKey, IRHandle> &irHandleDict) {
   if (isNull()) return IRHandle();
   IRHandle ret;
   switch (Type()) {
@@ -33,23 +40,23 @@ IRHandle IRHandle::clone(std::map<std::string, IRHandle> &irHandleDict) {
       break;
     }
     case IRNodeType::TENSOR: {
-      if (irHandleDict.find(as<TensorNode>()->name) != irHandleDict.end()) {
-        ret = irHandleDict[as<TensorNode>()->name];
+      if (irHandleDict.find(as<TensorNode>()->id) != irHandleDict.end()) {
+        ret = irHandleDict[as<TensorNode>()->id];
       } else {
-        ret = TensorNode::make(as<TensorNode>()->name, as<TensorNode>()->shape);
-        irHandleDict.insert(std::make_pair(as<TensorNode>()->name, ret));
+        ret = TensorNode::make(as<TensorNode>()->id, as<TensorNode>()->shape);
+        irHandleDict.insert(std::make_pair(as<TensorNode>()->id, ret));
       }
       break;
     }
     case IRNodeType::VAR: {
-      if (irHandleDict.find(as<VarNode>()->name) != irHandleDict.end()) {
-        ret = irHandleDict[as<VarNode>()->name];
+      if (irHandleDict.find(as<VarNode>()->id) != irHandleDict.end()) {
+        ret = irHandleDict[as<VarNode>()->id];
       } else {
-        ret = VarNode::make(as<VarNode>()->name,
+        ret = VarNode::make(as<VarNode>()->id,
                             as<VarNode>()->min.clone(irHandleDict),
                             as<VarNode>()->max.clone(irHandleDict),
                             as<VarNode>()->increment.clone(irHandleDict));
-        irHandleDict.insert(std::make_pair(as<VarNode>()->name, ret));
+        irHandleDict.insert(std::make_pair(as<VarNode>()->id, ret));
       }
       break;
     }
@@ -65,7 +72,8 @@ IRHandle IRHandle::clone(std::map<std::string, IRHandle> &irHandleDict) {
       break;
     }
     case IRNodeType::ASSIGN: {
-      ret = AssignmentNode::make(as<AssignmentNode>()->lhs.clone(irHandleDict),
+      ret = AssignmentNode::make(as<AssignmentNode>()->id,
+                                 as<AssignmentNode>()->lhs.clone(irHandleDict),
                                  as<AssignmentNode>()->rhs.clone(irHandleDict));
       break;
     }
@@ -81,14 +89,14 @@ IRHandle IRHandle::clone(std::map<std::string, IRHandle> &irHandleDict) {
     case IRNodeType::FOR: {
       // For node name: "for"-`var-name`
       if (irHandleDict.find("For-" +
-                            as<ForNode>()->looping_var_.as<VarNode>()->name) !=
+                            as<ForNode>()->looping_var_.as<VarNode>()->id) !=
           irHandleDict.end()) {
         ret = irHandleDict["For-" +
-                           as<ForNode>()->looping_var_.as<VarNode>()->name];
+                           as<ForNode>()->looping_var_.as<VarNode>()->id];
       } else {
         ret = ForNode::make(as<ForNode>()->looping_var_.clone(irHandleDict));
         irHandleDict.insert(std::make_pair(
-            "For-" + as<ForNode>()->looping_var_.as<VarNode>()->name, ret));
+            "For-" + as<ForNode>()->looping_var_.as<VarNode>()->id, ret));
         auto forNode = as<ForNode>();
         for (int i = 0; i < forNode->body.size(); i++) {
           ret.as<ForNode>()->Insert(forNode->body[i].clone(irHandleDict));
@@ -101,7 +109,8 @@ IRHandle IRHandle::clone(std::map<std::string, IRHandle> &irHandleDict) {
       break;
     }
     case IRNodeType::PRINT: {
-      ret = PrintNode::make(as<PrintNode>()->print.clone(irHandleDict));
+      ret = PrintNode::make(as<PrintNode>()->id,
+                            as<PrintNode>()->print.clone(irHandleDict));
       break;
     }
     case IRNodeType::FUNC: {
@@ -154,13 +163,13 @@ IRHandle ModNode::make(IRHandle lhs, IRHandle rhs) {
   return IRHandle(div);
 }
 
-IRHandle VarNode::make(const std::string name, IRHandle min, IRHandle max,
+IRHandle VarNode::make(const IRNodeKey id, IRHandle min, IRHandle max,
                        IRHandle increment) {
   VarNode *var = new VarNode();
-  var->name = name;
   var->min = min;
   var->max = max;
   var->increment = increment;
+  var->id = id;
   return IRHandle(var);
 }
 
@@ -169,10 +178,9 @@ IRHandle IntNode::make(int x) {
   return IRHandle(node);
 }
 
-IRHandle TensorNode::make(const std::string &name,
-                          std::vector<int64_t> &shape) {
+IRHandle TensorNode::make(const IRNodeKey id, std::vector<int64_t> &shape) {
   TensorNode *tensor = new TensorNode();
-  tensor->name = name;
+  tensor->id = id;
   tensor->shape = shape;
   return IRHandle(tensor);
 }
@@ -184,10 +192,11 @@ IRHandle AccessNode::make(IRHandle tensor, std::vector<IRHandle> indices) {
   return IRHandle(node);
 }
 
-IRHandle AssignmentNode::make(IRHandle lhs, IRHandle rhs) {
+IRHandle AssignmentNode::make(IRNodeKey id, IRHandle lhs, IRHandle rhs) {
   AssignmentNode *node = new AssignmentNode();
   node->lhs = lhs;
   node->rhs = rhs;
+  node->id = id;
   return IRHandle(node);
 }
 
@@ -198,14 +207,16 @@ IRHandle ForNode::make(IRHandle looping_var) {
 }
 
 IRHandle ConstNode::make(std::string name) {
-  ConstNode *node = new ConstNode();
-  node->name = name;
-  return IRHandle(node);
+  // ConstNode *node = new ConstNode();
+  // node->name = name;
+  // return IRHandle(node);
+  throw std::runtime_error("Not Implemented Error: ConstNode");
 }
 
-IRHandle PrintNode::make(IRHandle print) {
+IRHandle PrintNode::make(IRNodeKey id, IRHandle print) {
   PrintNode *node = new PrintNode();
   node->print = print;
+  node->id = id;
   return IRHandle(node);
 }
 

@@ -1,3 +1,12 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:29:51 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:29:51 
+ * @CopyRight: Qiming Zheng 
+ */
+
 #pragma once
 
 #include "common.h"
@@ -28,8 +37,11 @@ class PolyhedralExtraction : public IRVisitor {
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
 
-  std::vector<int> progContext;
   PolyhedralModel model;
+
+  /// The following variables are used as workspace vars.
+
+  std::vector<int> progContext;
   // affine access to arrays in a single statement
   std::vector<std::pair<ArrayKey, std::vector<QuasiAffineExpr>>> affineAccesses;
   QuasiAffineExpr expr;
