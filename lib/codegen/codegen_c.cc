@@ -2,106 +2,126 @@
 
 namespace polly {
 
-void CodeGenC::visitInt(IntNode *int_expr) { oss << int_expr->value; }
+void CodeGenC::visitInt(IntHandle int_expr) { oss << int_expr->value; }
 
-void CodeGenC::visitAdd(AddNode *add) {
-  add->lhs->accept(this);
+void CodeGenC::visitAdd(AddHandle add) {
+  add->lhs.accept(this);
   oss << " + ";
-  add->rhs->accept(this);
+  add->rhs.accept(this);
 }
 
-void CodeGenC::visitMul(MulNode *mul) {
+void CodeGenC::visitSub(SubHandle sub) {
+  sub->lhs.accept(this);
+  oss << " + ";
+  sub->rhs.accept(this);
+}
+
+void CodeGenC::visitMul(MulHandle mul) {
   oss << "(";
-  mul->lhs->accept(this);
+  mul->lhs.accept(this);
   oss << ")";
   oss << " * ";
   oss << "(";
-  mul->rhs->accept(this);
+  mul->rhs.accept(this);
   oss << ")";
 }
 
-void CodeGenC::visitSub(SubNode *sub) {
-  sub->lhs->accept(this);
-  oss << " - ";
-  sub->rhs->accept(this);
-}
-
-void CodeGenC::visitDiv(DivNode *div) {
+void CodeGenC::visitDiv(DivHandle div) {
   oss << "(";
-  div->lhs->accept(this);
+  div->lhs.accept(this);
   oss << ")";
   oss << " / ";
   oss << "(";
-  div->rhs->accept(this);
+  div->rhs.accept(this);
   oss << ")";
 }
 
-void CodeGenC::visitMod(ModNode *mod) {
-  mod->lhs->accept(this);
+void CodeGenC::visitMod(ModHandle mod) {
+  oss << "(";
+  mod->lhs.accept(this);
+  oss << ")";
   oss << " % ";
-  mod->rhs->accept(this);
+  oss << "(";
+  mod->rhs.accept(this);
+  oss << ")";
 }
 
-void CodeGenC::visitVar(VarNode *var) { oss << var->name; }
+void CodeGenC::visitVar(VarHandle var) { oss << var->id; }
 
-void CodeGenC::visitAccess(AccessNode *access) {
-  access->tensor->accept(this);
+void CodeGenC::visitAccess(AccessHandle access) {
+  access->tensor.accept(this);
   oss << "[";
   for (int i = 0; i < access->indices.size(); i++) {
-    access->indices[i]->accept(this);
+    access->indices[i].accept(this);
     oss << "]";
     if (i != access->indices.size() - 1) oss << "[";
   }
 }
 
-void CodeGenC::visitAssign(AssignmentNode *assign) {
+void CodeGenC::visitAssign(AssignmentHandle assign) {
   oss << getIndent();
-  assign->lhs->accept(this);
+  assign->lhs.accept(this);
   oss << " = ";
-  assign->rhs->accept(this);
+  assign->rhs.accept(this);
   oss << ";\n";
 }
 
-void CodeGenC::visitTensor(TensorNode *tensor) { oss << tensor->name; }
+void CodeGenC::visitTensor(TensorHandle tensor) { oss << tensor->id; }
 
-void CodeGenC::visitFor(ForNode *loop) {
-  VarNode *loop_var = static_cast<VarNode *>(loop->looping_var_);
+void CodeGenC::visitFor(ForHandle loop) {
+  VarHandle loop_var = loop->looping_var_.as<VarNode>();
   oss << getIndent();
   oss << "for (int ";
-  loop_var->accept(this);
+  loop->looping_var_.accept(this);
   oss << " = ";
-  loop_var->min->accept(this);
-  oss << ";";
-  loop_var->accept(this);
-  oss << " <= ";
-  loop_var->max->accept(this);
-  oss << ";";
-  loop_var->accept(this);
+  loop_var->min.accept(this);
+  oss << "; ";
+  loop->looping_var_.accept(this);
+  oss << " < ";
+  loop_var->max.accept(this);
+  oss << "; ";
+  loop->looping_var_.accept(this);
   oss << " += ";
-  loop_var->increment->accept(this);
+  loop_var->increment.accept(this);
   oss << ") {\n";
   indent += 1;
   for (int i = 0; i < loop->body.size(); i++) {
-    loop->body[i]->accept(this);
+    loop->body[i].accept(this);
   }
   indent -= 1;
   oss << getIndent();
   oss << "}\n";
 }
-
-void CodeGenC::visitConst(ConstNode *con) { oss << con->name; }
-
-void CodeGenC::genCode(ForNode *program, std::vector<TensorNode*> &tensors) {
+void CodeGenC::genCode(IRHandle program, std::vector<IRHandle> &tensors) {
   oss << C_Heaader;
   for (int i = 0; i < tensors.size(); i++) {
-    oss << "float " << tensors[i]->name;
-    for (int j = 0; j < tensors[i]->shape.size(); j++)
-      oss << "[" << tensors[i]->shape[j] << "]";
+    oss << "float " << tensors[i].as<TensorNode>()->id;
+    for (int j = 0; j < tensors[i].as<TensorNode>()->shape.size(); j++)
+      oss << "[" << tensors[i].as<TensorNode>()->shape[j] << "]";
     oss << ";\n";
   }
   oss << "int main() {\n";
+  oss << "  clock_t tStart = clock();\n";
   visit(program);
+  // timing unit: ms
+  oss << "  printf(\"%.6f\\n\", (double)(clock() - "
+         "tStart)/(CLOCKS_PER_SEC/1000.0));\n";
   oss << "}\n";
+}
+
+void CodeGenC::visitConst(ConstHandle con) { oss << con->name; }
+
+void CodeGenC::visitPrint(PrintHandle print) {
+  oss << getIndent();
+  oss << "std::cout << ";
+  print->print.accept(this);
+  oss << " << \"\\n\";\n";
+}
+
+void CodeGenC::visitFunc(FuncHandle func) {
+  for (int i = 0; i < func->body.size(); i++) {
+    func->body[i].accept(this);
+  }
 }
 
 }  // namespace polly

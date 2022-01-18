@@ -3,108 +3,126 @@
 
 namespace polly {
 
-void IRVisitor::visit(IRNode *expr) {
-  assert(expr != nullptr);
-  // std::cout << expr->Type() << std::endl;
-  switch (expr->Type()) {
+void IRVisitor::visit(IRHandle expr) {
+  assert(expr != NullIRHandle);
+  switch (expr.Type()) {
     case IRNodeType::ADD:
-      this->visitAdd(static_cast<AddNode *>(expr));
+      this->visitAdd(expr.as<AddNode>());
       break;
     case IRNodeType::SUB:
-      this->visitSub(static_cast<SubNode *>(expr));
+      this->visitSub(expr.as<SubNode>());
       break;
     case IRNodeType::MUL:
-      this->visitMul(static_cast<MulNode *>(expr));
+      this->visitMul(expr.as<MulNode>());
       break;
     case IRNodeType::DIV:
-      this->visitDiv(static_cast<DivNode *>(expr));
+      this->visitDiv(expr.as<DivNode>());
       break;
     case IRNodeType::MOD:
-      this->visitMod(static_cast<ModNode *>(expr));
+      this->visitMod(expr.as<ModNode>());
       break;
     case IRNodeType::INT:
-      this->visitInt(static_cast<IntNode *>(expr));
+      this->visitInt(expr.as<IntNode>());
       break;
     case IRNodeType::ASSIGN:
-      this->visitAssign(static_cast<AssignmentNode *>(expr));
+      this->visitAssign(expr.as<AssignmentNode>());
       break;
     case IRNodeType::VAR:
-      this->visitVar(static_cast<VarNode *>(expr));
+      this->visitVar(expr.as<VarNode>());
       break;
     case IRNodeType::ACCESS:
-      this->visitAccess(static_cast<AccessNode *>(expr));
+      this->visitAccess(expr.as<AccessNode>());
       break;
     case IRNodeType::TENSOR:
-      this->visitTensor(static_cast<TensorNode *>(expr));
+      this->visitTensor(expr.as<TensorNode>());
       break;
     case IRNodeType::FOR:
-      this->visitFor(static_cast<ForNode *>(expr));
+      this->visitFor(expr.as<ForNode>());
       break;
     case IRNodeType::CONST:
-      this->visitConst(static_cast<ConstNode *>(expr));
+      this->visitConst(expr.as<ConstNode>());
+      break;
+    case IRNodeType::PRINT:
+      this->visitPrint(expr.as<PrintNode>());
+      break;
+    case IRNodeType::FUNC:
+      this->visitFunc(expr.as<FuncNode>());
       break;
 
     default:
+      std::cout << expr.Type() << '\n';
       throw std::runtime_error("visiting unknonw node");
   }
 }
 
-void IRPrinterVisitor::visitInt(IntNode *int_expr) {
+void IRPrinterVisitor::visitInt(IntHandle int_expr) {
   std::cout << int_expr->value;
 }
-void IRPrinterVisitor::visitAdd(AddNode *add) {
-  add->lhs->accept(this);
+void IRPrinterVisitor::visitAdd(AddHandle add) {
+  add->lhs.accept(this);
   std::cout << " + ";
-  add->rhs->accept(this);
+  add->rhs.accept(this);
 }
-void IRPrinterVisitor::visitSub(SubNode *sub) {
-  sub->lhs->accept(this);
+void IRPrinterVisitor::visitSub(SubHandle sub) {
+  sub->lhs.accept(this);
   std::cout << " - ";
-  sub->rhs->accept(this);
+  sub->rhs.accept(this);
 }
-void IRPrinterVisitor::visitMul(MulNode *mul) {
-  mul->lhs->accept(this);
+void IRPrinterVisitor::visitMul(MulHandle mul) {
+  mul->lhs.accept(this);
   std::cout << " * ";
-  mul->rhs->accept(this);
+  mul->rhs.accept(this);
 }
-void IRPrinterVisitor::visitDiv(DivNode *div) {
-  div->lhs->accept(this);
+void IRPrinterVisitor::visitDiv(DivHandle div) {
+  div->lhs.accept(this);
   std::cout << " / ";
-  div->rhs->accept(this);
+  div->rhs.accept(this);
 }
-void IRPrinterVisitor::visitMod(ModNode *mod) {
-  mod->lhs->accept(this);
+void IRPrinterVisitor::visitMod(ModHandle mod) {
+  mod->lhs.accept(this);
   std::cout << " % ";
-  mod->rhs->accept(this);
+  mod->rhs.accept(this);
 }
-void IRPrinterVisitor::visitVar(VarNode *var) { std::cout << var->name; }
-void IRPrinterVisitor::visitAccess(AccessNode *access) {
-  access->tensor->accept(this);
+void IRPrinterVisitor::visitVar(VarHandle var) { std::cout << var->id; }
+void IRPrinterVisitor::visitAccess(AccessHandle access) {
+  access->tensor.accept(this);
   std::cout << "(";
   for (int i = 0; i < access->indices.size(); i++) {
-    access->indices[i]->accept(this);
+    access->indices[i].accept(this);
     if (i < access->indices.size() - 1) std::cout << ", ";
   }
   std::cout << ")";
 }
-void IRPrinterVisitor::visitAssign(AssignmentNode *assign) {
-  assign->lhs->accept(this);
+void IRPrinterVisitor::visitAssign(AssignmentHandle assign) {
+  assign->lhs.accept(this);
   std::cout << " = ";
-  assign->rhs->accept(this);
+  assign->rhs.accept(this);
   std::cout << "\n";
 }
-void IRPrinterVisitor::visitTensor(TensorNode *tensor) {
-  std::cout << tensor->name;
+void IRPrinterVisitor::visitTensor(TensorHandle tensor) {
+  std::cout << tensor->id;
 }
-void IRPrinterVisitor::visitFor(ForNode *loop) {
-  loop->looping_var_->accept(this);
+void IRPrinterVisitor::visitFor(ForHandle loop) {
+  loop->looping_var_.accept(this);
   std::cout << " {\n";
   for (int i = 0; i < loop->body.size(); i++) {
-    loop->body[i]->accept(this);
+    loop->body[i].accept(this);
   }
   std::cout << "}\n";
 }
 
-void IRPrinterVisitor::visitConst(ConstNode *con) { std::cout << con->name; }
+void IRPrinterVisitor::visitConst(ConstHandle con) { std::cout << con->name; }
+
+void IRPrinterVisitor::visitPrint(PrintHandle print) {
+  std::cout << "print ";
+  print->print.accept(this);
+  std::cout << ";\n";
+}
+
+void IRPrinterVisitor::visitFunc(FuncHandle func) {
+  for (int i = 0; i < func->body.size(); i++) {
+    func->body[i].accept(this);
+  }
+}
 
 }  // namespace polly

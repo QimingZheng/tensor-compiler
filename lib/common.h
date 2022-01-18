@@ -1,19 +1,32 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:30:05 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:30:05 
+ * @CopyRight: Qiming Zheng 
+ */
 #pragma once
 
 #include <iostream>
 #include <ostream>
+#include <fstream>
 #include <assert.h>
 #include <algorithm>
 #include <assert.h>
 #include <vector>
 #include <stack>
 #include <map>
+#include <memory>
 #include <unordered_map>
 #include <set>
 #include <unordered_set>
 #include <utility>
 #include <atomic>
 #include <cstdlib>
+#include <sys/time.h>
+#include <random>
+#include <math.h>
 
 namespace polly {
 

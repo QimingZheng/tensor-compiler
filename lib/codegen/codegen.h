@@ -1,3 +1,11 @@
+/*
+ * @Description: Polly: A DSL compiler for Tensor Program 
+ * @Author: Qiming Zheng 
+ * @Date: 2022-01-18 20:32:55 
+ * @Last Modified by:   Qiming Zheng 
+ * @Last Modified time: 2022-01-18 20:32:55 
+ * @CopyRight: Qiming Zheng 
+ */
 #pragma once
 
 #include "common.h"
@@ -13,6 +21,7 @@ class CodeGen : public IRVisitor {
 const std::string C_Heaader = R"(
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 )";
 
 class CodeGenC : public IRVisitor {
@@ -28,19 +37,21 @@ class CodeGenC : public IRVisitor {
 
  public:
   CodeGenC(std::ostream &os) : oss(os) {}
-  void genCode(ForNode *program, std::vector<TensorNode *> &tensors);
-  void visitInt(IntNode *int_expr) override;
-  void visitAdd(AddNode *add) override;
-  void visitMul(MulNode *mul) override;
-  void visitSub(SubNode *sub) override;
-  void visitDiv(DivNode *div) override;
-  void visitMod(ModNode *mod) override;
-  void visitVar(VarNode *var) override;
-  void visitAccess(AccessNode *access) override;
-  void visitAssign(AssignmentNode *assign) override;
-  void visitTensor(TensorNode *tensor) override;
-  void visitFor(ForNode *loop) override;
-  void visitConst(ConstNode *con) override;
+  void genCode(IRHandle program, std::vector<IRHandle> &tensors);
+  void visitInt(IntHandle int_expr) override;
+  void visitAdd(AddHandle add) override;
+  void visitSub(SubHandle sub) override;
+  void visitMul(MulHandle mul) override;
+  void visitDiv(DivHandle div) override;
+  void visitMod(ModHandle mod) override;
+  void visitVar(VarHandle var) override;
+  void visitAccess(AccessHandle access) override;
+  void visitAssign(AssignmentHandle assign) override;
+  void visitTensor(TensorHandle tensor) override;
+  void visitFor(ForHandle loop) override;
+  void visitConst(ConstHandle con) override;
+  void visitPrint(PrintHandle print) override;
+  void visitFunc(FuncHandle func) override;
 };
 
 class CodeGenCuda : public CodeGen {

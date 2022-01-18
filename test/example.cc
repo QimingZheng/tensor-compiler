@@ -1,38 +1,186 @@
-#include "dsl/program.h"
-#include "dsl/expr.h"
+#include "lang/program.h"
+#include "lang/expr.h"
+
+#include "pass/analysis/analysis_pass.h"
+#include "pass/analysis/polyhedral_extraction.h"
+#include "pass/transform/fission.h"
+#include "pass/transform/fussion.h"
 
 using namespace polly;
 
 int main() {
-  Program prog;
-  Tensor A("A", {1024, 1024}), B("B", {1024, 1024}), C("C", {1024, 1024});
-  // Constant M("M"), N("N"), K("K");
   {
-    Variable i("i", 1, 10, 1);
+    Program prog;
+    Tensor A({1024, 1024}), B({1024, 1024}), C({1024, 1024});
+    IRNodeKey I, J, K;
     {
-      Variable j("j", 1, 10, 1);
+      Variable i(1, 1023, 1);
+      I = i.id;
       {
-        Variable k("k", 1, 10, 1);
-        auto x = C(i, i) + i + j;
-        C(i, j) = C(i, j) + A(i, k) * B(k, j);
+        Variable j(1, 1023, 1);
+        J = j.id;
+        {
+          Variable k(1, 1024, 1);
+          K = k.id;
+          auto x = C(i, i) + i + j;
+          C(i, j) = C(i, j) + A(i, k) * B(k, j);
+        }
       }
     }
+
+    prog.GenerateC();
+    prog.Reorder(I, J);
+    prog.GenerateC();
+    prog.Split(J, 2);
+    prog.GenerateC();
+    prog.Reorder(J + "_inner", K);
+    prog.GenerateC();
+    prog.Vectorize(J + "_inner", 2);
+    prog.GenerateC();
+    prog.Fuse(J + "_outter", K);
+    prog.GenerateC();
+
+    // prog.Fuse("i", "j");
+    // prog.GenerateC();
+
+    std::cout << prog.IsAffineProgram() << std::endl;
   }
 
-  // prog.GenerateC();
-  prog.Reorder("i", "j");
-  // prog.GenerateC();
-  prog.Split("j", 2);
-  // prog.GenerateC();
-  prog.Reorder("j_inner", "k");
-  // prog.GenerateC();
-  prog.Vectorize("j_inner", 2);
-  prog.GenerateC();
-  prog.Fuse("j_outter", "k");
-  // prog.IRGen();
-  prog.GenerateC();
+  {
+    Program prog;
+    Tensor A({1024, 1024}), B({3, 3}), C({1022, 1022});
+    {
+      Variable i(0, 1021, 1);
+      {
+        Variable j(0, 1021, 1);
+        {
+          Variable k(0, 2, 1);
+          {
+            Variable h(0, 2, 1);
+            C(i, j) = C(i, j) + A(i + k, j + h) * B(k, h);
+          }
+        }
+      }
+    }
 
-  std::cout << prog.IsAffineProgram() << std::endl;
+    prog.Unroll();
+    prog.GenerateC();
 
+    std::cout << prog.IsAffineProgram() << std::endl;
+  }
+
+  {
+    Program prog;
+    Tensor A({1024, 1024}), B({1024, 1024});
+    IRNodeKey I, J;
+    {
+      {
+        Variable i(0, 1024, 1);
+        I = i.id;
+        A(i) = i * 2;
+      }
+      {
+        Variable i(0, 1024, 1);
+        J = i.id;
+        B(i) = A(i) + i * 3;
+      }
+    }
+
+    solver::context ctx;
+
+    IRHandle ori = prog.module_.CreateSubSpace().GetRoot();
+
+    PolyhedralModel oriModel = PolyhedralExtraction(ori).model;
+    std::cout << "==============\n";
+    for (auto st : oriModel.statements_) {
+      std::cout << st.DbgMsg();
+    }
+    std::cout << "==============\n";
+
+    DataDependencyModel oriDep(ctx, PolyhedralExtraction(ori).model);
+
+    IRHandle first_loop = prog.module_.GetLoop(I);
+    IRHandle second_loop = prog.module_.GetLoop(J);
+    FussionTransform fuss;
+
+    fuss.runPass(
+        std::shared_ptr<FussionTransform::Arg>(new FussionTransform::Arg(
+            prog.module_.GetRoot(), first_loop, second_loop)));
+
+    // prog.GenerateC();
+    IRHandle transformed = prog.module_.GetRoot();
+
+    PolyhedralModel transformedModel = PolyhedralExtraction(transformed).model;
+    std::cout << "==============\n";
+    for (auto st : transformedModel.statements_) {
+      std::cout << st.DbgMsg();
+    }
+    std::cout << "==============\n";
+    DataDependencyModel dep(ctx, transformedModel);
+
+    PolyhedralAnalysisPass analysis;
+    auto ret = analysis.runPass(std::shared_ptr<PolyhedralAnalysisPass::Arg>(
+        new PolyhedralAnalysisPass::Arg(
+            ctx, ori, transformed,
+            DataDependencyModel::CreateFussionTransformMap(ctx, oriModel,
+                                                           transformedModel))));
+    std::cout << PassRet::as<PolyhedralAnalysisPass::Ret>(ret)->hasConflicts
+              << std::endl;
+  }
+
+  {
+    Program prog;
+    Tensor A({1024, 1024}), B({1024, 1024});
+    IRNodeKey I;
+    {
+      {
+        Variable i(0, 1024, 1);
+        I = i.id;
+        A(i) = i * 2;
+        B(i) = A(i) + i * 3;
+      }
+    }
+
+    solver::context ctx;
+
+    IRHandle ori = prog.module_.CreateSubSpace().GetRoot();
+
+    PolyhedralModel oriModel = PolyhedralExtraction(ori).model;
+    std::cout << "==============\n";
+    for (auto st : oriModel.statements_) {
+      std::cout << st.DbgMsg();
+    }
+    std::cout << "==============\n";
+
+    DataDependencyModel oriDep(ctx, PolyhedralExtraction(ori).model);
+
+    std::cout << "==============\n";
+    IRHandle loop = prog.module_.GetLoop(I);
+    FissionTransform fiss;
+
+    std::cout << "==============\n";
+    fiss.runPass(std::shared_ptr<FissionTransform::Arg>(
+        new FissionTransform::Arg(prog.module_.GetRoot(), loop)));
+
+    std::cout << "==============\n";
+    IRHandle transformed = prog.module_.GetRoot();
+
+    PolyhedralModel transformedModel = PolyhedralExtraction(transformed).model;
+    std::cout << "==============\n";
+    for (auto st : transformedModel.statements_) {
+      std::cout << st.DbgMsg();
+    }
+    std::cout << "==============\n";
+    DataDependencyModel dep(ctx, transformedModel);
+
+    PolyhedralAnalysisPass analysis;
+    auto ret = analysis.runPass(std::shared_ptr<PolyhedralAnalysisPass::Arg>(
+        new PolyhedralAnalysisPass::Arg(
+            ctx, ori, transformed,
+            DataDependencyModel::CreateFussionTransformMap(ctx, oriModel,
+                                                           transformedModel))));
+    std::cout << PassRet::as<PolyhedralAnalysisPass::Ret>(ret)->hasConflicts
+              << std::endl;
+  }
   return 0;
 }
