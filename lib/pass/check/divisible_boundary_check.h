@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:31:59 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:31:59 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:31:59
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-19 20:11:35
+ * @CopyRight: Qiming Zheng
  */
 
 #pragma once
@@ -20,21 +20,27 @@ namespace polly {
 /// divided by a certain divisor. Please make sure that the boundary of it is
 /// checked by the IRConstantBoundaryCheckVisitor checker first.
 class DivisibleBoundaryCheck : public Pass, public IRVisitor {
+ private:
+  DivisibleBoundaryCheck() {}
+  DivisibleBoundaryCheck(IRHandle loop, int divisor)
+      : loop_(loop), divisor(divisor) {
+    if (divisor > 0) {
+      this->visit(loop_);
+    } else {
+      isDivisibleBoundary = false;
+    }
+    SetStatus(Pass::PassStatus::VALID);
+  }
+
  public:
   bool isDivisibleBoundary;
   int divisor;
   int value = -1;
-  DivisibleBoundaryCheck() {}
-  DivisibleBoundaryCheck(IRHandle loop, int divisor)
-      : loop_(loop), divisor(divisor) {}
 
-  PassRetHandle runPass(PassArgHandle arg) override {
-    loop_ = PassArg::as<Arg>(arg)->loop;
-    divisor = PassArg::as<Arg>(arg)->divisor;
-    this->visit(loop_);
-    SetStatus(Pass::PassStatus::VALID);
-    auto ret = std::shared_ptr<Ret>(new Ret);
-    ret->isDivisibleBoundary = isDivisibleBoundary;
+  static PassRetHandle runPass(PassArgHandle arg) {
+    DivisibleBoundaryCheck checker(PassArg::as<Arg>(arg)->loop,
+                                   PassArg::as<Arg>(arg)->divisor);
+    auto ret = Ret::create(checker.isDivisibleBoundary);
     return ret;
   }
 
@@ -62,6 +68,11 @@ class DivisibleBoundaryCheck : public Pass, public IRVisitor {
 
   struct Ret : public PassRet {
     bool isDivisibleBoundary;
+    static PassRetHandle create(bool isDivisibleBoundary) {
+      auto ret = std::shared_ptr<Ret>(new Ret);
+      ret->isDivisibleBoundary = isDivisibleBoundary;
+      return ret;
+    }
   };
 
  private:

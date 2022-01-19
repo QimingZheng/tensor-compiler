@@ -159,6 +159,43 @@ class ConstantFoldingEvaluator : public IRVisitor {
   void visitFunc(FuncHandle func) { t = value_type::DEFAULT; }
 };
 
+IRHandle ConstantFoldingPass::simplify(IRHandle node) {
+  folded = true;
+  auto zero = IntNode::make(0);
+  auto one = IntNode::make(1);
+  switch (node.Type()) {
+    case IRNodeType::ADD: {
+      if (node.as<AddNode>()->lhs.equals(zero)) return node.as<AddNode>()->rhs;
+      if (node.as<AddNode>()->rhs.equals(zero)) return node.as<AddNode>()->lhs;
+      break;
+    }
+    case IRNodeType::SUB: {
+      if (node.as<SubNode>()->rhs.equals(zero)) return node.as<SubNode>()->lhs;
+      break;
+    }
+    case IRNodeType::MUL: {
+      if (node.as<MulNode>()->lhs.equals(zero)) return zero;
+      if (node.as<MulNode>()->rhs.equals(zero)) return zero;
+      if (node.as<MulNode>()->lhs.equals(one)) return node.as<AddNode>()->rhs;
+      if (node.as<MulNode>()->rhs.equals(one)) return node.as<AddNode>()->lhs;
+      break;
+    }
+    case IRNodeType::DIV: {
+      if (node.as<AddNode>()->rhs.equals(one)) return node.as<AddNode>()->lhs;
+      break;
+    }
+    case IRNodeType::MOD: {
+      if (node.as<AddNode>()->rhs.equals(one)) zero;
+      break;
+    }
+
+    default:
+      break;
+  }
+  folded = false;
+  return node;
+}
+
 void ConstantFoldingPass::visitInt(IntHandle int_expr) {
   /// Pass
 }
@@ -175,6 +212,8 @@ void ConstantFoldingPass::visitAdd(AddHandle add) {
   if (rhs != NullIRHandle) {
     add->rhs = rhs;
   }
+  add->lhs = simplify(add->lhs);
+  add->rhs = simplify(add->rhs);
 }
 
 void ConstantFoldingPass::visitSub(SubHandle sub) {
@@ -189,6 +228,8 @@ void ConstantFoldingPass::visitSub(SubHandle sub) {
   if (rhs != NullIRHandle) {
     sub->rhs = rhs;
   }
+  sub->lhs = simplify(sub->lhs);
+  sub->rhs = simplify(sub->rhs);
 }
 
 void ConstantFoldingPass::visitMul(MulHandle mul) {
@@ -203,6 +244,8 @@ void ConstantFoldingPass::visitMul(MulHandle mul) {
   if (rhs != NullIRHandle) {
     mul->rhs = rhs;
   }
+  mul->lhs = simplify(mul->lhs);
+  mul->rhs = simplify(mul->rhs);
 }
 
 void ConstantFoldingPass::visitDiv(DivHandle div) {
@@ -217,6 +260,8 @@ void ConstantFoldingPass::visitDiv(DivHandle div) {
   if (rhs != NullIRHandle) {
     div->rhs = rhs;
   }
+  div->lhs = simplify(div->lhs);
+  div->rhs = simplify(div->rhs);
 }
 
 void ConstantFoldingPass::visitMod(ModHandle mod) {
@@ -231,6 +276,8 @@ void ConstantFoldingPass::visitMod(ModHandle mod) {
   if (rhs != NullIRHandle) {
     mod->rhs = rhs;
   }
+  mod->lhs = simplify(mod->lhs);
+  mod->rhs = simplify(mod->rhs);
 }
 
 void ConstantFoldingPass::visitVar(VarHandle var) {
@@ -247,6 +294,9 @@ void ConstantFoldingPass::visitVar(VarHandle var) {
   if (increment != NullIRHandle) {
     var->increment = increment;
   }
+  var->min = simplify(var->min);
+  var->max = simplify(var->max);
+  var->increment = simplify(var->increment);
 }
 
 void ConstantFoldingPass::visitAccess(AccessHandle access) {
@@ -257,6 +307,7 @@ void ConstantFoldingPass::visitAccess(AccessHandle access) {
     if (ind != NullIRHandle) {
       access->indices[i] = ind;
     }
+    access->indices[i] = simplify(access->indices[i]);
   }
 }
 
@@ -268,6 +319,8 @@ void ConstantFoldingPass::visitAssign(AssignmentHandle assign) {
   if (rhs != NullIRHandle) {
     assign->rhs = rhs;
   }
+  assign->lhs = simplify(assign->lhs);
+  assign->rhs = simplify(assign->rhs);
 }
 
 void ConstantFoldingPass::visitTensor(TensorHandle tensor) {
@@ -292,6 +345,7 @@ void ConstantFoldingPass::visitPrint(PrintHandle print) {
   if (pr != NullIRHandle) {
     print->print = pr;
   }
+  print->print = simplify(print->print);
 }
 
 void ConstantFoldingPass::visitFunc(FuncHandle func) {

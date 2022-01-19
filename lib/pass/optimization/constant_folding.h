@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:29:26 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:29:26 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:29:26
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-19 20:10:21
+ * @CopyRight: Qiming Zheng
  */
 
 #pragma once
@@ -16,21 +16,34 @@
 
 namespace polly {
 
+// Constant Folding is a common compiler optimization pass that compute know
+// algebra results ahead of executions.
 class ConstantFoldingPass : public Pass, public IRVisitor {
+ private:
+  ConstantFoldingPass() {}
+  ConstantFoldingPass(IRHandle program) : program_(program) {
+    folded = true;
+    while (folded) {
+      this->program_.accept(this);
+      folded = false;
+    }
+  }
+
  public:
   constexpr static PassKey id = ConstantFoldingPassID;
 
-  ConstantFoldingPass() {}
-  ConstantFoldingPass(IRHandle program) : program_(program) {}
-
-  PassRetHandle runPass(PassArgHandle arg) override {
-    program_ = PassArg::as<Arg>(arg)->program;
-
-    this->program_.accept(this);
-    SetStatus(Pass::PassStatus::VALID);
-    auto ret = std::shared_ptr<Ret>(new Ret);
-    return ret;
+  static PassRetHandle runPass(PassArgHandle arg) {
+    ConstantFoldingPass(PassArg::as<Arg>(arg)->program);
+    return Ret::create();
   }
+
+  // Simplify the calculation of a single node. Including:
+  // 1. 0 + x = x; x + 0 = x;
+  // 2. x - 0 = x; (TODO: 0 - x = -x;)
+  // 3: x * 1 = x; 1 * x = x; 0 * x = 0; x * 0 = 0;
+  // 4: x / 1 = x;
+  // 5. x % 1 = 0;
+  IRHandle simplify(IRHandle node);
 
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
@@ -53,10 +66,13 @@ class ConstantFoldingPass : public Pass, public IRVisitor {
     Arg(IRHandle p) : program(p) {}
   };
 
-  struct Ret : public PassRet {};
+  struct Ret : public PassRet {
+    static PassRetHandle create() { return std::shared_ptr<Ret>(new Ret); }
+  };
 
  private:
   IRHandle program_;
+  bool folded;
 };
 
 }  // namespace polly

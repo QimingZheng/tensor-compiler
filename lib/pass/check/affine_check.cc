@@ -7,89 +7,117 @@ void AffineCheck::visitInt(IntHandle int_expr) {
   isAffine = true;
 }
 void AffineCheck::visitAdd(AddHandle add) {
-  isAffine = false;
-  this->visit(add->lhs);
-  if (!isAffine) return;
-  isAffine = false;
-  this->visit(add->rhs);
-  if (!isAffine) return;
-  isAffine = true;
+  if (!firstTimeEntering) {
+    auto ret = IsAffineIRHandle::runPass(
+        std::shared_ptr<IsAffineIRHandle::Arg>(new IsAffineIRHandle::Arg(add)));
+    isAffine = PassRet::as<IsAffineIRHandle::Ret>(ret)->isAffine;
+  } else {
+    add->lhs.accept(this);
+    if (!isAffine) return;
+    add->rhs.accept(this);
+    if (!isAffine) return;
+  }
 }
 void AffineCheck::visitSub(SubHandle sub) {
-  isAffine = false;
-  this->visit(sub->lhs);
-  if (!isAffine) return;
-  isAffine = false;
-  this->visit(sub->rhs);
-  if (!isAffine) return;
-  isAffine = true;
+  if (!firstTimeEntering) {
+    auto ret = IsAffineIRHandle::runPass(
+        std::shared_ptr<IsAffineIRHandle::Arg>(new IsAffineIRHandle::Arg(sub)));
+    isAffine = PassRet::as<IsAffineIRHandle::Ret>(ret)->isAffine;
+  } else {
+    sub->lhs.accept(this);
+    if (!isAffine) return;
+    sub->rhs.accept(this);
+    if (!isAffine) return;
+  }
 }
 void AffineCheck::visitMul(MulHandle mul) {
-  isAffine = false;
-  this->visit(mul->lhs);
-  if (!isAffine) return;
-  isAffine = false;
-  this->visit(mul->rhs);
-  if (!isAffine) return;
-  isAffine = true;
+  if (!firstTimeEntering) {
+    auto ret = IsAffineIRHandle::runPass(
+        std::shared_ptr<IsAffineIRHandle::Arg>(new IsAffineIRHandle::Arg(mul)));
+    isAffine = PassRet::as<IsAffineIRHandle::Ret>(ret)->isAffine;
+  } else {
+    mul->lhs.accept(this);
+    if (!isAffine) return;
+    mul->rhs.accept(this);
+    if (!isAffine) return;
+  }
 }
 void AffineCheck::visitDiv(DivHandle div) {
-  isAffine = false;
-  this->visit(div->lhs);
-  if (!isAffine) return;
-  isAffine = false;
-  this->visit(div->rhs);
-  if (!isAffine) return;
-  isAffine = true;
+  if (!firstTimeEntering) {
+    auto ret = IsAffineIRHandle::runPass(
+        std::shared_ptr<IsAffineIRHandle::Arg>(new IsAffineIRHandle::Arg(div)));
+    isAffine = PassRet::as<IsAffineIRHandle::Ret>(ret)->isAffine;
+  } else {
+    div->lhs.accept(this);
+    if (!isAffine) return;
+    div->rhs.accept(this);
+    if (!isAffine) return;
+  }
 }
 void AffineCheck::visitMod(ModHandle mod) {
-  isAffine = false;
-  this->visit(mod->lhs);
-  if (!isAffine) return;
-  isAffine = false;
-  this->visit(mod->rhs);
-  if (!isAffine) return;
-  isAffine = true;
+  if (!firstTimeEntering) {
+    auto ret = IsAffineIRHandle::runPass(
+        std::shared_ptr<IsAffineIRHandle::Arg>(new IsAffineIRHandle::Arg(mod)));
+    isAffine = PassRet::as<IsAffineIRHandle::Ret>(ret)->isAffine;
+  } else {
+    mod->lhs.accept(this);
+    if (!isAffine) return;
+    mod->rhs.accept(this);
+    if (!isAffine) return;
+  }
 }
 void AffineCheck::visitVar(VarHandle var) {
-  // PASS
-  isAffine = true;
+  auto ret = IsAffineIRHandle::runPass(
+      std::shared_ptr<IsAffineIRHandle::Arg>(new IsAffineIRHandle::Arg(var)));
+  isAffine = PassRet::as<IsAffineIRHandle::Ret>(ret)->isAffine;
 }
 void AffineCheck::visitAccess(AccessHandle access) {
-  containsTensorExpr = false;
-
-  for (int i = 0; i < access->indices.size(); i++) {
-    isAffine = false;
-    this->visit(access->indices[i]);
-    if (!isAffine) return;
-    if (containsTensorExpr) {
-      isAffine = false;
-      return;
+  if (firstTimeEntering) {
+    firstTimeEntering = false;
+    for (int i = 0; i < access->indices.size(); i++) {
+      this->visit(access->indices[i]);
+      if (!isAffine) break;
     }
+    firstTimeEntering = true;
+  } else {
+    isAffine = false;
+    return;
   }
-  this->visit(access->tensor);
-  isAffine = true;
 }
 void AffineCheck::visitAssign(AssignmentHandle assign) {
-  isAffine = false;
+  firstTimeEntering = true;
   this->visit(assign->lhs);
+  firstTimeEntering = false;
   if (!isAffine) return;
-  isAffine = false;
+  firstTimeEntering = true;
   this->visit(assign->rhs);
+  firstTimeEntering = false;
   if (!isAffine) return;
-  isAffine = true;
 }
 void AffineCheck::visitTensor(TensorHandle tensor) {
+  /// Pass
   isAffine = true;
-  containsTensorExpr = true;
 }
 void AffineCheck::visitFor(ForHandle loop) {
-  isAffine = false;
-  this->visit(loop->looping_var_);
-  if (!isAffine) return;
+  {
+    auto ret = IsAffineIRHandle::runPass(std::shared_ptr<IsAffineIRHandle::Arg>(
+        new IsAffineIRHandle::Arg(loop->looping_var_.as<VarNode>()->min)));
+    isAffine = PassRet::as<IsAffineIRHandle::Ret>(ret)->isAffine;
+    if (!isAffine) return;
+    ret = IsAffineIRHandle::runPass(std::shared_ptr<IsAffineIRHandle::Arg>(
+        new IsAffineIRHandle::Arg(loop->looping_var_.as<VarNode>()->max)));
+    isAffine = PassRet::as<IsAffineIRHandle::Ret>(ret)->isAffine;
+    if (!isAffine) return;
+  }
+  {
+    auto ret = IsConstantIRHandle::runPass(
+        std::shared_ptr<IsConstantIRHandle::Arg>(new IsConstantIRHandle::Arg(
+            loop->looping_var_.as<VarNode>()->increment)));
+    isAffine = PassRet::as<IsConstantIRHandle::Ret>(ret)->isConstant;
+    if (!isAffine) return;
+  }
   for (int i = 0; i < loop->body.size(); i++) {
-    isAffine = false;
-    this->visit(loop->body[i]);
+    loop->body[i].accept(this);
     if (!isAffine) return;
   }
   isAffine = true;
@@ -98,8 +126,9 @@ void AffineCheck::visitFor(ForHandle loop) {
 void AffineCheck::visitConst(ConstHandle con) { isAffine = true; }
 
 void AffineCheck::visitPrint(PrintHandle print) {
-  // TODO: check the content being printed maybe.
-  isAffine = true;
+  auto ret = IsAffineIRHandle::runPass(std::shared_ptr<IsAffineIRHandle::Arg>(
+      new IsAffineIRHandle::Arg(print->print)));
+  isAffine = PassRet::as<IsAffineIRHandle::Ret>(ret)->isAffine;
 }
 
 void AffineCheck::visitFunc(FuncHandle func) {
@@ -109,4 +138,4 @@ void AffineCheck::visitFunc(FuncHandle func) {
   }
   isAffine = true;
 }
-}
+}  // namespace polly

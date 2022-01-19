@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:31:50 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:31:50 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:31:50
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-19 20:22:17
+ * @CopyRight: Qiming Zheng
  */
 
 #pragma once
@@ -14,28 +14,32 @@
 #include "ir/ir.h"
 #include "ir/ir_visitor.h"
 
+#include "constant_expr_check.h"
+#include "affine_expr_check.h"
+
 namespace polly {
 
+// AffineCheck checks whether a program is an affine program or not.
+// To be an legal affine program, all the loop bounds shoud be expressed as
+// affine expressions and the incremental amount should be constant number.
+// Array access expression in statements should be affine also.
 class AffineCheck : public IRVisitor, public Pass {
- public:
-  bool isAffine;
-  bool containsTensorExpr;
-
+ private:
   AffineCheck() {}
 
-  AffineCheck(IRHandle program)
-      : program_(program), containsTensorExpr(false) {}
-
-  PassRetHandle runPass(PassArgHandle arg) override {
-    IRHandle program = PassArg::as<Arg>(arg)->program;
-    program_ = program;
-    containsTensorExpr = false;
-
+  AffineCheck(IRHandle program) : program_(program), firstTimeEntering(false) {
     this->visit(program_);
     SetStatus(Pass::PassStatus::VALID);
-    auto ret = std::shared_ptr<Ret>(new Ret);
-    ret->isAffine = isAffine;
-    return ret;
+  }
+
+ public:
+  bool isAffine;
+
+  bool firstTimeEntering;
+
+  static PassRetHandle runPass(PassArgHandle arg) {
+    AffineCheck checker(PassArg::as<Arg>(arg)->program);
+    return Ret::create(checker.isAffine);
   }
 
   void visitInt(IntHandle int_expr) override;
@@ -61,6 +65,11 @@ class AffineCheck : public IRVisitor, public Pass {
 
   struct Ret : public PassRet {
     bool isAffine;
+    static PassRetHandle create(bool isAffine) {
+      auto ret = std::shared_ptr<Ret>(new Ret);
+      ret->isAffine = isAffine;
+      return ret;
+    }
   };
 
  private:

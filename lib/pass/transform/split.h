@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:30:39 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:30:39 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:30:39
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-19 18:26:13
+ * @CopyRight: Qiming Zheng
  */
 
 #pragma once
@@ -19,9 +19,14 @@ namespace polly {
 /// It can be proved that a split operation does not change the semantics of a
 /// program.
 class LoopSplit : public Pass, public IRVisitor {
+ private:
+  LoopSplit(IRHandle p, IRHandle l, int s)
+      : program_(p), loop_(l), splitFactor(s) {
+    searching_ = true;
+  }
+
  public:
-  LoopSplit() { searching_ = true; }
-  PassRetHandle runPass(PassArgHandle arg) override;
+  static PassRetHandle runPass(PassArgHandle arg);
 
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
@@ -46,9 +51,14 @@ class LoopSplit : public Pass, public IRVisitor {
     int splitFactor;
     Arg() {}
     Arg(IRHandle p, IRHandle l, int s) : program(p), loop(l), splitFactor(s) {}
+    static PassArgHandle create(IRHandle p, IRHandle l, int s) {
+      return std::shared_ptr<Arg>(new Arg(p, l, s));
+    }
   };
 
-  struct Ret : public PassRet {};
+  struct Ret : public PassRet {
+    static PassRetHandle create() { return std::shared_ptr<Ret>(new Ret); }
+  };
 
   IRHandle program_;
   IRHandle loop_;

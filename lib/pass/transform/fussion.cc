@@ -3,22 +3,10 @@
 namespace polly {
 
 PassRetHandle FussionTransform::runPass(PassArgHandle arg) {
-  searching_ = true;
-  program_ = PassArg::as<Arg>(arg)->program;
-  firstLoop = PassArg::as<Arg>(arg)->firstLoop;
-  secondLoop = PassArg::as<Arg>(arg)->secondLoop;
-
-  auto firstVar = firstLoop.as<ForNode>()->looping_var_.as<VarNode>();
-  auto secondVar = secondLoop.as<ForNode>()->looping_var_.as<VarNode>();
-
-  if (!(firstVar->min.equals(secondVar->min)) ||
-      !(firstVar->max.equals(secondVar->max)) ||
-      !(firstVar->increment.equals(secondVar->increment))) {
-    throw std::runtime_error("Cannot make fussion transformation");
-  }
-  program_.accept(this);
-  auto ret = std::shared_ptr<Ret>(new Ret);
-  return ret;
+  FussionTransform(PassArg::as<Arg>(arg)->program,
+                   PassArg::as<Arg>(arg)->firstLoop,
+                   PassArg::as<Arg>(arg)->secondLoop);
+  return Ret::create();
 }
 
 IRHandle FussionTransform::replace_if_match(IRHandle origin) {

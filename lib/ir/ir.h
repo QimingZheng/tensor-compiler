@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:32:50 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:32:50 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:32:50
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-19 15:53:10
+ * @CopyRight: Qiming Zheng
  */
 #pragma once
 
@@ -118,8 +118,8 @@ class IRHandle {
     return std::static_pointer_cast<T>(ptr_);
   }
 
-  bool operator!=(const IRHandle &other) { return !equals(other); }
-  bool operator==(const IRHandle &other) { return equals(other); }
+  bool operator!=(const IRHandle &other) const { return !equals(other); }
+  bool operator==(const IRHandle &other) const { return equals(other); }
 
   mutable std::shared_ptr<IRNode> ptr_;
 
@@ -131,13 +131,20 @@ class IRHandle {
     return ptr_->equals(other.GetRaw());
   }
 
-  /// Clone this IRNode
+  /// Clone this IRNode Recursively
   /// Used by the IRModule
   IRHandle clone(std::map<std::string, IRHandle> &irHandleDict);
 
   IRNodeType Type() const { return ptr_->Type(); }
 
   void accept(IRVisitor *visitor);
+};
+
+// hash function for IRHandles
+class IRHandleHash {
+ public:
+  // id is returned as hash function
+  size_t operator()(const IRHandle &t) const { return t.Type(); }
 };
 
 static const IRHandle NullIRHandle = IRHandle();

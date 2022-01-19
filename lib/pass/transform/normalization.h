@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:31:00 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:31:00 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:31:00
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-19 20:27:59
+ * @CopyRight: Qiming Zheng
  */
 #pragma once
 
@@ -19,10 +19,11 @@ namespace polly {
 /// Including:
 ///     1. Make the incremental amount always equal to 1.
 class NormalizationPass : public Pass, public IRVisitor {
- public:
-  NormalizationPass() {}
+ private:
+  NormalizationPass(IRHandle p) : program_(p) { program_.accept(this); }
 
-  PassRetHandle runPass(PassArgHandle arg) override;
+ public:
+  static PassRetHandle runPass(PassArgHandle arg);
 
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
@@ -57,7 +58,9 @@ class NormalizationPass : public Pass, public IRVisitor {
     Arg(IRHandle p) : program(p) {}
   };
 
-  struct Ret : public PassRet {};
+  struct Ret : public PassRet {
+    static PassRetHandle create() { return std::shared_ptr<Ret>(new Ret); }
+  };
 
   IRHandle program_;
 };

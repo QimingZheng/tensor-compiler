@@ -101,9 +101,7 @@ int main() {
 
     IRHandle first_loop = prog.module_.GetLoop(I);
     IRHandle second_loop = prog.module_.GetLoop(J);
-    FussionTransform fuss;
-
-    fuss.runPass(
+    FussionTransform::runPass(
         std::shared_ptr<FussionTransform::Arg>(new FussionTransform::Arg(
             prog.module_.GetRoot(), first_loop, second_loop)));
 
@@ -118,12 +116,12 @@ int main() {
     std::cout << "==============\n";
     DataDependencyModel dep(ctx, transformedModel);
 
-    PolyhedralAnalysisPass analysis;
-    auto ret = analysis.runPass(std::shared_ptr<PolyhedralAnalysisPass::Arg>(
-        new PolyhedralAnalysisPass::Arg(
-            ctx, ori, transformed,
-            DataDependencyModel::CreateFussionTransformMap(ctx, oriModel,
-                                                           transformedModel))));
+    auto ret = PolyhedralAnalysisPass::runPass(
+        std::shared_ptr<PolyhedralAnalysisPass::Arg>(
+            new PolyhedralAnalysisPass::Arg(
+                ctx, ori, transformed,
+                DataDependencyModel::CreateFussionTransformMap(
+                    ctx, oriModel, transformedModel))));
     std::cout << PassRet::as<PolyhedralAnalysisPass::Ret>(ret)->hasConflicts
               << std::endl;
   }
@@ -156,10 +154,9 @@ int main() {
 
     std::cout << "==============\n";
     IRHandle loop = prog.module_.GetLoop(I);
-    FissionTransform fiss;
 
     std::cout << "==============\n";
-    fiss.runPass(std::shared_ptr<FissionTransform::Arg>(
+    FissionTransform::runPass(std::shared_ptr<FissionTransform::Arg>(
         new FissionTransform::Arg(prog.module_.GetRoot(), loop)));
 
     std::cout << "==============\n";
@@ -173,14 +170,29 @@ int main() {
     std::cout << "==============\n";
     DataDependencyModel dep(ctx, transformedModel);
 
-    PolyhedralAnalysisPass analysis;
-    auto ret = analysis.runPass(std::shared_ptr<PolyhedralAnalysisPass::Arg>(
-        new PolyhedralAnalysisPass::Arg(
-            ctx, ori, transformed,
-            DataDependencyModel::CreateFussionTransformMap(ctx, oriModel,
-                                                           transformedModel))));
+    auto ret = PolyhedralAnalysisPass::runPass(
+        std::shared_ptr<PolyhedralAnalysisPass::Arg>(
+            new PolyhedralAnalysisPass::Arg(
+                ctx, ori, transformed,
+                DataDependencyModel::CreateFussionTransformMap(
+                    ctx, oriModel, transformedModel))));
     std::cout << PassRet::as<PolyhedralAnalysisPass::Ret>(ret)->hasConflicts
               << std::endl;
+  }
+
+  {
+    Program prog;
+    Tensor A({1024});
+    {
+      Variable i(1, 1024, 1);
+      A(i) = i + 2 - 0 * A(i - 0);
+    }
+    auto nodes = prog.module_.GetIRNodes();
+    std::cout << (nodes.find(IntNode::make(0)) == nodes.end()) << "\n";
+    std::cout << (nodes.find(IntNode::make(2)) == nodes.end()) << "\n";
+    ConstantFoldingPass::runPass(std::shared_ptr<ConstantFoldingPass::Arg>(
+        new ConstantFoldingPass::Arg(prog.module_.GetRoot())));
+    prog.GenerateC();
   }
   return 0;
 }

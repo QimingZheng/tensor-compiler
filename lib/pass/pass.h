@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:30:24 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:30:24 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:30:24
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-19 16:27:12
+ * @CopyRight: Qiming Zheng
  */
 #pragma once
 
@@ -47,7 +47,7 @@ class Pass {
 
   Pass() : status_(PassStatus::INVALID) {}
 
-  virtual PassRetHandle runPass(PassArgHandle) = 0;
+  // virtual PassRetHandle runPass(PassArgHandle) = 0;
 
   const PassStatus Status() const { return status_; }
   void SetStatus(PassStatus status) { status_ = status; }

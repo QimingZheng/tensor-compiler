@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:31:03 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:31:03 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:31:03
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-19 20:04:03
+ * @CopyRight: Qiming Zheng
  */
 #pragma once
 
@@ -16,16 +16,26 @@
 namespace polly {
 
 class FussionTransform : public Pass, public IRVisitor {
- public:
-  constexpr static PassKey id = FussionPassID;
-
+ private:
   FussionTransform() {}
   FussionTransform(IRHandle program, IRHandle first, IRHandle second)
       : program_(program), firstLoop(first), secondLoop(second) {
     searching_ = true;
+    auto firstVar = firstLoop.as<ForNode>()->looping_var_.as<VarNode>();
+    auto secondVar = secondLoop.as<ForNode>()->looping_var_.as<VarNode>();
+
+    if (!(firstVar->min.equals(secondVar->min)) ||
+        !(firstVar->max.equals(secondVar->max)) ||
+        !(firstVar->increment.equals(secondVar->increment))) {
+      throw std::runtime_error("Cannot make fussion transformation");
+    }
+    program_.accept(this);
   }
 
-  PassRetHandle runPass(PassArgHandle arg) override;
+ public:
+  constexpr static PassKey id = FussionPassID;
+
+  static PassRetHandle runPass(PassArgHandle arg);
 
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
@@ -58,7 +68,9 @@ class FussionTransform : public Pass, public IRVisitor {
     Arg(IRHandle program, IRHandle firstLoop, IRHandle secondLoop)
         : program(program), firstLoop(firstLoop), secondLoop(secondLoop) {}
   };
-  struct Ret : public PassRet {};
+  struct Ret : public PassRet {
+    static PassRetHandle create() { return std::shared_ptr<Ret>(new Ret); }
+  };
 };
 
 }  // namespace polly

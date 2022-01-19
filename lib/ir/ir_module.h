@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:32:39 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:32:39 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:32:39
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-19 20:28:45
+ * @CopyRight: Qiming Zheng
  */
 #pragma once
 
@@ -76,6 +76,9 @@ class IRModule {
   IRHandle& GetRoot() { return root_; }
   std::vector<IRHandle>& GetTensors() { return tensors_; }
 
+  /// Extract all IRNodes from a program.
+  std::unordered_set<IRHandle, IRHandleHash> GetIRNodes();
+
   bool Reorder(const std::string i, const std::string j);
   bool Fuse(const std::string i, const std::string j, const std::string fuse);
   // Divide the i loop into `tiles` tiles.
@@ -109,9 +112,9 @@ class IRModule {
     auto rng = std::default_random_engine{rand()};
     std::shuffle(divisors.begin(), divisors.end(), rng);
     for (auto i : divisors) {
-      DivisibleBoundaryCheck checker;
-      auto ret = checker.runPass(std::shared_ptr<DivisibleBoundaryCheck::Arg>(
-          new DivisibleBoundaryCheck::Arg(GetLoop(splitAxis), i)));
+      auto ret = DivisibleBoundaryCheck::runPass(
+          std::shared_ptr<DivisibleBoundaryCheck::Arg>(
+              new DivisibleBoundaryCheck::Arg(GetLoop(splitAxis), i)));
       if (!PassRet::as<DivisibleBoundaryCheck::Ret>(ret)->isDivisibleBoundary)
         continue;
       IRHandle tiles = IntNode::make(i);

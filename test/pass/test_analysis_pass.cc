@@ -50,6 +50,7 @@ TEST(POLYHEDRAL_ANALYSIS_PASS, DATA_DEPENDENCY_MODEL) {
     for (auto st : model.statements_) {
       std::cout << st.DbgMsg();
     }
-    DataDependencyModel dep(model);
+    solver::context ctx;
+    DataDependencyModel dep(ctx, model);
   }
 }

@@ -4,11 +4,8 @@
 
 namespace polly {
 
-PassRetHandle LoopReorder::runPass(PassArgHandle arg) {
-  program_ = PassArg::as<Arg>(arg)->program;
-  i_loop_ = PassArg::as<Arg>(arg)->i_loop;
-  j_loop_ = PassArg::as<Arg>(arg)->j_loop;
-
+LoopReorder::LoopReorder(IRHandle program, IRHandle i_loop, IRHandle j_loop)
+    : program_(program), i_loop_(i_loop), j_loop_(j_loop) {
   modeling_ = true;
   ith_ = -1;
   ith_ = -1;
@@ -42,7 +39,12 @@ PassRetHandle LoopReorder::runPass(PassArgHandle arg) {
   rb.GetReorderedBound(loop_vars, extractedIters, ith_, jth_);
   modeling_ = false;
   program_.accept(this);
-  return std::shared_ptr<Ret>(new Ret);
+}
+
+PassRetHandle LoopReorder::runPass(PassArgHandle arg) {
+  LoopReorder(PassArg::as<Arg>(arg)->program, PassArg::as<Arg>(arg)->i_loop,
+              PassArg::as<Arg>(arg)->j_loop);
+  return Ret::create();
 }
 
 void LoopReorder::visitFor(ForHandle loop) {

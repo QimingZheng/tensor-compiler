@@ -71,6 +71,7 @@ class Tensor : public Expr {
   }
 };
 
+/// TODO: Should not be exposed to users.
 class Constant : public Expr {
  public:
   std::string name;

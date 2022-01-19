@@ -9,13 +9,10 @@
 namespace polly {
 
 PassRetHandle LoopSplit::runPass(PassArgHandle arg) {
-  searching_ = true;
-  program_ = PassArg::as<Arg>(arg)->program;
-  loop_ = PassArg::as<Arg>(arg)->loop;
-  splitFactor = PassArg::as<Arg>(arg)->splitFactor;
-  this->loop_.accept(this);
-  auto ret = std::shared_ptr<Ret>(new Ret);
-  return ret;
+  LoopSplit split(PassArg::as<Arg>(arg)->program, PassArg::as<Arg>(arg)->loop,
+                  PassArg::as<Arg>(arg)->splitFactor);
+  split.visit(split.loop_);
+  return Ret::create();
 }
 
 IRHandle LoopSplit::replace_with(IRHandle node) {

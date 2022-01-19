@@ -262,8 +262,7 @@ bool IRModule::Split(const std::string i, IRHandle tiles,
 }
 
 bool IRModule::Unroll() {
-  LoopUnroll unroll;
-  unroll.runPass(
+  LoopUnroll::runPass(
       std::shared_ptr<LoopUnroll::Arg>(new LoopUnroll::Arg(GetRoot())));
 }
 
@@ -304,6 +303,24 @@ IRHandle IRModule::find_loop_var(const std::string loop_var_id) {
     }
   }
   return NullIRHandle;
+}
+
+class GetIRNodesHelper : public IRRecursiveVisitor {
+ public:
+  std::unordered_set<IRHandle, IRHandleHash> dict;
+
+  void enter(IRHandle handle) override {
+    dict.insert(handle);
+    return;
+  }
+};
+
+std::unordered_set<IRHandle, IRHandleHash> IRModule::GetIRNodes() {
+  std::unordered_set<IRHandle, IRHandleHash> ret;
+  GetIRNodesHelper helper;
+  helper.visit(GetRoot());
+  ret = helper.dict;
+  return ret;
 }
 
 }  // namespace polly

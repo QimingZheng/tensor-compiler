@@ -23,24 +23,13 @@ cc_binary(
         "//lib:polly",
     ],
 )
-
 cc_test(
-    name="check_pass_test",
+    name="pass",
     srcs=[
-        "test_check_pass.cc",
-    ],
-    deps=[
-        "//lib:polly",
-        "@gtest//:gtest",
-        "@gtest//:gtest_main",
-        "@isl//:isl",
-    ],
-)
-
-cc_test(
-    name = "analysis_pass_test",
-    srcs = [
-        "test_analysis_pass.cc",
+        "pass/test_check_pass.cc",
+        "pass/test_analysis_pass.cc",
+        "pass/test_optimization_pass.cc",
+        "pass/test_transform_pass.cc",
     ],
     deps=[
         "//lib:polly",

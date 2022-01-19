@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:30:32 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:30:32 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:30:32
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-19 19:50:27
+ * @CopyRight: Qiming Zheng
  */
 #pragma once
 
@@ -17,18 +17,18 @@ namespace polly {
 
 /// Before unrolling a loop, check its boundary is contant first.
 class LoopUnroll : public Pass, public IRVisitor {
- public:
-  constexpr static PassKey id = UnrollPassID;
-
+ private:
   LoopUnroll() {}
 
   LoopUnroll(IRHandle program) : program_(program) {}
 
-  PassRetHandle runPass(PassArgHandle arg) override {
-    program_ = PassArg::as<Arg>(arg)->program;
-    this->visit(program_);
+ public:
+  constexpr static PassKey id = UnrollPassID;
 
-    auto ret = std::shared_ptr<Ret>(new Ret);
+  static PassRetHandle runPass(PassArgHandle arg) {
+    LoopUnroll unroll(PassArg::as<Arg>(arg)->program);
+    unroll.visit(unroll.program_);
+    auto ret = Ret::create();
     return ret;
   }
 
@@ -51,8 +51,13 @@ class LoopUnroll : public Pass, public IRVisitor {
     IRHandle program;
     Arg() {}
     Arg(IRHandle p) : program(p) {}
+    static PassArgHandle create(IRHandle p) {
+      return std::shared_ptr<Arg>(new Arg(p));
+    }
   };
-  struct Ret : public PassRet {};
+  struct Ret : public PassRet {
+    static PassRetHandle create() { return std::shared_ptr<Ret>(new Ret); }
+  };
 
  private:
   IRHandle replaceVarWithInt(IRHandle node, IRHandle var, IRHandle int_expr);

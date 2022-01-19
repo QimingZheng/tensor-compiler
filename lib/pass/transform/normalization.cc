@@ -3,9 +3,8 @@
 namespace polly {
 
 PassRetHandle NormalizationPass::runPass(PassArgHandle arg) {
-  program_ = PassArg::as<Arg>(arg)->program;
-  program_.accept(this);
-  return std::shared_ptr<Ret>(new Ret);
+  NormalizationPass(PassArg::as<Arg>(arg)->program);
+  return Ret::create();
 }
 
 class NormalizationHelper : public IRVisitor {

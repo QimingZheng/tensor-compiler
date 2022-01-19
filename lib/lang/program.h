@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:32:24 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:32:24 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:32:24
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-19 20:34:16
+ * @CopyRight: Qiming Zheng
  */
 #pragma once
 
@@ -171,31 +171,29 @@ class Program {
   }
 
   bool IsAffineProgram() {
-    AffineCheck check;
-    auto ret = check.runPass(std::shared_ptr<AffineCheck::Arg>(
+    auto ret = AffineCheck::runPass(std::shared_ptr<AffineCheck::Arg>(
         new AffineCheck::Arg(module_.GetRoot())));
     return PassRet::as<AffineCheck::Ret>(ret)->isAffine;
   }
 
   bool IsConstantBoundary() {
-    ConstantBoundaryCheck checker;
-    auto ret = checker.runPass(std::shared_ptr<ConstantBoundaryCheck::Arg>(
-        new ConstantBoundaryCheck::Arg(module_.GetRoot())));
+    auto ret = ConstantBoundaryCheck::runPass(
+        std::shared_ptr<ConstantBoundaryCheck::Arg>(
+            new ConstantBoundaryCheck::Arg(module_.GetRoot())));
     return PassRet::as<ConstantBoundaryCheck::Ret>(ret)->isConstantBoundary;
   }
 
   bool IsBoundaryDivisible(std::string i, int divisor) {
     auto loop = module_.GetLoop(i);
     assert(loop != NullIRHandle);
-    DivisibleBoundaryCheck checker;
-    auto ret = checker.runPass(std::shared_ptr<DivisibleBoundaryCheck::Arg>(
-        new DivisibleBoundaryCheck::Arg(loop, divisor)));
+    auto ret = DivisibleBoundaryCheck::runPass(
+        std::shared_ptr<DivisibleBoundaryCheck::Arg>(
+            new DivisibleBoundaryCheck::Arg(loop, divisor)));
     return PassRet::as<DivisibleBoundaryCheck::Ret>(ret)->isDivisibleBoundary;
   }
 
   void GenerateC() {
-    ConstantFoldingPass confold;
-    confold.runPass(std::shared_ptr<ConstantFoldingPass::Arg>(
+    ConstantFoldingPass::runPass(std::shared_ptr<ConstantFoldingPass::Arg>(
         new ConstantFoldingPass::Arg(module_.GetRoot())));
     CodeGenC codegen(std::cout);
     codegen.genCode(module_.GetRoot(), module_.GetTensors());

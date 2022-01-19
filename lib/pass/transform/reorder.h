@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:30:44 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:30:44 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:30:44
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-19 20:37:44
+ * @CopyRight: Qiming Zheng
  */
 
 #pragma once
@@ -17,10 +17,11 @@
 namespace polly {
 
 class LoopReorder : public Pass, public IRSimpleVisitor {
- public:
-  LoopReorder() {}
+ private:
+  LoopReorder(IRHandle program, IRHandle i_loop, IRHandle j_loop);
 
-  PassRetHandle runPass(PassArgHandle arg) override;
+ public:
+  static PassRetHandle runPass(PassArgHandle arg);
 
   void visitFor(ForHandle loop) override;
   void visitFunc(FuncHandle func) override;
@@ -33,9 +34,14 @@ class LoopReorder : public Pass, public IRSimpleVisitor {
     Arg() {}
     Arg(IRHandle program, IRHandle i_loop, IRHandle j_loop)
         : program(program), i_loop(i_loop), j_loop(j_loop) {}
+    static PassArgHandle create(IRHandle p, IRHandle i, IRHandle j) {
+      return std::shared_ptr<Arg>(new Arg(p, i, j));
+    }
   };
 
-  struct Ret : public PassRet {};
+  struct Ret : public PassRet {
+    static PassRetHandle create() { return std::shared_ptr<Ret>(new Ret); }
+  };
 
   IRHandle program_;
   IRHandle i_loop_;
