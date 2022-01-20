@@ -418,10 +418,56 @@ class FuncNode : public IRNode {
   }
 };
 
-// TODO: Complete the negate node.
-class NegateNode : public IRNode {
+// TODO: Complete the unary node.
+class UnaryNode : public IRNode {
  public:
-  IRHandle negate;
+  IRHandle node;
 };
+
+// TODO: Complete the negate node.
+class NegateNode : public UnaryNode {
+ public:
+};
+
+// sin(x)
+class SinNode : public UnaryNode {};
+// cos(x)
+class CosNode : public UnaryNode {};
+// tan(x)
+class TanNode : public UnaryNode {};
+// exp(x)
+class ExpNode : public UnaryNode {};
+// abs(x)
+class AbsNode : public UnaryNode {};
+// sign(x)
+class SignNode : public UnaryNode {};
+// sqrt(x)
+class SqrtNode : public UnaryNode {};
+
+// min(a, b)
+class MinNode : public BinaryNode {};
+// max(a, b)
+class MaxNode : public BinaryNode {};
+// >=
+class GeNode : public BinaryNode {};
+// <=
+class LeNode : public BinaryNode {};
+// >
+class GtNode : public BinaryNode {};
+// <
+class LtNode : public BinaryNode {};
+// ==
+class EqNode : public BinaryNode {};
+// !=
+class NeqNode : public BinaryNode {};
+
+class SIMDLoad : public UnaryNode {};
+
+class SIMDStore : public UnaryNode {};
+
+class SIMDAdd : public BinaryNode {};
+class SIMDSub : public BinaryNode {};
+class SIMDMul : public BinaryNode {};
+class SIMDDiv : public BinaryNode {};
 
 }  // namespace polly

@@ -11,7 +11,6 @@ namespace polly {
 PassRetHandle LoopSplit::runPass(PassArgHandle arg) {
   LoopSplit split(PassArg::as<Arg>(arg)->program, PassArg::as<Arg>(arg)->loop,
                   PassArg::as<Arg>(arg)->splitFactor);
-  split.visit(split.loop_);
   return Ret::create();
 }
 
@@ -163,26 +162,19 @@ void LoopSplit::visitFunc(FuncHandle func) {
               IntNode::make(splitFactor)),
           IntNode::make(1));
       auto outter_loop = ForNode::make(outter_loop_var);
-
       auto inner_loop_var = VarNode::make(
           "i" + IRNodeKeyGen::GetInstance()->yield(), IntNode::make(0),
           IntNode::make(splitFactor), IntNode::make(1));
       auto inner_loop = ForNode::make(inner_loop_var);
-
       outter_loop.as<ForNode>()->Insert(inner_loop);
-
       replace_ = AddNode::make(
           MulNode::make(outter_loop_var, IntNode::make(splitFactor)),
           inner_loop_var);
-
       func->body[i].accept(this);
-
       for (int j = 0; j < func->body[i].as<ForNode>()->body.size(); j++) {
         inner_loop.as<ForNode>()->Insert(func->body[i].as<ForNode>()->body[j]);
       }
-
       func->body[i] = outter_loop;
-
       break;
     }
   }

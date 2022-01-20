@@ -23,6 +23,7 @@ class LoopSplit : public Pass, public IRVisitor {
   LoopSplit(IRHandle p, IRHandle l, int s)
       : program_(p), loop_(l), splitFactor(s) {
     searching_ = true;
+    program_.accept(this);
   }
 
  public:

@@ -154,7 +154,28 @@ TEST(TRANSFORM_PASS, REORDER) {
   }
 }
 
-TEST(TRANSFORM_PASS, SPLIT) {}
+TEST(TRANSFORM_PASS, SPLIT) {
+  {
+    Program prog;
+    Tensor A({1024});
+    IRNodeKey I;
+    {
+      Variable i(0, 16, 1);
+      I = i.id;
+      A(i) = i + A(i);
+    }
+    auto i_loop = prog.module_.GetLoop(I);
+    LoopSplit::runPass(
+        LoopSplit::Arg::create(prog.module_.GetRoot(), i_loop, 4));
+    EXPECT_EQ(prog.module_.GetRoot()
+                  .as<FuncNode>()
+                  ->body[0]
+                  .as<ForNode>()
+                  ->body[0]
+                  .Type(),
+              IRNodeType::FOR);
+  }
+}
 
 TEST(TRANSFORM_PASS, UNROLL) {
   {

@@ -7,6 +7,7 @@
 #include "pass/transform/fussion.h"
 #include "pass/transform/normalization.h"
 #include "pass/transform/reorder.h"
+#include "pass/transform/split.h"
 
 using namespace polly;
 
@@ -219,6 +220,20 @@ int main() {
     LoopReorder::runPass(LoopReorder::Arg::create(root, i_loop, j_loop));
     ConstantFoldingPass::runPass(
         ConstantFoldingPass::Arg::create(prog.module_.GetRoot()));
+    prog.GenerateC();
+  }
+  {
+    Program prog;
+    Tensor A({1024});
+    IRNodeKey I;
+    {
+      Variable i(0, 16, 1);
+      I = i.id;
+      A(i) = i + A(i);
+    }
+    auto i_loop = prog.module_.GetLoop(I);
+    LoopSplit::runPass(
+        LoopSplit::Arg::create(prog.module_.GetRoot(), i_loop, 4));
     prog.GenerateC();
   }
   return 0;
