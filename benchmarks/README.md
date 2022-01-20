@@ -1,4 +1,4 @@
-# Testing Cases
+# Benchmarks
 
 Samples programs are categorized according to their domains:
 
@@ -144,7 +144,12 @@ for (i: 0 -> N) {
     O(i) = O(i) / sum
 }
 ```
-
+**Pooling**
+```c++
+```
+**Batch Norm**
+```c++
+```
 ## Scientific Computation
 **2D Stencil**
 ```c++

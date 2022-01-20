@@ -3,7 +3,7 @@
  * @Author: Qiming Zheng
  * @Date: 2022-01-18 20:32:50
  * @Last Modified by: Qiming Zheng
- * @Last Modified time: 2022-01-19 15:53:10
+ * @Last Modified time: 2022-01-19 21:49:23
  * @CopyRight: Qiming Zheng
  */
 #pragma once
@@ -149,92 +149,91 @@ class IRHandleHash {
 
 static const IRHandle NullIRHandle = IRHandle();
 
-class AddNode : public IRNode {
+class BinaryNode : public IRNode {
+ public:
+  IRHandle lhs, rhs;
+
+  template <typename T>
+  bool equals(const IRNode *other) {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return lhs.equals(static_cast<const T *>(other)->lhs) &&
+           rhs.equals(static_cast<const T *>(other)->rhs);
+  }
+};
+
+class AddNode : public BinaryNode {
  private:
   AddNode() {}
 
  public:
-  IRHandle lhs, rhs;
+  // IRHandle lhs, rhs;
 
   static IRHandle make(IRHandle lhs, IRHandle rhs);
 
   bool equals(const IRNode *other) override {
-    if (other == nullptr) return false;
-    if (Type() != other->Type()) return false;
-    return lhs.equals(static_cast<const AddNode *>(other)->lhs) &&
-           rhs.equals(static_cast<const AddNode *>(other)->rhs);
+    return BinaryNode::equals<AddNode>(other);
   }
 
   IRNodeType Type() const override { return IRNodeType::ADD; }
 };
 
-class SubNode : public IRNode {
+class SubNode : public BinaryNode {
  private:
   SubNode() {}
 
  public:
-  IRHandle lhs, rhs;
+  // IRHandle lhs, rhs;
 
   static IRHandle make(IRHandle lhs, IRHandle rhs);
 
   bool equals(const IRNode *other) override {
-    if (other == nullptr) return false;
-    if (Type() != other->Type()) return false;
-    return lhs.equals(static_cast<const SubNode *>(other)->lhs) &&
-           rhs.equals(static_cast<const SubNode *>(other)->rhs);
+    return BinaryNode::equals<SubNode>(other);
   }
 
   IRNodeType Type() const override { return IRNodeType::SUB; }
 };
 
-class MulNode : public IRNode {
+class MulNode : public BinaryNode {
  private:
   MulNode() {}
 
  public:
-  IRHandle lhs, rhs;
+  // IRHandle lhs, rhs;
   static IRHandle make(IRHandle lhs, IRHandle rhs);
 
   IRNodeType Type() const override { return IRNodeType::MUL; }
   bool equals(const IRNode *other) override {
-    if (other == nullptr) return false;
-    if (Type() != other->Type()) return false;
-    return lhs.equals(static_cast<const MulNode *>(other)->lhs) &&
-           rhs.equals(static_cast<const MulNode *>(other)->rhs);
+    return BinaryNode::equals<MulNode>(other);
   }
 };
 
-class DivNode : public IRNode {
+class DivNode : public BinaryNode {
  private:
   DivNode() {}
 
  public:
-  IRHandle lhs, rhs;
+  // IRHandle lhs, rhs;
   static IRHandle make(IRHandle lhs, IRHandle rhs);
 
   IRNodeType Type() const override { return IRNodeType::DIV; }
   bool equals(const IRNode *other) override {
-    if (other == nullptr) return false;
-    if (Type() != other->Type()) return false;
-    return lhs.equals(static_cast<const DivNode *>(other)->lhs) &&
-           rhs.equals(static_cast<const DivNode *>(other)->rhs);
+    return BinaryNode::equals<DivNode>(other);
   }
 };
 
-class ModNode : public IRNode {
+class ModNode : public BinaryNode {
  private:
   ModNode() {}
 
  public:
-  IRHandle lhs, rhs;
+  // IRHandle lhs, rhs;
   static IRHandle make(IRHandle lhs, IRHandle rhs);
 
   IRNodeType Type() const override { return IRNodeType::MOD; }
+
   bool equals(const IRNode *other) override {
-    if (other == nullptr) return false;
-    if (Type() != other->Type()) return false;
-    return lhs.equals(static_cast<const ModNode *>(other)->lhs) &&
-           rhs.equals(static_cast<const ModNode *>(other)->rhs);
+    return BinaryNode::equals<ModNode>(other);
   }
 };
 
@@ -417,6 +416,12 @@ class FuncNode : public IRNode {
     }
     return true;
   }
+};
+
+// TODO: Complete the negate node.
+class NegateNode : public IRNode {
+ public:
+  IRHandle negate;
 };
 
 }  // namespace polly

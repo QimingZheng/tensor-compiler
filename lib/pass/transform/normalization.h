@@ -41,12 +41,17 @@ class NormalizationPass : public Pass, public IRVisitor {
   void visitFunc(FuncHandle func) override;
 
   bool isNormalized(IRHandle var) {
+    assert(var.Type() == IRNodeType::VAR);
+
     IRHandle min = var.as<VarNode>()->min;
     IRHandle max = var.as<VarNode>()->max;
     IRHandle increment = var.as<VarNode>()->increment;
-    if (increment.Type() != IRNodeType::INT) {
+
+    if (min != IntNode::make(0)) {
       return false;
-    } else if (increment.as<IntNode>()->value != 1) {
+    }
+
+    if (increment != IntNode::make(1)) {
       return false;
     }
     return true;
@@ -56,6 +61,9 @@ class NormalizationPass : public Pass, public IRVisitor {
     IRHandle program;
     Arg() {}
     Arg(IRHandle p) : program(p) {}
+    static PassArgHandle create(IRHandle program) {
+      return std::shared_ptr<Arg>(new Arg(program));
+    }
   };
 
   struct Ret : public PassRet {

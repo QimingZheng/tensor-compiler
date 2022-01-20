@@ -45,7 +45,6 @@ std::vector<constraint> IterSet::GetUpperBounds(std::string loop) {
   std::vector<constraint> ret;
   constraint_list lst = GetBounds(loop);
   int sz = lst.size();
-  std::vector<int> to_drop;
   for (int i = 0; i < sz; i++) {
     constraint c = lst.at(i);
     if (c.is_equality()) {
@@ -63,7 +62,6 @@ std::vector<constraint> IterSet::GetLowerBounds(std::string loop) {
   std::vector<constraint> ret;
   constraint_list lst = GetBounds(loop);
   int sz = lst.size();
-  std::vector<int> to_drop;
   for (int i = 0; i < sz; i++) {
     constraint c = lst.at(i);
     if (c.is_equality()) {

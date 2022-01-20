@@ -8,7 +8,7 @@ LoopReorder::LoopReorder(IRHandle program, IRHandle i_loop, IRHandle j_loop)
     : program_(program), i_loop_(i_loop), j_loop_(j_loop) {
   modeling_ = true;
   ith_ = -1;
-  ith_ = -1;
+  jth_ = -1;
   loop_vars_.clear();
 
   PolyhedralModel model = PolyhedralExtraction(program_).model;
@@ -25,14 +25,13 @@ LoopReorder::LoopReorder(IRHandle program, IRHandle i_loop, IRHandle j_loop)
         found_j = true;
       }
       if (found_i && found_j) {
-        extractedIters =
-            std::vector<Iteration>(iterations.begin(), iterations.begin() + j);
+        extractedIters = std::vector<Iteration>(iterations.begin(),
+                                                iterations.begin() + j + 1);
         break;
       }
     }
     if (found_i && found_j) break;
   }
-
   program_.accept(this);
   loop_vars = loop_vars_;
   ReorderedBounds rb;
@@ -72,6 +71,8 @@ void LoopReorder::visitFor(ForHandle loop) {
       }
       loop->body[i].accept(this);
     }
+    if (ith_ >= 0 && jth_ >= 0) return;
+    loop_vars_.pop_back();
   }
 }
 

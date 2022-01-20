@@ -67,6 +67,10 @@ class FussionTransform : public Pass, public IRVisitor {
     Arg() {}
     Arg(IRHandle program, IRHandle firstLoop, IRHandle secondLoop)
         : program(program), firstLoop(firstLoop), secondLoop(secondLoop) {}
+    static PassArgHandle create(IRHandle program, IRHandle firstLoop,
+                                IRHandle secondLoop) {
+      return std::shared_ptr<Arg>(new Arg(program, firstLoop, secondLoop));
+    }
   };
   struct Ret : public PassRet {
     static PassRetHandle create() { return std::shared_ptr<Ret>(new Ret); }

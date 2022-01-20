@@ -148,6 +148,7 @@ void NormalizationPass::visitFor(ForHandle loop) {
             AddNode::make(MulNode::make(var.as<VarNode>()->increment, newVar),
                           var.as<VarNode>()->min));
       }
+      loop->body[i].accept(this);
     }
   }
 }
@@ -181,6 +182,7 @@ void NormalizationPass::visitFunc(FuncHandle func) {
             AddNode::make(MulNode::make(var.as<VarNode>()->increment, newVar),
                           var.as<VarNode>()->min));
       }
+      func->body[i].accept(this);
     }
   }
 }

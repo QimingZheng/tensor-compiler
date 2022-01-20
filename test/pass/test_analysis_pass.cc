@@ -25,9 +25,9 @@ TEST(POLYHEDRAL_ANALYSIS_PASS, MODEL_EXTRACTION) {
     }
     PolyhedralExtraction extraction(prog.module_.GetRoot());
     PolyhedralModel model = extraction.model;
-    for (auto st : model.statements_) {
-      std::cout << st.DbgMsg();
-    }
+    // for (auto st : model.statements_) {
+    //   std::cout << st.DbgMsg();
+    // }
   }
 }
 
@@ -47,9 +47,9 @@ TEST(POLYHEDRAL_ANALYSIS_PASS, DATA_DEPENDENCY_MODEL) {
     }
     PolyhedralExtraction extraction(prog.module_.GetRoot());
     PolyhedralModel model = extraction.model;
-    for (auto st : model.statements_) {
-      std::cout << st.DbgMsg();
-    }
+    // for (auto st : model.statements_) {
+    //   std::cout << st.DbgMsg();
+    // }
     solver::context ctx;
     DataDependencyModel dep(ctx, model);
   }

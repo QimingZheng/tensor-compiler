@@ -24,8 +24,8 @@ class ConstantFoldingPass : public Pass, public IRVisitor {
   ConstantFoldingPass(IRHandle program) : program_(program) {
     folded = true;
     while (folded) {
-      this->program_.accept(this);
       folded = false;
+      this->program_.accept(this);
     }
   }
 
@@ -64,6 +64,9 @@ class ConstantFoldingPass : public Pass, public IRVisitor {
     IRHandle program;
     Arg() {}
     Arg(IRHandle p) : program(p) {}
+    static PassArgHandle create(IRHandle program) {
+      return std::shared_ptr<Arg>(new Arg(program));
+    }
   };
 
   struct Ret : public PassRet {

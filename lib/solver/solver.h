@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:30:14 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:30:14 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:30:14
+ * @Last Modified by:   Qiming Zheng
+ * @Last Modified time: 2022-01-18 20:30:14
+ * @CopyRight: Qiming Zheng
  */
 
 #pragma once
@@ -31,6 +31,13 @@ class IterSet {
   }
 
  public:
+  IterSet(const IterSet &other) {
+    domain_ = other.domain_.copy();
+    spc = other.spc.copy();
+    name = other.name;
+    nestings = other.nestings;
+  }
+
   // name: point set identifier.
   // dim_names: name of each dimensions.
   IterSet(const context &ctx, const std::string &name,
@@ -44,7 +51,10 @@ class IterSet {
     domain_ = basic_set::universe(spc);
   }
 
-  void add_constraint(constraint c) { domain_.add_constraint(c); }
+  void add_constraint(constraint c) {
+    domain_.add_constraint(c);
+    domain_.remove_redundancies();
+  }
 
   constraint CreateEquality(std::map<std::string, int> coeffs,
                             int constant = 0);
@@ -54,6 +64,7 @@ class IterSet {
   IterSet project_onto(std::string i) {
     basic_set b =
         isl_basic_set_project_out(domain_.copy(), isl_dim_set, nestings[i], 1);
+    b.remove_redundancies();
     std::map<std::string, int> nest;
     int order = nestings[i];
     nestings.erase(i);
@@ -82,6 +93,8 @@ class IterSet {
     }
     return ret;
   }
+
+  void dump() { domain_.dump(); }
 
   friend class AccessMap;
 

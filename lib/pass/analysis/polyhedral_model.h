@@ -103,7 +103,7 @@ class ReorderedBounds {
                          int jth);
 
  private:
-  IRHandle IslConstraintToIR(solver::constraint c);
+  IRHandle IslConstraintToBound(solver::constraint c, std::string loop_name);
   IRHandle QuasiAffineExprToIR(QuasiAffineExpr expr);
 
   std::vector<IRHandle> loop_vars;

@@ -63,6 +63,9 @@ class FissionTransform : public Pass, public IRVisitor {
     Arg() {}
     Arg(IRHandle program, IRHandle targetLoop)
         : program(program), targetLoop(targetLoop) {}
+    static PassArgHandle create(IRHandle program, IRHandle targetLoop) {
+      return std::shared_ptr<Arg>(new Arg(program, targetLoop));
+    }
   };
 
   struct Ret : public PassRet {

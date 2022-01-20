@@ -160,7 +160,8 @@ class ConstantFoldingEvaluator : public IRVisitor {
 };
 
 IRHandle ConstantFoldingPass::simplify(IRHandle node) {
-  folded = true;
+  bool already_folded = folded;
+  if (!already_folded) folded = true;
   auto zero = IntNode::make(0);
   auto one = IntNode::make(1);
   switch (node.Type()) {
@@ -176,23 +177,22 @@ IRHandle ConstantFoldingPass::simplify(IRHandle node) {
     case IRNodeType::MUL: {
       if (node.as<MulNode>()->lhs.equals(zero)) return zero;
       if (node.as<MulNode>()->rhs.equals(zero)) return zero;
-      if (node.as<MulNode>()->lhs.equals(one)) return node.as<AddNode>()->rhs;
-      if (node.as<MulNode>()->rhs.equals(one)) return node.as<AddNode>()->lhs;
+      if (node.as<MulNode>()->lhs.equals(one)) return node.as<MulNode>()->rhs;
+      if (node.as<MulNode>()->rhs.equals(one)) return node.as<MulNode>()->lhs;
       break;
     }
     case IRNodeType::DIV: {
-      if (node.as<AddNode>()->rhs.equals(one)) return node.as<AddNode>()->lhs;
+      if (node.as<DivNode>()->rhs.equals(one)) return node.as<DivNode>()->lhs;
       break;
     }
     case IRNodeType::MOD: {
-      if (node.as<AddNode>()->rhs.equals(one)) zero;
+      if (node.as<ModNode>()->rhs.equals(one)) zero;
       break;
     }
-
     default:
       break;
   }
-  folded = false;
+  if (!already_folded) folded = false;
   return node;
 }
 
@@ -282,14 +282,17 @@ void ConstantFoldingPass::visitMod(ModHandle mod) {
 
 void ConstantFoldingPass::visitVar(VarHandle var) {
   ConstantFoldingEvaluator evaluator;
+  var->min.accept(this);
   IRHandle min = evaluator.Evaluate(var->min);
   if (min != NullIRHandle) {
     var->min = min;
   }
+  var->max.accept(this);
   IRHandle max = evaluator.Evaluate(var->max);
   if (max != NullIRHandle) {
     var->max = max;
   }
+  var->increment.accept(this);
   IRHandle increment = evaluator.Evaluate(var->increment);
   if (increment != NullIRHandle) {
     var->increment = increment;

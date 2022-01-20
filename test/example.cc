@@ -5,6 +5,8 @@
 #include "pass/analysis/polyhedral_extraction.h"
 #include "pass/transform/fission.h"
 #include "pass/transform/fussion.h"
+#include "pass/transform/normalization.h"
+#include "pass/transform/reorder.h"
 
 using namespace polly;
 
@@ -192,6 +194,31 @@ int main() {
     std::cout << (nodes.find(IntNode::make(2)) == nodes.end()) << "\n";
     ConstantFoldingPass::runPass(std::shared_ptr<ConstantFoldingPass::Arg>(
         new ConstantFoldingPass::Arg(prog.module_.GetRoot())));
+    prog.GenerateC();
+  }
+  {
+    Program prog;
+    Tensor A({1024, 1024}), B({1024, 1024}), C({1024, 1024});
+    IRNodeKey I, J, K;
+    {
+      Variable i(0, 1024, 1);
+      I = i.id;
+      {
+        Variable j(i, 1024, 1);
+        J = j.id;
+        {
+          Variable k(0, 1024, 1);
+          K = k.id;
+          C(i, j) = C(i, j) + A(i, k) * B(k, j);
+        }
+      }
+    }
+    auto root = prog.module_.GetRoot();
+    auto i_loop = prog.module_.GetLoop(I).as<ForNode>()->looping_var_;
+    auto j_loop = prog.module_.GetLoop(J).as<ForNode>()->looping_var_;
+    LoopReorder::runPass(LoopReorder::Arg::create(root, i_loop, j_loop));
+    ConstantFoldingPass::runPass(
+        ConstantFoldingPass::Arg::create(prog.module_.GetRoot()));
     prog.GenerateC();
   }
   return 0;

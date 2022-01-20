@@ -33,6 +33,9 @@ class basic_set : public object<isl_basic_set> {
   static basic_set universe(const space &s) {
     return isl_basic_set_universe(s.copy());
   }
+  void remove_redundancies() {
+    m_object = isl_basic_set_remove_redundancies(m_object);
+  }
   void set_name(std::string name) {
     m_object = isl_basic_set_set_tuple_name(m_object, name.c_str());
   }
@@ -169,4 +172,4 @@ inline bool operator>(const set &a, const set &b) { return b < a; }
 inline bool operator>(const union_set &a, const union_set &b) { return b < a; }
 
 }  // namespace isl
-}
+}  // namespace polly
