@@ -14,7 +14,7 @@
 namespace polly {
 
 /// Jitter Module that executes a program.
-class JitModule : public IRVisitor {
+class JitModule : public IRNotImplementedVisitor {
  public:
   JitModule(const IRModule &workspace) : module_(workspace) {}
   ~JitModule() {

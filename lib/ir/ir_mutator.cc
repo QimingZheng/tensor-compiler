@@ -77,7 +77,8 @@ void IRMutatorVisitor::visitTensor(TensorHandle tensor) {
 
 void IRMutatorVisitor::visitFor(ForHandle loop) {
   assert(loop != nullptr);
-  loop->looping_var_ = _replace_subnode_helper(loop->looping_var_, true);
+  loop->looping_var_ =
+      _replace_subnode_helper(loop->looping_var_, inplaceMutation);
   for (int i = 0; i < loop->body.size(); i++) {
     loop->body[i] = _replace_subnode_helper(loop->body[i]);
   }

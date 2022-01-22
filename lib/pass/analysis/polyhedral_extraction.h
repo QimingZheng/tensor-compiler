@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:29:51 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:29:51 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:29:51
+ * @Last Modified by:   Qiming Zheng
+ * @Last Modified time: 2022-01-18 20:29:51
+ * @CopyRight: Qiming Zheng
  */
 
 #pragma once
@@ -17,7 +17,7 @@
 
 namespace polly {
 
-class PolyhedralExtraction : public IRVisitor {
+class PolyhedralExtraction : public IRNotImplementedVisitor {
  public:
   PolyhedralExtraction() {}
   PolyhedralExtraction(IRHandle func) { func.accept(this); }
@@ -36,6 +36,11 @@ class PolyhedralExtraction : public IRVisitor {
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
+
+  static QuasiAffineExpr IRHandleToQuasiAffine(IRHandle handle) {
+    PolyhedralExtraction model(handle);
+    return model.expr;
+  }
 
   PolyhedralModel model;
 

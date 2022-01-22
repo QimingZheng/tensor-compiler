@@ -16,7 +16,7 @@
 namespace polly {
 
 /// Before unrolling a loop, check its boundary is contant first.
-class LoopUnroll : public Pass, public IRVisitor {
+class LoopUnroll : public Pass, public IRNotImplementedVisitor {
  private:
   LoopUnroll() {}
 

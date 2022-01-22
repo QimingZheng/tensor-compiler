@@ -23,7 +23,7 @@ namespace polly {
 // To be an legal affine program, all the loop bounds shoud be expressed as
 // affine expressions and the incremental amount should be constant number.
 // Array access expression in statements should be affine also.
-class AffineCheck : public IRVisitor, public Pass {
+class AffineCheck : public IRNotImplementedVisitor, public Pass {
  private:
   AffineCheck() {}
 

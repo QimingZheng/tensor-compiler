@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:33:00 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:33:00 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:33:00
+ * @Last Modified by:   Qiming Zheng
+ * @Last Modified time: 2022-01-18 20:33:00
+ * @CopyRight: Qiming Zheng
  */
 #pragma once
 
@@ -27,7 +27,7 @@ class CostModel {
     f.close();
 
     // Compile
-    executeCommands("g++ --std=c++11 -O3  -o .main .polly_cost_model.cc");
+    executeCommands("g++ --std=c++11 -O3 -mfma -o .main .polly_cost_model.cc");
     // Execute & get running time
     auto res = executeCommands("./.main");
     std::cout << res;

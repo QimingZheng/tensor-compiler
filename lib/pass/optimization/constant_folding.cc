@@ -2,7 +2,7 @@
 
 namespace polly {
 
-class ConstantFoldingEvaluator : public IRVisitor {
+class ConstantFoldingEvaluator : public IRNotImplementedVisitor {
  public:
   union value {
     int int_value;

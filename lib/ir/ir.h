@@ -30,6 +30,16 @@ enum IRNodeType {
 
   PRINT = 12,
   FUNC = 13,
+
+  VEC,
+  VEC_ADD,
+  VEC_SUB,
+  VEC_MUL,
+  VEC_DIV,
+  VEC_LOAD,
+  VEC_STORE,
+  VEC_BROADCAST_LOAD,
+  VEC_SCALAR,
 };
 
 class IntNode;
@@ -49,6 +59,17 @@ class ForNode;
 class PrintNode;
 class FuncNode;
 
+// SIMD related nodes
+class VecNode;
+class VecScalarNode;
+class VecLoadNode;
+class VecBroadCastLoadNode;
+class VecStoreNode;
+class VecAddNode;
+class VecSubNode;
+class VecMulNode;
+class VecDivNode;
+
 class IRVisitor;
 
 typedef std::shared_ptr<AddNode> AddHandle;
@@ -65,6 +86,16 @@ typedef std::shared_ptr<ForNode> ForHandle;
 typedef std::shared_ptr<ConstNode> ConstHandle;
 typedef std::shared_ptr<PrintNode> PrintHandle;
 typedef std::shared_ptr<FuncNode> FuncHandle;
+
+typedef std::shared_ptr<VecNode> VecHandle;
+typedef std::shared_ptr<VecScalarNode> VecScalarHandle;
+typedef std::shared_ptr<VecLoadNode> VecLoadHandle;
+typedef std::shared_ptr<VecBroadCastLoadNode> VecBroadCastLoadHandle;
+typedef std::shared_ptr<VecStoreNode> VecStoreHandle;
+typedef std::shared_ptr<VecAddNode> VecAddHandle;
+typedef std::shared_ptr<VecSubNode> VecSubHandle;
+typedef std::shared_ptr<VecMulNode> VecMulHandle;
+typedef std::shared_ptr<VecDivNode> VecDivHandle;
 
 /// IRNodeKey is used to identify a certain IR-Node.
 typedef std::string IRNodeKey;
@@ -421,7 +452,7 @@ class FuncNode : public IRNode {
 // TODO: Complete the unary node.
 class UnaryNode : public IRNode {
  public:
-  IRHandle node;
+  IRHandle data;
 };
 
 // TODO: Complete the negate node.
@@ -461,13 +492,150 @@ class EqNode : public BinaryNode {};
 // !=
 class NeqNode : public BinaryNode {};
 
-class SIMDLoad : public UnaryNode {};
+class FloatNode : public IRNode {
+ public:
+  float value;
+};
 
-class SIMDStore : public UnaryNode {};
+class VecNode : public IRNode {
+ public:
+  IRNodeKey id;
+  int length;
 
-class SIMDAdd : public BinaryNode {};
-class SIMDSub : public BinaryNode {};
-class SIMDMul : public BinaryNode {};
-class SIMDDiv : public BinaryNode {};
+  static IRHandle make(IRNodeKey id, int length);
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    auto o_ptr = static_cast<const VecNode *>(other);
+    return (id == o_ptr->id) && (length == o_ptr->length);
+  }
+
+  IRNodeType Type() const override { return IRNodeType::VEC; }
+};
+// float/int support
+class VecScalarNode : public IRNode {
+ public:
+  IRHandle vec, scalar;
+  int length;
+  static IRHandle make(IRHandle vec, IRHandle scalar, int length);
+
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    auto o_ptr = static_cast<const VecScalarNode *>(other);
+    return (vec.equals(o_ptr->vec)) && (scalar.equals(o_ptr->scalar)) &&
+           (length == o_ptr->length);
+  }
+  IRNodeType Type() const override { return IRNodeType::VEC_SCALAR; }
+};
+class VecLoadNode : public IRNode {
+ public:
+  IRHandle vec, data;
+  int length;
+  static IRHandle make(IRHandle vec, IRHandle data, int length);
+
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    auto o_ptr = static_cast<const VecLoadNode *>(other);
+    return (vec.equals(o_ptr->vec)) && (data.equals(o_ptr->data)) &&
+           (length == o_ptr->length);
+  }
+  IRNodeType Type() const override { return IRNodeType::VEC_LOAD; }
+};
+class VecBroadCastLoadNode : public IRNode {
+ public:
+  IRHandle vec, data;
+  int length;
+  static IRHandle make(IRHandle vec, IRHandle data, int length);
+
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    auto o_ptr = static_cast<const VecBroadCastLoadNode *>(other);
+    return (vec.equals(o_ptr->vec)) && (data.equals(o_ptr->data)) &&
+           (length == o_ptr->length);
+  }
+  IRNodeType Type() const override { return IRNodeType::VEC_BROADCAST_LOAD; }
+};
+class VecStoreNode : public IRNode {
+ public:
+  IRHandle vec, data;
+  int length;
+  static IRHandle make(IRHandle vec, IRHandle data, int length);
+
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    auto o_ptr = static_cast<const VecStoreNode *>(other);
+    return (vec.equals(o_ptr->vec)) && (data.equals(o_ptr->data)) &&
+           (length == o_ptr->length);
+  }
+  IRNodeType Type() const override { return IRNodeType::VEC_STORE; }
+};
+
+/// TODO: check if this node is necessary.
+// class VecBroadCastStoreNode : public IRNode {};
+
+class VecAddNode : public IRNode {
+ public:
+  IRHandle vec, lhs, rhs;
+  int length;
+  static IRHandle make(IRHandle vec, IRHandle lhs, IRHandle rhs, int length);
+
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    auto o_ptr = static_cast<const VecAddNode *>(other);
+    return (vec.equals(o_ptr->vec)) && (lhs.equals(o_ptr->lhs)) &&
+           (rhs.equals(o_ptr->rhs)) && (length == o_ptr->length);
+  }
+  IRNodeType Type() const override { return IRNodeType::VEC_ADD; }
+};
+class VecSubNode : public IRNode {
+ public:
+  IRHandle vec, lhs, rhs;
+  int length;
+  static IRHandle make(IRHandle vec, IRHandle lhs, IRHandle rhs, int length);
+
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    auto o_ptr = static_cast<const VecSubNode *>(other);
+    return (vec.equals(o_ptr->vec)) && (lhs.equals(o_ptr->lhs)) &&
+           (rhs.equals(o_ptr->rhs)) && (length == o_ptr->length);
+  }
+  IRNodeType Type() const override { return IRNodeType::VEC_SUB; }
+};
+class VecMulNode : public IRNode {
+ public:
+  IRHandle vec, lhs, rhs;
+  int length;
+  static IRHandle make(IRHandle vec, IRHandle lhs, IRHandle rhs, int length);
+
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    auto o_ptr = static_cast<const VecMulNode *>(other);
+    return (vec.equals(o_ptr->vec)) && (lhs.equals(o_ptr->lhs)) &&
+           (rhs.equals(o_ptr->rhs)) && (length == o_ptr->length);
+  }
+  IRNodeType Type() const override { return IRNodeType::VEC_MUL; }
+};
+class VecDivNode : public IRNode {
+ public:
+  IRHandle vec, lhs, rhs;
+  int length;
+  static IRHandle make(IRHandle vec, IRHandle lhs, IRHandle rhs, int length);
+
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    auto o_ptr = static_cast<const VecDivNode *>(other);
+    return (vec.equals(o_ptr->vec)) && (lhs.equals(o_ptr->lhs)) &&
+           (rhs.equals(o_ptr->rhs)) && (length == o_ptr->length);
+  }
+  IRNodeType Type() const override { return IRNodeType::VEC_DIV; }
+};
 
 }  // namespace polly

@@ -7,7 +7,7 @@ PassRetHandle NormalizationPass::runPass(PassArgHandle arg) {
   return Ret::create();
 }
 
-class NormalizationHelper : public IRVisitor {
+class NormalizationHelper : public IRNotImplementedVisitor {
  public:
   NormalizationHelper(IRHandle program, IRHandle loop_var, IRHandle replace_var)
       : program_(program), loop_var_(loop_var), replace_var_(replace_var) {}

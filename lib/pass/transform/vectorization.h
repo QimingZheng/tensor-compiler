@@ -17,13 +17,22 @@
 namespace polly {
 
 // Vectorize an inner most loop.
-class LoopVectorization : public Pass, public IRVisitor {
+// 1. Vectorization Pass should always be the last step.
+// 2. The Loop been vectorized should always be of the form:
+// 0 -> a divisible boundary by vecLen, (1)
+class LoopVectorization : public Pass, public IRNotImplementedVisitor {
  public:
   constexpr static PassKey id = LoopVectorizationPassID;
-  LoopVectorization(IRHandle program, IRHandle loop)
-      : program_(program), loop_(loop) {}
+  LoopVectorization(IRHandle program, IRHandle loop, int vecLen)
+      : program_(program), loop_(loop), vecLen(vecLen) {}
 
-  static PassRetHandle runPass(PassArgHandle arg) {}
+  static PassRetHandle runPass(PassArgHandle arg) {
+    LoopVectorization vec(PassArg::as<Arg>(arg)->program,
+                          PassArg::as<Arg>(arg)->loop,
+                          PassArg::as<Arg>(arg)->vecLen);
+    vec.visit(vec.loop_);
+    return Ret::create();
+  }
 
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
@@ -40,11 +49,26 @@ class LoopVectorization : public Pass, public IRVisitor {
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
 
-  struct Arg : public PassArg {};
-  struct Ret : public PassRet {};
+  struct Arg : public PassArg {
+    IRHandle program;
+    IRHandle loop;
+    int vecLen;
+    Arg() {}
+    Arg(IRHandle p, IRHandle l, int v) : program(p), loop(l), vecLen(v) {}
+    static PassArgHandle create(IRHandle p, IRHandle l, int v) {
+      return std::shared_ptr<Arg>(new Arg(p, l, v));
+    }
+  };
+  struct Ret : public PassRet {
+    static PassRetHandle create() { return std::shared_ptr<Ret>(new Ret); }
+  };
 
   IRHandle program_;
   IRHandle loop_;
+  int vecLen;
+
+  std::vector<IRHandle> vectorizationBody;
+  IRHandle node;
 };
 
 }  // namespace polly

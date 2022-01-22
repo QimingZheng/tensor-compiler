@@ -20,7 +20,7 @@ namespace polly {
 // and the incremental amount must be one.
 // A loop with constatnt boundary has many good properties, e.g. it can be
 // unrolled/vectorized etc.
-class ConstantBoundaryCheck : public Pass, public IRVisitor {
+class ConstantBoundaryCheck : public Pass, public IRNotImplementedVisitor {
  private:
   ConstantBoundaryCheck() {}
 

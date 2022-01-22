@@ -18,7 +18,7 @@ namespace polly {
 /// Normalization Pass will transform an affine program into standarized form.
 /// Including:
 ///     1. Make the incremental amount always equal to 1.
-class NormalizationPass : public Pass, public IRVisitor {
+class NormalizationPass : public Pass, public IRNotImplementedVisitor {
  private:
   NormalizationPass(IRHandle p) : program_(p) { program_.accept(this); }
 

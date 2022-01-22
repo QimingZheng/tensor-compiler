@@ -18,7 +18,7 @@ namespace polly {
 
 // Constant Folding is a common compiler optimization pass that compute know
 // algebra results ahead of executions.
-class ConstantFoldingPass : public Pass, public IRVisitor {
+class ConstantFoldingPass : public Pass, public IRNotImplementedVisitor {
  private:
   ConstantFoldingPass() {}
   ConstantFoldingPass(IRHandle program) : program_(program) {

@@ -31,6 +31,17 @@ class IRVisitor {
   virtual void visitConst(ConstHandle con) = 0;
   virtual void visitPrint(PrintHandle print) = 0;
   virtual void visitFunc(FuncHandle func) = 0;
+
+  virtual void visitVec(VecHandle vec) = 0;
+  virtual void visitVecScalar(VecScalarHandle vecScalar) = 0;
+  virtual void visitVecLoad(VecLoadHandle vecLoad) = 0;
+  virtual void visitVecBroadCastLoad(
+      VecBroadCastLoadHandle VecBroadCastLoad) = 0;
+  virtual void visitVecStore(VecStoreHandle VecStore) = 0;
+  virtual void visitVecAdd(VecAddHandle add) = 0;
+  virtual void visitVecSub(VecSubHandle sub) = 0;
+  virtual void visitVecMul(VecMulHandle mul) = 0;
+  virtual void visitVecDiv(VecDivHandle div) = 0;
 };
 
 class IRSimpleVisitor : public IRVisitor {
@@ -51,6 +62,24 @@ class IRSimpleVisitor : public IRVisitor {
   void visitConst(ConstHandle con) override { helper(IRHandle(con)); }
   void visitPrint(PrintHandle print) override { helper(IRHandle(print)); }
   void visitFunc(FuncHandle func) override { helper(IRHandle(func)); }
+
+  void visitVec(VecHandle vec) override { helper(IRHandle(vec)); }
+  void visitVecScalar(VecScalarHandle vecScalar) override {
+    helper(IRHandle(vecScalar));
+  }
+  void visitVecLoad(VecLoadHandle vecLoad) override {
+    helper(IRHandle(vecLoad));
+  }
+  void visitVecBroadCastLoad(VecBroadCastLoadHandle VecBroadCastLoad) override {
+    helper(IRHandle(VecBroadCastLoad));
+  }
+  void visitVecStore(VecStoreHandle VecStore) override {
+    helper(IRHandle(VecStore));
+  }
+  void visitVecAdd(VecAddHandle add) override { helper(IRHandle(add)); }
+  void visitVecSub(VecSubHandle sub) override { helper(IRHandle(sub)); }
+  void visitVecMul(VecMulHandle mul) override { helper(IRHandle(mul)); }
+  void visitVecDiv(VecDivHandle div) override { helper(IRHandle(div)); }
 
   virtual void helper(IRHandle node) { return; }
 };
@@ -136,6 +165,63 @@ class IRRecursiveVisitor : public IRVisitor {
     exit(IRHandle(func));
   }
 
+  void visitVec(VecHandle vec) override {
+    enter(IRHandle(vec));
+    exit(IRHandle(vec));
+  }
+  void visitVecScalar(VecScalarHandle vecScalar) override {
+    enter(IRHandle(vecScalar));
+    vecScalar->vec.accept(this);
+    vecScalar->scalar.accept(this);
+    exit(IRHandle(vecScalar));
+  }
+  void visitVecLoad(VecLoadHandle vecLoad) override {
+    enter(IRHandle(vecLoad));
+    vecLoad->vec.accept(this);
+    vecLoad->data.accept(this);
+    exit(IRHandle(vecLoad));
+  }
+  void visitVecBroadCastLoad(VecBroadCastLoadHandle VecBroadCastLoad) override {
+    enter(IRHandle(VecBroadCastLoad));
+    VecBroadCastLoad->vec.accept(this);
+    VecBroadCastLoad->data.accept(this);
+    exit(IRHandle(VecBroadCastLoad));
+  }
+  void visitVecStore(VecStoreHandle VecStore) override {
+    enter(IRHandle(VecStore));
+    VecStore->vec.accept(this);
+    VecStore->data.accept(this);
+    exit(IRHandle(VecStore));
+  }
+  void visitVecAdd(VecAddHandle add) override {
+    enter(IRHandle(add));
+    add->vec.accept(this);
+    add->lhs.accept(this);
+    add->rhs.accept(this);
+    exit(IRHandle(add));
+  }
+  void visitVecSub(VecSubHandle sub) override {
+    enter(IRHandle(sub));
+    sub->vec.accept(this);
+    sub->lhs.accept(this);
+    sub->rhs.accept(this);
+    exit(IRHandle(sub));
+  }
+  void visitVecMul(VecMulHandle mul) override {
+    enter(IRHandle(mul));
+    mul->vec.accept(this);
+    mul->lhs.accept(this);
+    mul->rhs.accept(this);
+    exit(IRHandle(mul));
+  }
+  void visitVecDiv(VecDivHandle div) override {
+    enter(IRHandle(div));
+    div->vec.accept(this);
+    div->lhs.accept(this);
+    div->rhs.accept(this);
+    exit(IRHandle(div));
+  }
+
   virtual void enter(IRHandle node) { return; }
   virtual void exit(IRHandle node) { return; }
 };
@@ -161,6 +247,24 @@ class IRNotImplementedVisitor : public IRVisitor {
   void visitPrint(PrintHandle print) override { throw_exception("Print"); }
   void visitFunc(FuncHandle func) override { throw_exception("Func"); }
 
+  void visitVec(VecHandle vec) override { throw_exception("Vec"); }
+  void visitVecScalar(VecScalarHandle vecScalar) override {
+    throw_exception("VecScalar");
+  }
+  void visitVecLoad(VecLoadHandle vecLoad) override {
+    throw_exception("VecLoad");
+  }
+  void visitVecBroadCastLoad(VecBroadCastLoadHandle VecBroadCastLoad) override {
+    throw_exception("VecBroadCastLoad");
+  }
+  void visitVecStore(VecStoreHandle VecStore) override {
+    throw_exception("VecStore");
+  }
+  void visitVecAdd(VecAddHandle add) override { throw_exception("VecAdd"); }
+  void visitVecSub(VecSubHandle sub) override { throw_exception("VecSub"); }
+  void visitVecMul(VecMulHandle mul) override { throw_exception("VecMul"); }
+  void visitVecDiv(VecDivHandle div) override { throw_exception("VecDiv"); }
+
  private:
   std::string errorMsg;
   void throw_exception(std::string msg) {
@@ -168,7 +272,7 @@ class IRNotImplementedVisitor : public IRVisitor {
   }
 };
 
-class IRPrinterVisitor : public IRVisitor {
+class IRPrinterVisitor : public IRNotImplementedVisitor {
  public:
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
@@ -184,14 +288,30 @@ class IRPrinterVisitor : public IRVisitor {
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
+
+  void visitVec(VecHandle vec) override;
+  void visitVecScalar(VecScalarHandle vecScalar) override;
+  void visitVecLoad(VecLoadHandle vecLoad) override;
+  void visitVecBroadCastLoad(VecBroadCastLoadHandle VecBroadCastLoad) override;
+  void visitVecStore(VecStoreHandle VecStore) override;
+  void visitVecAdd(VecAddHandle add) override;
+  void visitVecSub(VecSubHandle sub) override;
+  void visitVecMul(VecMulHandle mul) override;
+  void visitVecDiv(VecDivHandle div) override;
+
+  void vec_case(int vecLen);
 };
 
-class IRMutatorVisitor : public IRVisitor {
+class IRMutatorVisitor : public IRNotImplementedVisitor {
  public:
   IRHandle replaceFrom;
   IRHandle replaceTo;
-  IRMutatorVisitor(IRHandle replaceFrom, IRHandle replaceTo)
-      : replaceFrom(replaceFrom), replaceTo(replaceTo) {}
+  bool inplaceMutation;
+  IRMutatorVisitor(IRHandle replaceFrom, IRHandle replaceTo,
+                   bool inplaceMutation = true)
+      : replaceFrom(replaceFrom),
+        replaceTo(replaceTo),
+        inplaceMutation(inplaceMutation) {}
 
   template <typename T>
   T _replace_subnode_helper(T op_node, bool skipReplace = false);

@@ -15,7 +15,7 @@
 
 namespace polly {
 
-class FussionTransform : public Pass, public IRVisitor {
+class FussionTransform : public Pass, public IRNotImplementedVisitor {
  private:
   FussionTransform() {}
   FussionTransform(IRHandle program, IRHandle first, IRHandle second)

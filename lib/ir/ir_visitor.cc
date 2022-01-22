@@ -49,6 +49,34 @@ void IRVisitor::visit(IRHandle expr) {
       this->visitFunc(expr.as<FuncNode>());
       break;
 
+    case IRNodeType::VEC:
+      this->visitVec(expr.as<VecNode>());
+      break;
+    case IRNodeType::VEC_SCALAR:
+      this->visitVecScalar(expr.as<VecScalarNode>());
+      break;
+    case IRNodeType::VEC_LOAD:
+      this->visitVecLoad(expr.as<VecLoadNode>());
+      break;
+    case IRNodeType::VEC_BROADCAST_LOAD:
+      this->visitVecBroadCastLoad(expr.as<VecBroadCastLoadNode>());
+      break;
+    case IRNodeType::VEC_STORE:
+      this->visitVecStore(expr.as<VecStoreNode>());
+      break;
+    case IRNodeType::VEC_ADD:
+      this->visitVecAdd(expr.as<VecAddNode>());
+      break;
+    case IRNodeType::VEC_SUB:
+      this->visitVecSub(expr.as<VecSubNode>());
+      break;
+    case IRNodeType::VEC_MUL:
+      this->visitVecMul(expr.as<VecMulNode>());
+      break;
+    case IRNodeType::VEC_DIV:
+      this->visitVecDiv(expr.as<VecDivNode>());
+      break;
+
     default:
       std::cout << expr.Type() << '\n';
       throw std::runtime_error("visiting unknonw node");
@@ -123,6 +151,108 @@ void IRPrinterVisitor::visitFunc(FuncHandle func) {
   for (int i = 0; i < func->body.size(); i++) {
     func->body[i].accept(this);
   }
+}
+
+void IRPrinterVisitor::visitVec(VecHandle vec) { std::cout << vec->id; }
+void IRPrinterVisitor::visitVecScalar(VecScalarHandle vecScalar) {
+  vec_case(vecScalar->length);
+  vecScalar->vec.accept(this);
+  std::cout << " = ";
+  vec_case(vecScalar->length);
+
+  vecScalar->scalar.accept(this);
+  std::cout << ")";
+  std::cout << ";\n";
+}
+void IRPrinterVisitor::visitVecLoad(VecLoadHandle vecLoad) {
+  vec_case(vecLoad->length);
+
+  vecLoad->vec.accept(this);
+  std::cout << " = ";
+  vec_case(vecLoad->length);
+
+  std::cout << "&";
+  vecLoad->data.accept(this);
+  std::cout << ")";
+  std::cout << ";\n";
+}
+void IRPrinterVisitor::visitVecBroadCastLoad(
+    VecBroadCastLoadHandle vecBroadCastLoad) {
+  vec_case(vecBroadCastLoad->length);
+
+  vecBroadCastLoad->vec.accept(this);
+  std::cout << " = ";
+  vec_case(vecBroadCastLoad->length);
+
+  std::cout << "&";
+  vecBroadCastLoad->data.accept(this);
+  std::cout << ")";
+  std::cout << ";\n";
+}
+void IRPrinterVisitor::visitVecStore(VecStoreHandle vecStore) {
+  vec_case(vecStore->length);
+  std::cout << "&";
+  vecStore->data.accept(this);
+  std::cout << ", ";
+  vecStore->vec.accept(this);
+  std::cout << ")";
+  std::cout << ";\n";
+}
+void IRPrinterVisitor::visitVecAdd(VecAddHandle add) {
+  vec_case(add->length);
+
+  add->vec.accept(this);
+  std::cout << " = ";
+  vec_case(add->length);
+
+  add->lhs.accept(this);
+  std::cout << ", ";
+  add->rhs.accept(this);
+  std::cout << ")";
+  std::cout << ";\n";
+}
+void IRPrinterVisitor::visitVecSub(VecSubHandle sub) {
+  vec_case(sub->length);
+
+  sub->vec.accept(this);
+  std::cout << " = ";
+  vec_case(sub->length);
+
+  sub->lhs.accept(this);
+  std::cout << ", ";
+  sub->rhs.accept(this);
+  std::cout << ")";
+  std::cout << ";\n";
+}
+void IRPrinterVisitor::visitVecMul(VecMulHandle mul) {
+  vec_case(mul->length);
+
+  mul->vec.accept(this);
+  std::cout << " = ";
+  vec_case(mul->length);
+
+  mul->lhs.accept(this);
+  std::cout << ", ";
+  mul->rhs.accept(this);
+  std::cout << ")";
+  std::cout << ";\n";
+}
+void IRPrinterVisitor::visitVecDiv(VecDivHandle div) {
+  vec_case(div->length);
+
+  div->vec.accept(this);
+  std::cout << " = ";
+  vec_case(div->length);
+
+  div->lhs.accept(this);
+  std::cout << ", ";
+  div->rhs.accept(this);
+  std::cout << ")";
+  std::cout << ";\n";
+}
+
+void IRPrinterVisitor::vec_case(int vecLen) {
+  std::cout << "simd" << vecLen << " ";
 }
 
 }  // namespace polly

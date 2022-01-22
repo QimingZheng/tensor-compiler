@@ -18,7 +18,9 @@ namespace polly {
 
 /// It can be proved that a split operation does not change the semantics of a
 /// program.
-class LoopSplit : public Pass, public IRVisitor {
+// Make sure that the splitting transformation is done after the normalization
+// pass.
+class LoopSplit : public Pass, public IRNotImplementedVisitor {
  private:
   LoopSplit(IRHandle p, IRHandle l, int s)
       : program_(p), loop_(l), splitFactor(s) {
@@ -45,6 +47,12 @@ class LoopSplit : public Pass, public IRVisitor {
   void visitFunc(FuncHandle func) override;
 
   IRHandle replace_with(IRHandle node);
+
+  IRHandle get_outter_loop_var(IRHandle loop_var);
+  IRHandle get_inner_loop_var();
+  IRHandle get_remainder_loop_var(IRHandle loop_var);
+
+  IRHandle create_remainder_loop(IRHandle loop, IRHandle remainder_loop_var);
 
   struct Arg : public PassArg {
     IRHandle program;

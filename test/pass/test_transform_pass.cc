@@ -174,6 +174,8 @@ TEST(TRANSFORM_PASS, SPLIT) {
                   ->body[0]
                   .Type(),
               IRNodeType::FOR);
+    EXPECT_EQ(prog.module_.GetRoot().as<FuncNode>()->body[1].Type(),
+              IRNodeType::FOR);
   }
 }
 
@@ -200,4 +202,20 @@ TEST(TRANSFORM_PASS, UNROLL) {
   }
 }
 
-TEST(TRANSFORM_PASS, VECTORIZATION) {}
+TEST(TRANSFORM_PASS, VECTORIZATION) {
+  {
+    Program prog;
+    Tensor A({1024}), B({1024});
+    IRNodeKey I;
+    {
+      Variable i(0, 1024, 1);
+      I = i.id;
+      A(i) = i + B(i);
+    }
+    auto root = prog.module_.GetRoot();
+    auto i_loop = prog.module_.GetLoop(I);
+
+    LoopVectorization::runPass(
+        LoopVectorization::Arg::create(prog.module_.GetRoot(), i_loop, 4));
+  }
+}

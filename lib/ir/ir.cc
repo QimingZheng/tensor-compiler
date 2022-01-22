@@ -228,4 +228,82 @@ IRHandle FuncNode::make(std::vector<IRHandle> body) {
 
 void IRHandle::accept(IRVisitor *visitor) { visitor->visit(*this); }
 
+IRHandle VecNode::make(IRNodeKey id, int length) {
+  VecNode *node = new VecNode();
+  node->id = id;
+  node->length = length;
+  return IRHandle(node);
+}
+
+IRHandle VecScalarNode::make(IRHandle vec, IRHandle scalar, int length) {
+  VecScalarNode *node = new VecScalarNode();
+  node->length = length;
+  node->vec = vec;
+  node->scalar = scalar;
+  return IRHandle(node);
+}
+
+IRHandle VecLoadNode::make(IRHandle vec, IRHandle data, int length) {
+  VecLoadNode *node = new VecLoadNode();
+  node->vec = vec;
+  node->data = data;
+  node->length = length;
+  return IRHandle(node);
+}
+
+IRHandle VecBroadCastLoadNode::make(IRHandle vec, IRHandle data, int length) {
+  VecBroadCastLoadNode *node = new VecBroadCastLoadNode();
+  node->vec = vec;
+  node->data = data;
+  node->length = length;
+  return IRHandle(node);
+}
+
+IRHandle VecStoreNode::make(IRHandle vec, IRHandle data, int length) {
+  VecStoreNode *node = new VecStoreNode();
+  node->vec = vec;
+  node->data = data;
+  node->length = length;
+  return IRHandle(node);
+}
+
+IRHandle VecAddNode::make(IRHandle vec, IRHandle lhs, IRHandle rhs,
+                          int length) {
+  VecAddNode *node = new VecAddNode();
+  node->vec = vec;
+  node->lhs = lhs;
+  node->rhs = rhs;
+  node->length = length;
+  return IRHandle(node);
+}
+
+IRHandle VecSubNode::make(IRHandle vec, IRHandle lhs, IRHandle rhs,
+                          int length) {
+  VecSubNode *node = new VecSubNode();
+  node->vec = vec;
+  node->lhs = lhs;
+  node->rhs = rhs;
+  node->length = length;
+  return IRHandle(node);
+}
+
+IRHandle VecMulNode::make(IRHandle vec, IRHandle lhs, IRHandle rhs,
+                          int length) {
+  VecMulNode *node = new VecMulNode();
+  node->vec = vec;
+  node->lhs = lhs;
+  node->rhs = rhs;
+  node->length = length;
+  return IRHandle(node);
+}
+IRHandle VecDivNode::make(IRHandle vec, IRHandle lhs, IRHandle rhs,
+                          int length) {
+  VecDivNode *node = new VecDivNode();
+  node->vec = vec;
+  node->lhs = lhs;
+  node->rhs = rhs;
+  node->length = length;
+  return IRHandle(node);
+}
+
 }  // namespace polly

@@ -19,7 +19,7 @@ namespace polly {
 /// DivisibleBoundaryCheck checks whether the boundary of a loop can be
 /// divided by a certain divisor. Please make sure that the boundary of it is
 /// checked by the IRConstantBoundaryCheckVisitor checker first.
-class DivisibleBoundaryCheck : public Pass, public IRVisitor {
+class DivisibleBoundaryCheck : public Pass, public IRNotImplementedVisitor {
  private:
   DivisibleBoundaryCheck() {}
   DivisibleBoundaryCheck(IRHandle loop, int divisor)

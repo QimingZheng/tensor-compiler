@@ -8,6 +8,7 @@
 #include "pass/transform/normalization.h"
 #include "pass/transform/reorder.h"
 #include "pass/transform/split.h"
+#include "pass/transform/vectorization.h"
 
 using namespace polly;
 
@@ -234,6 +235,23 @@ int main() {
     auto i_loop = prog.module_.GetLoop(I);
     LoopSplit::runPass(
         LoopSplit::Arg::create(prog.module_.GetRoot(), i_loop, 4));
+    prog.GenerateC();
+  }
+  {
+    Program prog;
+    Tensor A({1024}), B({1024});
+    IRNodeKey I;
+    {
+      Variable i(0, 1024, 1);
+      I = i.id;
+      A(i) = B(i) + i;
+    }
+    auto root = prog.module_.GetRoot();
+    auto i_loop = prog.module_.GetLoop(I);
+
+    LoopVectorization::runPass(
+        LoopVectorization::Arg::create(prog.module_.GetRoot(), i_loop, 8));
+    // prog.IRGen();
     prog.GenerateC();
   }
   return 0;

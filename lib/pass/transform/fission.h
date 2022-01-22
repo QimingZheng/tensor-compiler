@@ -15,7 +15,7 @@
 
 namespace polly {
 
-class FissionTransform : public Pass, public IRVisitor {
+class FissionTransform : public Pass, public IRNotImplementedVisitor {
  private:
   FissionTransform() { searching_ = true; }
 
