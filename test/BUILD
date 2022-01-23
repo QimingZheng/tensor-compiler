@@ -30,6 +30,7 @@ cc_test(
         "pass/test_analysis_pass.cc",
         "pass/test_optimization_pass.cc",
         "pass/test_transform_pass.cc",
+        "pass/test_scc.cc",
     ],
     deps=[
         "//lib:polly",
