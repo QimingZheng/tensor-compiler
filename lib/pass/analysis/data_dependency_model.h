@@ -20,9 +20,9 @@ class DataDependencyModel {
  public:
   DataDependencyModel(solver::context &ctx, PolyhedralModel model);
 
-  static solver::union_map CreateFussionTransformMap(
-      solver::context &ctx, PolyhedralModel origin,
-      PolyhedralModel transformed);
+  static solver::union_map CreateTransformMap(solver::context &ctx,
+                                              PolyhedralModel origin,
+                                              PolyhedralModel transformed);
 
   solver::DependencyMap WAW;
   solver::DependencyMap WAR;

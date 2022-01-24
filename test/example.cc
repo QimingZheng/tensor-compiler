@@ -9,6 +9,7 @@
 #include "pass/transform/reorder.h"
 #include "pass/transform/split.h"
 #include "pass/transform/vectorization.h"
+#include "pass/analysis/parallelization_analysis_pass.h"
 
 using namespace polly;
 
@@ -124,8 +125,8 @@ int main() {
         std::shared_ptr<PolyhedralAnalysisPass::Arg>(
             new PolyhedralAnalysisPass::Arg(
                 ctx, ori, transformed,
-                DataDependencyModel::CreateFussionTransformMap(
-                    ctx, oriModel, transformedModel))));
+                DataDependencyModel::CreateTransformMap(ctx, oriModel,
+                                                        transformedModel))));
     std::cout << PassRet::as<PolyhedralAnalysisPass::Ret>(ret)->hasConflicts
               << std::endl;
   }
@@ -178,8 +179,8 @@ int main() {
         std::shared_ptr<PolyhedralAnalysisPass::Arg>(
             new PolyhedralAnalysisPass::Arg(
                 ctx, ori, transformed,
-                DataDependencyModel::CreateFussionTransformMap(
-                    ctx, oriModel, transformedModel))));
+                DataDependencyModel::CreateTransformMap(ctx, oriModel,
+                                                        transformedModel))));
     std::cout << PassRet::as<PolyhedralAnalysisPass::Ret>(ret)->hasConflicts
               << std::endl;
   }
@@ -253,6 +254,24 @@ int main() {
         LoopVectorization::Arg::create(prog.module_.GetRoot(), i_loop, 8));
     // prog.IRGen();
     prog.GenerateC();
+  }
+  {
+    Program prog;
+    Tensor A({1024});
+    IRNodeKey I, J;
+    {
+      Variable i(0, 1024, 1);
+      I = i.id;
+      A(i) = A(i) * i + i;
+    }
+
+    auto par_module = prog.module_.CreateSubSpace();
+    auto root = par_module.GetRoot();
+    auto i_loop = par_module.GetLoop(I);
+
+    auto arg = ParallelizationAnalysisPass::Arg::create(root, i_loop);
+
+    auto ret = ParallelizationAnalysisPass::runPass(arg);
   }
   return 0;
 }

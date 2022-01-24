@@ -90,7 +90,7 @@ DataDependencyModel::DataDependencyModel(solver::context &ctx,
                               writesProgs, writesProgs, deepest);
 }
 
-solver::union_map DataDependencyModel::CreateFussionTransformMap(
+solver::union_map DataDependencyModel::CreateTransformMap(
     solver::context &ctx, PolyhedralModel origin, PolyhedralModel transformed) {
   std::map<StatementKey, Statement> originStatements;
   std::map<StatementKey, Statement> transformedStatements;

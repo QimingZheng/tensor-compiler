@@ -235,6 +235,48 @@ union_map ScheduleMap::OneOneMap(context &ctx,
   return union_map(ori_tr_map);
 }
 
+union_map ScheduleMap::ParallelMap(context &ctx, std::vector<std::string> iter,
+                                   std::vector<int> prog, int schedule_dim) {
+  space spc(ctx, input_tuple(schedule_dim), output_tuple(schedule_dim));
+  basic_map par_map = basic_map::universe(spc);
+
+  for (int i = 0; i < prog.size(); i++) {
+    constraint c = constraint::equality(spc);
+    value val(ctx, -1);
+    c.set_coefficient(space::input, 2 * i, val);
+    val = value(ctx, prog[i]);
+    c.set_constant(val);
+    par_map.add_constraint(c);
+  }
+
+  for (int i = 0; i < prog.size(); i++) {
+    constraint c = constraint::equality(spc);
+    value val(ctx, -1);
+    c.set_coefficient(space::output, 2 * i, val);
+    val = value(ctx, prog[i]);
+    c.set_constant(val);
+    par_map.add_constraint(c);
+  }
+
+  for (int i = 0; i < iter.size() - 1; i++) {
+    constraint c = constraint::equality(spc);
+    value val(ctx, -1);
+    c.set_coefficient(space::input, 2 * i + 1, val);
+    val = value(ctx, 1);
+    c.set_coefficient(space::output, 2 * i + 1, val);
+    par_map.add_constraint(c);
+  }
+
+  constraint c = constraint::inequality(spc);
+  value val(ctx, 1);
+  c.set_coefficient(space::input, 2 * iter.size() - 1, val);
+  val = value(ctx, -1);
+  c.set_coefficient(space::output, 2 * iter.size() - 1, val);
+  par_map.add_constraint(c);
+
+  return union_map(par_map);
+}
+
 }  // namespace solver
 
 }  // namespace polly

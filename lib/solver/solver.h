@@ -154,6 +154,9 @@ class ScheduleMap {
                              std::vector<std::string> tr_iter,
                              std::vector<int> tr_prog, int schedule_dim);
 
+  static union_map ParallelMap(context &ctx, std::vector<std::string> iter,
+                               std::vector<int> prog, int schedule_dim);
+
   union_map schedule;
 };
 
