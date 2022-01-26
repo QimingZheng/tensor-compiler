@@ -87,53 +87,13 @@ class NormalizationHelper : public IRNotImplementedVisitor {
   IRHandle replace_var_;
 };
 
-void NormalizationPass::visitInt(IntHandle int_expr) {
-  /// Pass
-}
-
-void NormalizationPass::visitAdd(AddHandle add) {
-  /// Pass
-}
-
-void NormalizationPass::visitSub(SubHandle sub) {
-  /// Pass
-}
-
-void NormalizationPass::visitMul(MulHandle mul) {
-  /// Pass
-}
-
-void NormalizationPass::visitDiv(DivHandle div) {
-  /// Pass
-}
-
-void NormalizationPass::visitMod(ModHandle mod) {
-  /// Pass
-}
-
-void NormalizationPass::visitVar(VarHandle var) {
-  /// Pass
-}
-
-void NormalizationPass::visitAccess(AccessHandle access) {
-  /// Pass
-}
-
-void NormalizationPass::visitAssign(AssignmentHandle assign) {
-  /// Pass
-}
-
-void NormalizationPass::visitTensor(TensorHandle tensor) {
-  /// Pass
-}
-
 void NormalizationPass::visitFor(ForHandle loop) {
   for (int i = 0; i < loop->body.size(); i++) {
     if (loop->body[i].Type() == IRNodeType::FOR) {
       auto var = loop->body[i].as<ForNode>()->looping_var_;
       if (!isNormalized(var)) {
         IRHandle newVar = VarNode::make(
-            "i" + IRNodeKeyGen::GetInstance()->yield(), IntNode::make(0),
+            IRNodeKeyGen::GetInstance()->YieldVarKey(), IntNode::make(0),
             DivNode::make(
                 SubNode::make(
                     AddNode::make(var.as<VarNode>()->max,
@@ -153,21 +113,13 @@ void NormalizationPass::visitFor(ForHandle loop) {
   }
 }
 
-void NormalizationPass::visitConst(ConstHandle con) {
-  /// Pass
-}
-
-void NormalizationPass::visitPrint(PrintHandle print) {
-  /// Pass
-}
-
 void NormalizationPass::visitFunc(FuncHandle func) {
   for (int i = 0; i < func->body.size(); i++) {
     if (func->body[i].Type() == IRNodeType::FOR) {
       auto var = func->body[i].as<ForNode>()->looping_var_;
       if (!isNormalized(var)) {
         IRHandle newVar = VarNode::make(
-            "i" + IRNodeKeyGen::GetInstance()->yield(), IntNode::make(0),
+            IRNodeKeyGen::GetInstance()->YieldVarKey(), IntNode::make(0),
             DivNode::make(
                 SubNode::make(
                     AddNode::make(var.as<VarNode>()->max,

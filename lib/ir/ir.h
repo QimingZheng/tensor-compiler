@@ -102,6 +102,10 @@ typedef std::string IRNodeKey;
 
 class IRNodeKeyGen {
   IRNodeKeyGen() {}
+  int tensor_id = 0;
+  int loop_var_id = 0;
+  int statement_id = 0;
+  int vec_id = 0;
   int id = 0;
 
  protected:
@@ -109,7 +113,14 @@ class IRNodeKeyGen {
 
  public:
   static IRNodeKeyGen *GetInstance();
-  std::string yield() { return std::to_string(id++); }
+  // std::string yield() { return std::to_string(id++); }
+
+  std::string YieldStatementKey() {
+    return "s" + std::to_string(statement_id++);
+  }
+  std::string YieldTensorKey() { return "t" + std::to_string(tensor_id++); }
+  std::string YieldVarKey() { return "i" + std::to_string(loop_var_id++); }
+  std::string YieldVecKey() { return "v" + std::to_string(vec_id++); }
 };
 
 class IRNode {
@@ -366,11 +377,33 @@ class AssignmentNode : public IRNode {
   }
 };
 
+class LoopAnnotation {
+ public:
+  LoopAnnotation() {
+    parallelization = false;
+    max_parallelization_degree = -1;
+    parallelization_degree = -1;
+    vectorization = false;
+    max_vectorization_length = -1;
+    vectorization_length = -1;
+    reduction = false;
+  }
+  bool parallelization;
+  int max_parallelization_degree;
+  int parallelization_degree;
+  bool vectorization;
+  int max_vectorization_length;
+  int vectorization_length;
+  // TODO: `reduction` is a placeholder, not intende to be used for now.
+  bool reduction;
+};
+
 class ForNode : public IRNode {
  private:
   ForNode() {}
 
  public:
+  LoopAnnotation annotation;
   IRHandle looping_var_;
   std::vector<IRHandle> body;
 

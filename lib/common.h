@@ -2,8 +2,8 @@
  * @Description: Polly: A DSL compiler for Tensor Program 
  * @Author: Qiming Zheng 
  * @Date: 2022-01-18 20:30:05 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:30:05 
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-24 21:34:16
  * @CopyRight: Qiming Zheng 
  */
 #pragma once
@@ -27,6 +27,11 @@
 #include <sys/time.h>
 #include <random>
 #include <math.h>
+#include <thread>
+#include <mutex>
+#include <future>
+#include <queue>
+// #include <barrier>
 
 namespace polly {
 

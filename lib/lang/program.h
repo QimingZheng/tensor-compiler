@@ -3,7 +3,7 @@
  * @Author: Qiming Zheng
  * @Date: 2022-01-18 20:32:24
  * @Last Modified by: Qiming Zheng
- * @Last Modified time: 2022-01-19 20:34:16
+ * @Last Modified time: 2022-01-26 19:15:07
  * @CopyRight: Qiming Zheng
  */
 #pragma once
@@ -157,12 +157,11 @@ class Program {
 
   bool Vectorize(const std::string i, int vectorLength) { return false; }
 
-  void AutoTune() {
-    scheduler_.Search(module_);
-    for (int i = 0; i < 10; i++) {
-      scheduler_.Search();
-    }
-    module_ = scheduler_.best_module_;
+  void AutoTune(std::string searching_strategy = "BeamSearch") {
+    if (searching_strategy == "BeamSearch")
+      module_ = scheduler_.BeamSearch(module_);
+    else if (searching_strategy == "RandomSearch")
+      module_ = scheduler_.RandomSearch(module_);
   }
 
   void IRGen() {

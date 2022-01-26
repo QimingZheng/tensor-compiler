@@ -4,14 +4,14 @@
 namespace polly {
 
 void LoopVectorization::visitInt(IntHandle int_expr) {
-  auto vec = VecNode::make("v" + IRNodeKeyGen::GetInstance()->yield(), vecLen);
+  auto vec = VecNode::make(IRNodeKeyGen::GetInstance()->YieldVecKey(), vecLen);
   vectorizationBody.push_back(
       VecScalarNode::make(vec, IRHandle(int_expr), vecLen));
   node = vec;
 }
 
 void LoopVectorization::visitAdd(AddHandle add) {
-  auto res = VecNode::make("v" + IRNodeKeyGen::GetInstance()->yield(), vecLen);
+  auto res = VecNode::make(IRNodeKeyGen::GetInstance()->YieldVecKey(), vecLen);
   add->lhs.accept(this);
   auto lhs = node;
   add->rhs.accept(this);
@@ -21,7 +21,7 @@ void LoopVectorization::visitAdd(AddHandle add) {
 }
 
 void LoopVectorization::visitSub(SubHandle sub) {
-  auto res = VecNode::make("v" + IRNodeKeyGen::GetInstance()->yield(), vecLen);
+  auto res = VecNode::make(IRNodeKeyGen::GetInstance()->YieldVecKey(), vecLen);
   sub->lhs.accept(this);
   auto lhs = node;
   sub->rhs.accept(this);
@@ -31,7 +31,7 @@ void LoopVectorization::visitSub(SubHandle sub) {
 }
 
 void LoopVectorization::visitMul(MulHandle mul) {
-  auto res = VecNode::make("v" + IRNodeKeyGen::GetInstance()->yield(), vecLen);
+  auto res = VecNode::make(IRNodeKeyGen::GetInstance()->YieldVecKey(), vecLen);
   mul->lhs.accept(this);
   auto lhs = node;
   mul->rhs.accept(this);
@@ -41,7 +41,7 @@ void LoopVectorization::visitMul(MulHandle mul) {
 }
 
 void LoopVectorization::visitDiv(DivHandle div) {
-  auto res = VecNode::make("v" + IRNodeKeyGen::GetInstance()->yield(), vecLen);
+  auto res = VecNode::make(IRNodeKeyGen::GetInstance()->YieldVecKey(), vecLen);
   div->lhs.accept(this);
   auto lhs = node;
   div->rhs.accept(this);
@@ -55,7 +55,7 @@ void LoopVectorization::visitMod(ModHandle mod) {
 }
 
 void LoopVectorization::visitVar(VarHandle var) {
-  auto vec = VecNode::make("v" + IRNodeKeyGen::GetInstance()->yield(), vecLen);
+  auto vec = VecNode::make(IRNodeKeyGen::GetInstance()->YieldVecKey(), vecLen);
   vectorizationBody.push_back(VecScalarNode::make(vec, IRHandle(var), vecLen));
   node = vec;
 }
@@ -63,7 +63,7 @@ void LoopVectorization::visitVar(VarHandle var) {
 void LoopVectorization::visitAccess(AccessHandle access) {
   QuasiAffineExpr expr =
       PolyhedralExtraction::IRHandleToQuasiAffine(access->indices.back());
-  auto vec = VecNode::make("v" + IRNodeKeyGen::GetInstance()->yield(), vecLen);
+  auto vec = VecNode::make(IRNodeKeyGen::GetInstance()->YieldVecKey(), vecLen);
   auto id = loop_.as<ForNode>()->looping_var_.as<VarNode>()->id;
   if (expr.coeffs.find(id) != expr.coeffs.end() && expr.coeffs[id] != 0) {
     vectorizationBody.push_back(

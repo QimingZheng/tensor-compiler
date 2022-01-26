@@ -241,8 +241,8 @@ void LoopUnroll::visitAssign(AssignmentHandle assign) {
   tape_.pop();
   auto lhs = tape_.top();
   tape_.pop();
-  tape_.push(AssignmentNode::make("S" + IRNodeKeyGen::GetInstance()->yield(),
-                                  lhs, rhs));
+  tape_.push(AssignmentNode::make(
+      IRNodeKeyGen::GetInstance()->YieldStatementKey(), lhs, rhs));
 }
 
 void LoopUnroll::visitTensor(TensorHandle tensor) {
@@ -295,7 +295,8 @@ void LoopUnroll::visitPrint(PrintHandle print) {
   print->print.accept(this);
   auto pr = tape_.top();
   tape_.pop();
-  tape_.push(PrintNode::make("S" + IRNodeKeyGen::GetInstance()->yield(), pr));
+  tape_.push(
+      PrintNode::make(IRNodeKeyGen::GetInstance()->YieldStatementKey(), pr));
 }
 
 void LoopUnroll::visitFunc(FuncHandle func) {

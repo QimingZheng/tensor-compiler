@@ -27,7 +27,8 @@ IRHandle ReorderedBounds::IslConstraintToBound(solver::constraint c,
       it.second = -it.second;
     }
   } else {
-    expr.constant += 1;
+    // expr.constant += 1;
+    expr.constant += expr.divisor;
   }
   return QuasiAffineExprToIR(expr);
 }
@@ -51,7 +52,8 @@ IRHandle ReorderedBounds::QuasiAffineExprToIR(QuasiAffineExpr expr) {
     IRHandle add = AddNode::make(lhs, rhs);
     muls.push_back(add);
   }
-  return muls[0];
+  return DivNode::make(muls[0], IntNode::make(expr.divisor));
+  // return muls[0];
 }
 
 void ReorderedBounds::GetReorderedBound(std::vector<IRHandle> loop_vars_,

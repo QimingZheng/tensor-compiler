@@ -92,8 +92,7 @@ void FissionTransform::visitFor(ForHandle loop) {
         std::vector<IRHandle> fissionLoops;
         for (int j = 0; j < targetLoop->body.size(); j++) {
           fissionLoops.push_back(ForNode::make(VarNode::make(
-              /* targetLoop->looping_var_.as<VarNode>()->id, */
-              "i" + IRNodeKeyGen::GetInstance()->yield(),
+              IRNodeKeyGen::GetInstance()->YieldVarKey(),
               targetLoop->looping_var_.as<VarNode>()->min,
               targetLoop->looping_var_.as<VarNode>()->max,
               targetLoop->looping_var_.as<VarNode>()->increment)));
@@ -147,8 +146,7 @@ void FissionTransform::visitFunc(FuncHandle func) {
       std::vector<IRHandle> fissionLoops;
       for (int j = 0; j < loop->body.size(); j++) {
         fissionLoops.push_back(ForNode::make(
-            VarNode::make(/* loop->looping_var_.as<VarNode>()->id */
-                          "i" + IRNodeKeyGen::GetInstance()->yield(),
+            VarNode::make(IRNodeKeyGen::GetInstance()->YieldVarKey(),
                           loop->looping_var_.as<VarNode>()->min,
                           loop->looping_var_.as<VarNode>()->max,
                           loop->looping_var_.as<VarNode>()->increment)));

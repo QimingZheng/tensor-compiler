@@ -11,6 +11,7 @@ cc_binary(
 cc_binary(
     name="auto_scheduler",
     srcs=["test_auto_scheduler.cc"],
+    linkopts = ["-lgmp"],
     deps=[
         "//lib:polly",
     ],

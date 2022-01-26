@@ -33,7 +33,6 @@ class PolyhedralExtraction : public IRNotImplementedVisitor {
   void visitAssign(AssignmentHandle assign) override;
   void visitTensor(TensorHandle tensor) override;
   void visitFor(ForHandle loop) override;
-  void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
 

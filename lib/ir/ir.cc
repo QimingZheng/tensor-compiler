@@ -101,6 +101,7 @@ IRHandle IRHandle::clone(std::map<IRNodeKey, IRHandle> &irHandleDict) {
         for (int i = 0; i < forNode->body.size(); i++) {
           ret.as<ForNode>()->Insert(forNode->body[i].clone(irHandleDict));
         }
+        ret.as<ForNode>()->annotation = forNode->annotation;
       }
       break;
     }

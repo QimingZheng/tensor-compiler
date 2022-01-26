@@ -4,7 +4,7 @@
 namespace polly {
 
 Variable::Variable(const Expr &min, const Expr &max, const Expr &increament) {
-  id = "i" + IRNodeKeyGen::GetInstance()->yield();
+  id = IRNodeKeyGen::GetInstance()->YieldVarKey();
   handle_ = VarNode::make(id, min.GetIRHandle(), max.GetIRHandle(),
                           increament.GetIRHandle());
   Program::GetInstance()->EnterLoop(this);
@@ -39,7 +39,7 @@ Access::Access(const Expr tensor, const std::vector<Expr> &indices) {
 }
 
 Tensor::Tensor(std::vector<int64_t> shape) : shape(shape) {
-  id = "t" + IRNodeKeyGen::GetInstance()->yield();
+  id = IRNodeKeyGen::GetInstance()->YieldTensorKey();
   handle_ = TensorNode::make(id, shape);
   Program::GetInstance()->DeclareTensor(this);
 }

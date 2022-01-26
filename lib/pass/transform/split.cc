@@ -180,19 +180,19 @@ void LoopSplit::visitFunc(FuncHandle func) {
 
 IRHandle LoopSplit::get_outter_loop_var(IRHandle loop_var) {
   return VarNode::make(
-      "i" + IRNodeKeyGen::GetInstance()->yield(), IntNode::make(0),
+      IRNodeKeyGen::GetInstance()->YieldVarKey(), IntNode::make(0),
       DivNode::make(loop_var.as<VarNode>()->max, IntNode::make(splitFactor)),
       IntNode::make(1));
 }
 
 IRHandle LoopSplit::get_inner_loop_var() {
-  return VarNode::make("i" + IRNodeKeyGen::GetInstance()->yield(),
+  return VarNode::make(IRNodeKeyGen::GetInstance()->YieldVarKey(),
                        IntNode::make(0), IntNode::make(splitFactor),
                        IntNode::make(1));
 }
 
 IRHandle LoopSplit::get_remainder_loop_var(IRHandle loop_var) {
-  return VarNode::make("i" + IRNodeKeyGen::GetInstance()->yield(),
+  return VarNode::make(IRNodeKeyGen::GetInstance()->YieldVarKey(),
                        MulNode::make(IntNode::make(splitFactor),
                                      DivNode::make(loop_var.as<VarNode>()->max,
                                                    IntNode::make(splitFactor))),
@@ -264,8 +264,8 @@ class LoopSplitHelper : public IRNotImplementedVisitor {
     auto lhs = node;
     assign->rhs.accept(this);
     auto rhs = node;
-    node = AssignmentNode::make("S" + IRNodeKeyGen::GetInstance()->yield(), lhs,
-                                rhs);
+    node = AssignmentNode::make(
+        IRNodeKeyGen::GetInstance()->YieldStatementKey(), lhs, rhs);
   }
   void visitTensor(TensorHandle tensor) override { node = IRHandle(tensor); }
   void visitFor(ForHandle loop) override {
@@ -276,7 +276,7 @@ class LoopSplitHelper : public IRNotImplementedVisitor {
     loop->looping_var_.as<VarNode>()->increment.accept(this);
     auto increment = node;
     dict[loop->looping_var_.as<VarNode>()->id] = VarNode::make(
-        "i" + IRNodeKeyGen::GetInstance()->yield(), min, max, increment);
+        IRNodeKeyGen::GetInstance()->YieldVarKey(), min, max, increment);
     std::vector<IRHandle> body;
     for (int i = 0; i < loop->body.size(); i++) {
       loop->body[i].accept(this);
@@ -290,7 +290,8 @@ class LoopSplitHelper : public IRNotImplementedVisitor {
   }
   void visitPrint(PrintHandle print) override {
     print->print.accept(this);
-    node = PrintNode::make("S" + IRNodeKeyGen::GetInstance()->yield(), node);
+    node =
+        PrintNode::make(IRNodeKeyGen::GetInstance()->YieldStatementKey(), node);
   }
   void visitFunc(FuncHandle func) override {
     throw std::runtime_error("Should Not visit this node");

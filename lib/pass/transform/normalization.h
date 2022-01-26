@@ -3,7 +3,7 @@
  * @Author: Qiming Zheng
  * @Date: 2022-01-18 20:31:00
  * @Last Modified by: Qiming Zheng
- * @Last Modified time: 2022-01-19 20:27:59
+ * @Last Modified time: 2022-01-26 11:41:34
  * @CopyRight: Qiming Zheng
  */
 #pragma once
@@ -25,19 +25,7 @@ class NormalizationPass : public Pass, public IRNotImplementedVisitor {
  public:
   static PassRetHandle runPass(PassArgHandle arg);
 
-  void visitInt(IntHandle int_expr) override;
-  void visitAdd(AddHandle add) override;
-  void visitSub(SubHandle sub) override;
-  void visitMul(MulHandle mul) override;
-  void visitDiv(DivHandle div) override;
-  void visitMod(ModHandle mod) override;
-  void visitVar(VarHandle var) override;
-  void visitAccess(AccessHandle access) override;
-  void visitAssign(AssignmentHandle assign) override;
-  void visitTensor(TensorHandle tensor) override;
   void visitFor(ForHandle loop) override;
-  void visitConst(ConstHandle con) override;
-  void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
 
   bool isNormalized(IRHandle var) {

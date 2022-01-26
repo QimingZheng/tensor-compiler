@@ -12,7 +12,7 @@ void CodeGenC::visitAdd(AddHandle add) {
 
 void CodeGenC::visitSub(SubHandle sub) {
   sub->lhs.accept(this);
-  oss << " + ";
+  oss << " - ";
   sub->rhs.accept(this);
 }
 
