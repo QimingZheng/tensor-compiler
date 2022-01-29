@@ -194,8 +194,8 @@ class Program {
   void GenerateC() {
     // ConstantFoldingPass::runPass(std::shared_ptr<ConstantFoldingPass::Arg>(
     //     new ConstantFoldingPass::Arg(module_.GetRoot())));
-    CodeGenC codegen(std::cout);
-    codegen.genCode(module_.GetRoot(), module_.GetTensors());
+    CodeGenC codegen;
+    std::cout << codegen.genCode(module_.GetRoot(), module_.GetTensors());
   }
 
   void DeclareTensor(Tensor *tensor) {

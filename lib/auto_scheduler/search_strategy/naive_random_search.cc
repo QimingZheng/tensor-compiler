@@ -4,7 +4,7 @@ namespace polly {
 
 IRModule RandomSearchStrategy::Search(IRModule module) {
   while (search_budget_--) {
-    int seed = rand() % 4;
+    int seed = rand() % 5;
     int max_trial = 10;
     while (max_trial--) {
       auto cloned_module = module.CreateSubSpace();
@@ -45,7 +45,14 @@ IRModule RandomSearchStrategy::Search(IRModule module) {
           break;
         }
       }
-      // if (seed = 4) {
+      if (seed = 4) {
+        // Parallelize
+        if (Mutator::Parallelize(cloned_module.GetRoot())) {
+          module = cloned_module;
+          break;
+        }
+      }
+      // if (seed = 5) {
       //   // Unroll
       //   if (Mutator::Unroll(cloned_module.GetRoot())) {
       //     module = cloned_module;

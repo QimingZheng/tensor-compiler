@@ -272,6 +272,48 @@ TEST(PARALLEL_ANALYSIS, PARALLEL_ANALYSIS) {
 
     EXPECT_EQ(PassRet::as<ParallelizationAnalysisPass::Ret>(ret)->legal, true);
   }
+  // Positive & Negative Case
+  {
+    Program prog;
+    Tensor A({1024, 1024}), B({1024, 1024}), C({1024, 1024});
+    IRNodeKey I, J, K;
+    {
+      Variable i(0, 1024, 1);
+      I = i.id;
+      {
+        Variable j(0, 1024, 1);
+        J = j.id;
+        {
+          Variable k(0, 1024, 1);
+          K = k.id;
+          C(i, j) = C(i, j) + A(i, k) * B(k, j);
+        }
+      }
+    }
+
+    auto par_module = prog.module_.CreateSubSpace();
+    auto root = par_module.GetRoot();
+    auto i_loop = par_module.GetLoop(I);
+    auto j_loop = par_module.GetLoop(J);
+    auto k_loop = par_module.GetLoop(K);
+
+    EXPECT_EQ(PassRet::as<ParallelizationAnalysisPass::Ret>(
+                  ParallelizationAnalysisPass::runPass(
+                      ParallelizationAnalysisPass::Arg::create(root, i_loop)))
+                  ->legal,
+              true);
+
+    EXPECT_EQ(PassRet::as<ParallelizationAnalysisPass::Ret>(
+                  ParallelizationAnalysisPass::runPass(
+                      ParallelizationAnalysisPass::Arg::create(root, j_loop)))
+                  ->legal,
+              true);
+    EXPECT_EQ(PassRet::as<ParallelizationAnalysisPass::Ret>(
+                  ParallelizationAnalysisPass::runPass(
+                      ParallelizationAnalysisPass::Arg::create(root, k_loop)))
+                  ->legal,
+              false);
+  }
   // Negative Case
   {
     Program prog;

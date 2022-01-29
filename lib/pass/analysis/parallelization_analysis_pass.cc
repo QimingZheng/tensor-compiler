@@ -32,8 +32,6 @@ PassRetHandle ParallelizationAnalysisPass::runPass(PassArgHandle arg) {
   auto parMap = solver::ScheduleMap::ParallelMap(
       ctx, iters, analysis.prog_context_, deepest);
 
-  parMap.dump();
-
   return Ret::create(!((!(dependency.RAW.dependency & parMap).empty()) ||
                        (!(dependency.WAW.dependency & parMap).empty()) ||
                        (!(dependency.WAR.dependency & parMap).empty())));

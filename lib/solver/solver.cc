@@ -272,9 +272,36 @@ union_map ScheduleMap::ParallelMap(context &ctx, std::vector<std::string> iter,
   c.set_coefficient(space::input, 2 * iter.size() - 1, val);
   val = value(ctx, -1);
   c.set_coefficient(space::output, 2 * iter.size() - 1, val);
+  val = value(ctx, -1);
+  c.set_constant(val);
   par_map.add_constraint(c);
 
   return union_map(par_map);
+}
+
+union_map ScheduleMap::ConcurrentMap(context &ctx, int pos, int i, int j,
+                                     int schedule_dim) {
+  space spc(ctx, input_tuple(schedule_dim), output_tuple(schedule_dim));
+  basic_map concur_map = basic_map::universe(spc);
+
+  {
+    constraint c = constraint::equality(spc);
+    value val(ctx, -1);
+    c.set_coefficient(space::input, pos, val);
+    val = value(ctx, i);
+    c.set_constant(val);
+    concur_map.add_constraint(c);
+  }
+  {
+    constraint c = constraint::equality(spc);
+    value val(ctx, -1);
+    c.set_coefficient(space::output, pos, val);
+    val = value(ctx, j);
+    c.set_constant(val);
+    concur_map.add_constraint(c);
+  }
+
+  return union_map(concur_map);
 }
 
 }  // namespace solver

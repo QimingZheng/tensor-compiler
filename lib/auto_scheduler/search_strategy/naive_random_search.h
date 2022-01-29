@@ -3,14 +3,14 @@
  * @Author: Qiming Zheng
  * @Date: 2022-01-26 13:10:55
  * @Last Modified by: Qiming Zheng
- * @Last Modified time: 2022-01-26 19:11:05
+ * @Last Modified time: 2022-01-26 19:22:22
  * @CopyRight: Qiming Zheng
  */
 
 #pragma once
 
 #include "common.h"
-#include "auto_scheduler/cost_model.h"
+#include "auto_scheduler/cost_model/cost_model.h"
 #include "ir/ir_module.h"
 #include "auto_scheduler/mutator/mutator.h"
 #include "strategy.h"
@@ -19,7 +19,7 @@ namespace polly {
 
 class RandomSearchStrategy : public SearchStrategy {
  public:
-  RandomSearchStrategy(int search_budget = 10)
+  RandomSearchStrategy(int search_budget = 2)
       : search_budget_(search_budget) {}
 
   int search_budget_;

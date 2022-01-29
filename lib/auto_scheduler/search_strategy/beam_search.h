@@ -3,14 +3,14 @@
  * @Author: Qiming Zheng
  * @Date: 2022-01-26 10:11:04
  * @Last Modified by: Qiming Zheng
- * @Last Modified time: 2022-01-26 19:12:11
+ * @Last Modified time: 2022-01-26 19:22:21
  * @CopyRight: Qiming Zheng
  */
 
 #pragma once
 
 #include "common.h"
-#include "auto_scheduler/cost_model.h"
+#include "auto_scheduler/cost_model/cost_model.h"
 #include "ir/ir_module.h"
 #include "strategy.h"
 

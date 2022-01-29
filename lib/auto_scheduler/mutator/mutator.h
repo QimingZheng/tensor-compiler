@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-26 19:09:13 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-26 19:09:13 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-26 19:09:13
+ * @Last Modified by:   Qiming Zheng
+ * @Last Modified time: 2022-01-26 19:09:13
+ * @CopyRight: Qiming Zheng
  */
 #pragma once
 
@@ -34,10 +34,7 @@ namespace polly {
 class Mutator {
  public:
   // Parallelize a program
-  static bool Parallelize(IRHandle program) {
-    LoopParallel::runPass(LoopParallel::Arg::create(program));
-    return true;
-  }
+  static bool Parallelize(IRHandle program);
   static bool Split(IRHandle program, IRHandle loop, int splitFactor);
   static bool Reorder(IRHandle program, IRHandle outter_loop,
                       IRHandle inner_loop);

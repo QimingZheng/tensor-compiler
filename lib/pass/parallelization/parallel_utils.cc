@@ -1,4 +1,4 @@
-#include "scc.h"
+#include "parallel_utils.h"
 
 namespace polly {
 
@@ -8,7 +8,6 @@ void TarjanSCC::FindSCC() {
   for (auto &it : nodes) {
     auto &node = it.second;
     if (node->component_id < 0) {
-      std::cout << node->id << std::endl;
       StrongConnect(node);
     }
   }
@@ -38,6 +37,28 @@ void TarjanSCC::StrongConnect(NodeHandle node) {
     }
     stack.pop_back();
   }
+}
+
+std::vector<NodeHandle> TopologicalSort::Sort() {
+  std::vector<NodeHandle> ret;
+  std::deque<NodeHandle> q;
+  for (auto it : nodes) {
+    if (it.second->indegree == 0) {
+      q.push_back(it.second);
+    }
+  }
+  while (!q.empty()) {
+    auto cur = q.front();
+    ret.push_back(cur);
+    q.pop_front();
+    for (auto &it : cur->outgoings) {
+      it.second->indegree -= 1;
+      if (it.second->indegree == 0) {
+        q.push_back(it.second);
+      }
+    }
+  }
+  return ret;
 }
 
 }  // namespace internal

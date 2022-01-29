@@ -2,8 +2,8 @@
  * @Description: Polly: A DSL compiler for Tensor Program
  * @Author: Qiming Zheng
  * @Date: 2022-01-18 20:29:44
- * @Last Modified by:   Qiming Zheng
- * @Last Modified time: 2022-01-18 20:29:44
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-28 16:29:55
  * @CopyRight: Qiming Zheng
  */
 
@@ -26,9 +26,20 @@ typedef std::string ArrayKey;
 /// x_i is integer variable
 class QuasiAffineExpr {
  public:
-  QuasiAffineExpr() {}
+  QuasiAffineExpr() { clear(); }
   QuasiAffineExpr(std::map<VarKey, int> coeffs, int constant, int divisor)
       : coeffs(coeffs), constant(constant), divisor(divisor) {}
+
+  QuasiAffineExpr(const QuasiAffineExpr& other)
+      : coeffs(other.coeffs),
+        constant(other.constant),
+        divisor(other.divisor) {}
+
+  QuasiAffineExpr& operator=(const QuasiAffineExpr& other) {
+    coeffs = other.coeffs;
+    constant = other.constant;
+    divisor = other.divisor;
+  }
 
   void clear() {
     coeffs.clear();
@@ -190,6 +201,13 @@ class Statement {
 class PolyhedralModel {
  public:
   PolyhedralModel() {}
+  PolyhedralModel operator+(PolyhedralModel model) {
+    PolyhedralModel ret;
+    ret.statements_ = statements_;
+    ret.statements_.insert(ret.statements_.begin(), model.statements_.begin(),
+                           model.statements_.end());
+    return ret;
+  }
   std::vector<Statement> statements_;
 };
 

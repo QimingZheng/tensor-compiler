@@ -31,7 +31,8 @@ cc_test(
         "pass/test_analysis_pass.cc",
         "pass/test_optimization_pass.cc",
         "pass/test_transform_pass.cc",
-        "pass/test_scc.cc",
+        "pass/test_parallelization_utils.cc",
+        "pass/test_parallelization_pass.cc",
     ],
     deps=[
         "//lib:polly",

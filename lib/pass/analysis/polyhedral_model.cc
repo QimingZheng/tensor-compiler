@@ -30,6 +30,7 @@ IRHandle ReorderedBounds::IslConstraintToBound(solver::constraint c,
     // expr.constant += 1;
     expr.constant += expr.divisor;
   }
+
   return QuasiAffineExprToIR(expr);
 }
 

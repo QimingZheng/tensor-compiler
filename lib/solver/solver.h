@@ -2,8 +2,8 @@
  * @Description: Polly: A DSL compiler for Tensor Program
  * @Author: Qiming Zheng
  * @Date: 2022-01-18 20:30:14
- * @Last Modified by:   Qiming Zheng
- * @Last Modified time: 2022-01-18 20:30:14
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-28 16:59:40
  * @CopyRight: Qiming Zheng
  */
 
@@ -157,6 +157,9 @@ class ScheduleMap {
   static union_map ParallelMap(context &ctx, std::vector<std::string> iter,
                                std::vector<int> prog, int schedule_dim);
 
+  static union_map ConcurrentMap(context &ctx, int pos, int i, int j,
+                                 int schedule_dim);
+
   union_map schedule;
 };
 
@@ -198,6 +201,30 @@ class DependencyMap {
     dependency_flow =
         dependency_flow & solver::ScheduleMap::PreceedMap(ctx, schedule_dim);
     dependency = dependency_flow;
+  }
+
+  DependencyMap(context &ctx, std::vector<int> progs, int schedule_dim,
+                union_map &dep) {
+    dependency = dep;
+
+    union_map prog_equ = union_map(ctx, "{}");
+
+    // space spc = dependency.get_space();
+
+    space spc(ctx, input_tuple(schedule_dim), output_tuple(schedule_dim));
+    basic_map subPreceeds = basic_map::universe(spc);
+    for (int j = 0; j < 2 * progs.size(); j++) {
+      constraint c = constraint::equality(spc);
+      value val(ctx, 1);
+      c.set_coefficient(space::input, j, val);
+      val = value(ctx, -1);
+      c.set_coefficient(space::output, j, val);
+      subPreceeds.add_constraint(c);
+    }
+
+    prog_equ = prog_equ | union_map(subPreceeds);
+
+    dependency = dependency & prog_equ;
   }
 
   union_map dependency;

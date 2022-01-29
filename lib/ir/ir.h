@@ -107,6 +107,7 @@ class IRNodeKeyGen {
   int statement_id = 0;
   int vec_id = 0;
   int id = 0;
+  int method_id = 0;
 
  protected:
   static IRNodeKeyGen *generator;
@@ -121,6 +122,9 @@ class IRNodeKeyGen {
   std::string YieldTensorKey() { return "t" + std::to_string(tensor_id++); }
   std::string YieldVarKey() { return "i" + std::to_string(loop_var_id++); }
   std::string YieldVecKey() { return "v" + std::to_string(vec_id++); }
+  std::string YieldMethodName() {
+    return "func_" + std::to_string(method_id++);
+  }
 };
 
 class IRNode {

@@ -60,6 +60,8 @@ DataDependencyModel::DataDependencyModel(solver::context &ctx,
     statements[st.statementName] = st;
   }
 
+  depth = deepest;
+
   std::vector<solver::AccessMap> reads;
   std::vector<std::vector<std::string>> readsIters;
   std::vector<std::vector<int>> readsProgs;
@@ -88,6 +90,59 @@ DataDependencyModel::DataDependencyModel(solver::context &ctx,
                               writesProgs, readsProgs, deepest);
   WAW = solver::DependencyMap(ctx, writes, writes, writesIters, writesIters,
                               writesProgs, writesProgs, deepest);
+}
+
+DataDependencyModel::DataDependencyModel(solver::context &ctx,
+                                         std::vector<int> prog_context,
+                                         PolyhedralModel model)
+    : model(model) {
+  int deepest = 0;
+
+  std::map<StatementKey, Statement> statements;
+
+  for (Statement st : model.statements_) {
+    IterDomain iter = st.iters_;
+    ProgDomain prog = st.prog_;
+    assert(iter.iterations_.size() + 1 == prog.progContext_.size());
+    deepest = std::max(
+        deepest, (int)(iter.iterations_.size() + prog.progContext_.size()));
+    statements[st.statementName] = st;
+  }
+
+  depth = deepest;
+
+  std::vector<solver::AccessMap> reads;
+  std::vector<std::vector<std::string>> readsIters;
+  std::vector<std::vector<int>> readsProgs;
+  std::vector<solver::AccessMap> writes;
+  std::vector<std::vector<std::string>> writesIters;
+  std::vector<std::vector<int>> writesProgs;
+
+  for (Statement st : model.statements_) {
+    auto accesses = st.accesses_;
+    for (ArrayAccess acc : accesses) {
+      if (acc.access.type_ == ArrayDomain::AccessType::WRITE) {
+        writes.push_back(BuildAccessMap(ctx, st, acc));
+        writesIters.push_back(st.iters_.GerIters());
+        writesProgs.push_back(st.prog_.progContext_);
+      } else {
+        reads.push_back(BuildAccessMap(ctx, st, acc));
+        readsIters.push_back(st.iters_.GerIters());
+        readsProgs.push_back(st.prog_.progContext_);
+      }
+    }
+  }
+
+  RAW = solver::DependencyMap(ctx, reads, writes, readsIters, writesIters,
+                              readsProgs, writesProgs, deepest);
+  WAR = solver::DependencyMap(ctx, writes, reads, writesIters, readsIters,
+                              writesProgs, readsProgs, deepest);
+  WAW = solver::DependencyMap(ctx, writes, writes, writesIters, writesIters,
+                              writesProgs, writesProgs, deepest);
+
+  RAW = solver::DependencyMap(ctx, prog_context, deepest, RAW.dependency);
+  WAR = solver::DependencyMap(ctx, prog_context, deepest, WAR.dependency);
+  WAW = solver::DependencyMap(ctx, prog_context, deepest, WAW.dependency);
 }
 
 solver::union_map DataDependencyModel::CreateTransformMap(

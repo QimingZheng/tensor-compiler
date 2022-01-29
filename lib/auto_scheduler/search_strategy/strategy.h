@@ -10,7 +10,7 @@
 #pragma once
 
 #include "common.h"
-#include "auto_scheduler/cost_model.h"
+#include "auto_scheduler/cost_model/cost_model.h"
 #include "ir/ir_module.h"
 
 namespace polly {

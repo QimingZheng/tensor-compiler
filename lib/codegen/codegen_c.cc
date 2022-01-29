@@ -2,6 +2,93 @@
 
 namespace polly {
 
+std::string CodeGenC::genCode(IRHandle program,
+                              std::vector<IRHandle> &tensors) {
+  program_ = program;
+
+  oss << C_Heaader;
+  oss << C_Runtime_Deps;
+  for (int i = 0; i < tensors.size(); i++) {
+    tensor_name.push_back(tensors[i].as<TensorNode>()->id);
+    tensor_shape.push_back(tensors[i].as<TensorNode>()->shape);
+    oss << "float " << tensors[i].as<TensorNode>()->id;
+    for (int j = 0; j < tensors[i].as<TensorNode>()->shape.size(); j++)
+      oss << "[" << tensors[i].as<TensorNode>()->shape[j] << "]";
+    oss << ";\n";
+  }
+
+  std::ostringstream parallel_method_declarations;
+  std::swap(oss, parallel_method_declarations);
+
+  oss << "int main() {\n";
+  oss << "  ThreadDim dim({16, 1});\n";
+  oss << "  ThreadPool::Initialize(dim);\n";
+  oss << "  struct timeval start, end;\n";
+  oss << "  gettimeofday(&start, NULL);\n";
+  visit(program);
+  // timing unit: ms
+  oss << "  gettimeofday(&end, NULL);\n";
+  oss << "  printf(\"%.6f\\n\", (end.tv_sec - start.tv_sec) * 1000L + "
+         "(end.tv_usec - start.tv_usec) * 1.0 / 1000L);\n";
+  oss << "}\n";
+  while (methods_.size()) {
+    auto arguments = methods_.back();
+    methods_.pop_back();
+    create_method(arguments.method_name, tensor_name, arguments.loop_var_names,
+                  arguments.level, arguments.parallel_loop);
+  }
+  swap(oss, parallel_method_declarations);
+  for (int i = 0; i < method_decls_.size(); i++) {
+    oss << method_decls_[i] << "\n";
+  }
+  oss << parallel_method_declarations.str();
+  return oss.str();
+}
+
+std::string CodeGenC::tensor_shape_str(std::vector<int64_t> shape) {
+  std::string ret = "";
+  for (int i = 0; i < shape.size(); i++) {
+    ret += "[" + std::to_string(shape[i]) + "]";
+  }
+  return ret;
+}
+
+void CodeGenC::create_method(std::string method_name,
+                             std::vector<std::string> tensor_name,
+                             std::vector<std::string> outter_loop_vars,
+                             int level, IRHandle loop) {
+  std::ostringstream dec;
+  dec << "inline void " << method_name << "(";
+  for (int i = 0; i < tensor_name.size(); i++) {
+    dec << "float " << tensor_name[i] << tensor_shape_str(tensor_shape[i])
+        << ", ";
+  }
+  for (int i = 0; i < outter_loop_vars.size(); i++) {
+    dec << "int " << outter_loop_vars[i] << ", ";
+  }
+
+  dec << "int worker_size, int wid)";
+
+  oss << dec.str();
+  method_decls_.push_back(dec.str() + ";");
+
+  oss << " {\n";
+  // TODO: method content here.
+  auto loop_var = loop.as<ForNode>()->looping_var_.as<VarNode>();
+  oss << getIndent();
+  oss << "for (int " << loop_var->id << " = wid; " << loop_var->id << " < ";
+  loop_var->max.accept(this);
+  oss << "; " << loop_var->id << " += worker_size) {\n";
+  indent += 1;
+  for (int i = 0; i < loop.as<ForNode>()->body.size(); i++) {
+    loop.as<ForNode>()->body[i].accept(this);
+  }
+  indent -= 1;
+  oss << getIndent();
+  oss << "}\n";
+  oss << "}\n";
+}
+
 void CodeGenC::visitInt(IntHandle int_expr) { oss << int_expr->value; }
 
 void CodeGenC::visitAdd(AddHandle add) {
@@ -68,8 +155,88 @@ void CodeGenC::visitAssign(AssignmentHandle assign) {
 
 void CodeGenC::visitTensor(TensorHandle tensor) { oss << tensor->id; }
 
+class OutterLoopCollectionHelper : public IRRecursiveVisitor {
+ public:
+  IRHandle loop;
+  std::vector<std::string> outter_loops;
+  bool stop;
+  OutterLoopCollectionHelper(IRHandle program, IRHandle loop) : loop(loop) {
+    stop = false;
+    program.accept(this);
+  }
+
+  void enter(IRHandle node) override {
+    if (stop) return;
+    if (node.equals(loop)) {
+      stop = true;
+      return;
+    }
+    if (node.Type() == IRNodeType::FOR) {
+      outter_loops.push_back(
+          node.as<ForNode>()->looping_var_.as<VarNode>()->id);
+    }
+  }
+  void exit(IRHandle node) override {
+    if (stop) return;
+    if (node.Type() == IRNodeType::FOR) outter_loops.pop_back();
+  }
+};
+
 void CodeGenC::visitFor(ForHandle loop) {
   VarHandle loop_var = loop->looping_var_.as<VarNode>();
+
+  if (loop->annotation.parallelization) {
+    auto meth_name = IRNodeKeyGen::GetInstance()->YieldMethodName();
+
+    parallel_loop_count += 1;
+    // multi-threading region.
+    oss << getIndent();
+    oss << "// Barrier begin\n";
+
+    oss << getIndent();
+    oss << "{\n";
+
+    indent += 1;
+
+    oss << getIndent();
+    oss << "std::vector<std::future<void>> ret;\n";
+
+    oss << getIndent();
+    oss << "for (int w = 0; w < " << worker_size << "; w++) {\n";
+    oss << getIndent() << "\t";
+    oss << "ret.push_back(ThreadPool::GetThreadingLevel("
+        << parallel_loop_count - 1 << ")->submit(" << meth_name << ", ";
+    for (int i = 0; i < tensor_name.size(); i++) {
+      oss << tensor_name[i] << ", ";
+    }
+    auto outter_loop_vars =
+        OutterLoopCollectionHelper(program_, IRHandle(loop)).outter_loops;
+    for (int i = 0; i < outter_loop_vars.size(); i++) {
+      oss << outter_loop_vars[i] << ", ";
+    }
+    oss << worker_size << ", w));\n";
+
+    oss << getIndent();
+    oss << "}\n";
+
+    oss << getIndent();
+    oss << "for (int w = 0; w < " << worker_size << "; w++) {\n";
+    oss << getIndent() << "\t";
+    oss << "ret[w].get();\n";
+    oss << getIndent();
+    oss << "}\n";
+
+    indent -= 1;
+    oss << getIndent();
+    oss << "}\n";
+    oss << getIndent();
+    oss << "// Barrier end\n";
+    methods_.push_back(method_arguments(meth_name, outter_loop_vars,
+                                        outter_loop_vars.size(), worker_size,
+                                        IRHandle(loop)));
+    return;
+  }
+
   oss << getIndent();
   oss << "for (int ";
   loop->looping_var_.accept(this);
@@ -90,22 +257,6 @@ void CodeGenC::visitFor(ForHandle loop) {
   }
   indent -= 1;
   oss << getIndent();
-  oss << "}\n";
-}
-void CodeGenC::genCode(IRHandle program, std::vector<IRHandle> &tensors) {
-  oss << C_Heaader;
-  for (int i = 0; i < tensors.size(); i++) {
-    oss << "float " << tensors[i].as<TensorNode>()->id;
-    for (int j = 0; j < tensors[i].as<TensorNode>()->shape.size(); j++)
-      oss << "[" << tensors[i].as<TensorNode>()->shape[j] << "]";
-    oss << ";\n";
-  }
-  oss << "int main() {\n";
-  oss << "  clock_t tStart = clock();\n";
-  visit(program);
-  // timing unit: ms
-  oss << "  printf(\"%.6f\\n\", (double)(clock() - "
-         "tStart)/(CLOCKS_PER_SEC/1000.0));\n";
   oss << "}\n";
 }
 

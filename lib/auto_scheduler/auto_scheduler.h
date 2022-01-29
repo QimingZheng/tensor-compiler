@@ -3,14 +3,14 @@
  * @Author: Qiming Zheng
  * @Date: 2022-01-18 20:29:40
  * @Last Modified by: Qiming Zheng
- * @Last Modified time: 2022-01-26 13:58:33
+ * @Last Modified time: 2022-01-26 19:22:33
  * @CopyRight: Qiming Zheng
  */
 
 #pragma once
 
 #include "common.h"
-#include "cost_model.h"
+#include "auto_scheduler/cost_model/cost_model.h"
 #include "ir/ir_module.h"
 #include "search_strategy/beam_search.h"
 #include "search_strategy/naive_random_search.h"

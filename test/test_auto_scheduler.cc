@@ -30,7 +30,7 @@ int main() {
   prog.SetSplit(K);
   prog.SetReorder(I, J);
   prog.SetReorder(J, K);
-  prog.AutoTune();
+  prog.AutoTune("RandomSearch");
 
   prog.GenerateC();
 

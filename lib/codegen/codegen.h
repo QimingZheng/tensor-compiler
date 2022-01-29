@@ -2,8 +2,8 @@
  * @Description: Polly: A DSL compiler for Tensor Program
  * @Author: Qiming Zheng
  * @Date: 2022-01-18 20:32:55
- * @Last Modified by:   Qiming Zheng
- * @Last Modified time: 2022-01-18 20:32:55
+ * @Last Modified by: Qiming Zheng
+ * @Last Modified time: 2022-01-26 21:56:31
  * @CopyRight: Qiming Zheng
  */
 #pragma once
@@ -37,12 +37,42 @@ class CodeGenC : public IRVisitor {
     }
     return ret;
   }
-  std::ostream &oss;
+  std::ostringstream oss;
   int indent = 1;
 
+  static std::string C_Runtime_Deps;
+
+  /// Used by the parallelization.
+  std::vector<std::string> tensor_name;
+  std::vector<std::vector<int64_t>> tensor_shape;
+
+  int parallel_loop_count;
+  int worker_size = 16;
+
+  struct method_arguments {
+    method_arguments(std::string method_name,
+                     std::vector<std::string> loop_var_names, int level,
+                     int worker_size, IRHandle parallel_loop)
+        : method_name(method_name),
+          loop_var_names(loop_var_names),
+          level(level),
+          worker_size(worker_size),
+          parallel_loop(parallel_loop) {}
+    std::string method_name;
+    std::vector<std::string> loop_var_names;
+    int level;
+    int worker_size;
+    IRHandle parallel_loop;
+  };
+
+  std::vector<method_arguments> methods_;
+  std::vector<std::string> method_decls_;
+
+  IRHandle program_;
+
  public:
-  CodeGenC(std::ostream &os) : oss(os) {}
-  void genCode(IRHandle program, std::vector<IRHandle> &tensors);
+  CodeGenC() { parallel_loop_count = 0; }
+  std::string genCode(IRHandle program, std::vector<IRHandle> &tensors);
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
@@ -68,6 +98,11 @@ class CodeGenC : public IRVisitor {
   void visitVecMul(VecMulHandle mul) override;
   void visitVecDiv(VecDivHandle div) override;
 
+  void create_method(std::string method_name,
+                     std::vector<std::string> tensor_name,
+                     std::vector<std::string> outter_loop_vars, int level,
+                     IRHandle loop);
+  std::string tensor_shape_str(std::vector<int64_t> shape);
   void vec_case(int vecLen, std::string str1, std::string str2);
 };
 

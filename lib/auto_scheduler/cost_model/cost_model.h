@@ -23,8 +23,8 @@ class CostModel {
     std::string costModelFileName = ".polly_cost_model.cc";
     std::ofstream f;
     f.open(costModelFileName);
-    CodeGenC codegen(f);
-    codegen.genCode(space.GetRoot(), space.GetTensors());
+    CodeGenC codegen;
+    f << codegen.genCode(space.GetRoot(), space.GetTensors());
     f.close();
 
     // Compile

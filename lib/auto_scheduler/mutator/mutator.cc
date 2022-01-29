@@ -1,7 +1,6 @@
 #include "mutator.h"
 
 namespace polly {
-
 bool Mutator::OfSameScope(IRHandle program, IRHandle first_loop,
                           IRHandle second_loop) {
   // two loops cannot be the same.
@@ -61,6 +60,13 @@ bool Mutator::IsFullyNested(IRHandle outter_loop, IRHandle inner_loop) {
     }
   }
   return false;
+}
+
+bool Mutator::Parallelize(IRHandle program) {
+  NormalizationPass::runPass(NormalizationPass::Arg::create(program));
+
+  LoopParallel::runPass(LoopParallel::Arg::create(program));
+  return true;
 }
 
 bool Mutator::Split(IRHandle program, IRHandle loop, int splitFactor) {

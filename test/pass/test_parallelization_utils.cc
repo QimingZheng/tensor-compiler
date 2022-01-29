@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "pass/parallelization/scc.h"
+#include "pass/parallelization/parallel_utils.h"
 
 using namespace polly::internal;
 

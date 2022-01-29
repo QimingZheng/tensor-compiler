@@ -11,6 +11,9 @@
 #include "pass/transform/vectorization.h"
 #include "pass/analysis/parallelization_analysis_pass.h"
 
+#include "pass/parallelization/parallel_utils.h"
+#include "pass/parallelization/sync_parallel.h"
+
 using namespace polly;
 
 int main() {
@@ -207,7 +210,7 @@ int main() {
       Variable i(0, 1024, 1);
       I = i.id;
       {
-        Variable j(i, 1024, 1);
+        Variable j(0, i + 1, 1);
         J = j.id;
         {
           Variable k(0, 1024, 1);
@@ -220,8 +223,8 @@ int main() {
     auto i_loop = prog.module_.GetLoop(I).as<ForNode>()->looping_var_;
     auto j_loop = prog.module_.GetLoop(J).as<ForNode>()->looping_var_;
     LoopReorder::runPass(LoopReorder::Arg::create(root, i_loop, j_loop));
-    ConstantFoldingPass::runPass(
-        ConstantFoldingPass::Arg::create(prog.module_.GetRoot()));
+    // ConstantFoldingPass::runPass(
+    //     ConstantFoldingPass::Arg::create(prog.module_.GetRoot()));
     prog.GenerateC();
   }
   {
@@ -272,6 +275,51 @@ int main() {
     auto arg = ParallelizationAnalysisPass::Arg::create(root, i_loop);
 
     auto ret = ParallelizationAnalysisPass::runPass(arg);
+  }
+  {
+    Program prog;
+    Tensor A({1024, 1024}), B({1024, 1024}), C({1024, 1024});
+    IRNodeKey I, J, K;
+    {
+      Variable i(0, 1024, 1);
+      I = i.id;
+      {
+        Variable j(0, 1024, 1);
+        J = j.id;
+        {
+          Variable k(0, 1024, 1);
+          K = k.id;
+          C(i, j) = C(i, j) + A(i, k) * B(k, j);
+        }
+      }
+    }
+
+    auto par_module = prog.module_.CreateSubSpace();
+    auto root = par_module.GetRoot();
+    auto i_loop = par_module.GetLoop(I);
+    auto j_loop = par_module.GetLoop(J);
+    auto k_loop = par_module.GetLoop(K);
+
+    auto ret = ParallelizationAnalysisPass::runPass(
+        ParallelizationAnalysisPass::Arg::create(root, i_loop));
+  }
+
+  {
+    Program prog;
+    Tensor A({1024}), B({1024});
+    {
+      Variable i(0, 1024, 1);
+      A(i) = i;
+      {
+        Variable j(0, 1, 1);
+        B(i + j) = i + j;
+        A(i + 1) = A(i) + B(i + j);
+      }
+      B(i + 1) = B(i);
+    }
+    prog.GenerateC();
+    SyncParallel::runPass(SyncParallel::Arg::create(prog.module_.GetRoot()));
+    prog.GenerateC();
   }
   return 0;
 }

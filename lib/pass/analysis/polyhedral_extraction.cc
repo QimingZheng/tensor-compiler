@@ -168,6 +168,7 @@ void PolyhedralExtraction::visitFor(ForHandle loop) {
   loop->looping_var_.as<VarNode>()->max.accept(this);
   auto max_ = expr;
   // max_ is a non-inclusive bound
+  // max_.constant -= 1;
   max_.constant -= 1 * max_.divisor;
 
   loops.push_back(Iteration(loop->looping_var_.as<VarNode>()->id, min_, max_));

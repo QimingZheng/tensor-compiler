@@ -3,7 +3,7 @@
  * @Author: Qiming Zheng
  * @Date: 2022-01-18 20:31:19
  * @Last Modified by: Qiming Zheng
- * @Last Modified time: 2022-01-23 20:36:01
+ * @Last Modified time: 2022-01-28 14:50:04
  * @CopyRight: Qiming Zheng
  */
 
@@ -25,19 +25,23 @@ struct Node {
   int component_id;
   int low_link;
   std::map<std::string, NodeHandle> outgoings;
+  int indegree;
 
   Node() {
     component_id = -1;
     id = "";
     outgoings.clear();
+    indegree = 0;
   }
   Node(std::string id) : id(id) {
     component_id = -1;
     outgoings.clear();
+    indegree = 0;
   }
   Node(std::string id, std::map<std::string, NodeHandle> outgoings)
       : id(id), outgoings(outgoings) {
     component_id = -1;
+    indegree = 0;
   }
   static NodeHandle create(std::string id) {
     return std::shared_ptr<Node>(new Node(id));
@@ -62,6 +66,7 @@ class TarjanSCC {
     assert(Contains(src));
     assert(Contains(dst));
     src->outgoings.insert({dst->id, dst});
+    dst->indegree += 1;
   }
 
   bool OnStack(NodeHandle node) {
@@ -75,6 +80,27 @@ class TarjanSCC {
 
   int index;
   std::vector<NodeHandle> stack;
+
+  std::map<std::string, NodeHandle> nodes;
+};
+
+class TopologicalSort {
+ public:
+  TopologicalSort() {}
+
+  void AddNode(NodeHandle node) {
+    if (!Contains(node)) nodes[node->id] = node;
+  }
+  bool Contains(NodeHandle node) { return nodes.find(node->id) != nodes.end(); }
+
+  void AddEdge(NodeHandle src, NodeHandle dst) {
+    assert(Contains(src));
+    assert(Contains(dst));
+    src->outgoings.insert({dst->id, dst});
+    dst->indegree += 1;
+  }
+
+  std::vector<NodeHandle> Sort();
 
   std::map<std::string, NodeHandle> nodes;
 };
