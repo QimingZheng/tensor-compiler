@@ -24,6 +24,19 @@ cc_binary(
         "//lib:polly",
     ],
 )
+
+cc_test(
+    name="codegen",
+    srcs=[
+        "test_codegen.cc",
+    ],
+    deps=[
+        "//lib:polly",
+        "@gtest//:gtest",
+        "@gtest//:gtest_main",
+    ],
+)
+
 cc_test(
     name="pass",
     srcs=[

@@ -14,8 +14,15 @@
 
 namespace polly {
 
-/// IRModule is a resource manager for the extracted IR Tree.
-/// It contains the representation for the whole program.
+/*!
+ * \brief IRModule is a resource manager for the extracted IR Tree. It contains
+ * the representation for the whole program. IRModule provides basic utilities
+ * to operate upon the IR Tree.
+ *
+ * \param root The root node of the represented program.
+ * \param tensors All tensors used in the program.
+ * \param constants All constants used in the program.
+ */
 class IRModule {
  public:
   IRModule() { root_ = NullIRHandle; }

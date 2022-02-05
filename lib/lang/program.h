@@ -28,7 +28,10 @@
 
 namespace polly {
 
-/// Should be Singleton.
+/*!
+ * \brief A program manage all the computation logics that users described
+ * through their DSL code. `Program` is implemented as a singleton for now.
+ */
 class Program {
  public:
   IRModule module_;
@@ -195,6 +198,11 @@ class Program {
     // ConstantFoldingPass::runPass(std::shared_ptr<ConstantFoldingPass::Arg>(
     //     new ConstantFoldingPass::Arg(module_.GetRoot())));
     CodeGenC codegen;
+    std::cout << codegen.genCode(module_.GetRoot(), module_.GetTensors());
+  }
+
+  void GenerateCuda() {
+    CodeGenCuda codegen;
     std::cout << codegen.genCode(module_.GetRoot(), module_.GetTensors());
   }
 

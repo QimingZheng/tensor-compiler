@@ -19,6 +19,15 @@
 
 namespace polly {
 
+/*!
+ * \brief The Polyhedral Analysis Pass verifies the validness of a polyhedral
+ * transformation.
+ *
+ * \param ctx The solver context.
+ * \param srcProgram IRModule that contains the source program.
+ * \param tgtProgram IRModule that contains the target program.
+ * \param transformMap Maps from the source logical date to target logical date.
+ */
 class PolyhedralAnalysisPass : public Pass {
   PolyhedralAnalysisPass(solver::context ctx, IRHandle srcProgram,
                          IRHandle tgtProgram, solver::union_map transformMap)
@@ -32,6 +41,7 @@ class PolyhedralAnalysisPass : public Pass {
 
     DataDependencyModel srcDependency(ctx, srcModel);
     DataDependencyModel tgtDependency(ctx, tgtModel);
+
     hasConflicts = hasConflict(srcDependency.RAW.dependency,
                                tgtDependency.RAW.dependency, ori_tr_map) ||
                    hasConflict(srcDependency.WAR.dependency,
@@ -79,7 +89,10 @@ class PolyhedralAnalysisPass : public Pass {
 
   static bool hasConflict(solver::union_map srcMap, solver::union_map tgtMap,
                           solver::union_map transformation) {
-    return !((((srcMap ^ (-1))(transformation)) ^ (-1)) - tgtMap).empty();
+    // return !((((srcMap ^ (-1))(transformation)) ^ (-1)) - tgtMap).empty();
+    return !(((((srcMap ^ (-1))(transformation)) ^ (-1))(transformation)) -
+             tgtMap)
+                .empty();
   }
 
   // solver::context ctx;

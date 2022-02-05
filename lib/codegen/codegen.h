@@ -27,19 +27,15 @@ const std::string C_Heaader = R"(
 #include <emmintrin.h>  // sse2
 #include <pmmintrin.h>  // sse3
 #include <immintrin.h>
+#include <omp.h>
+#include <sys/time.h>
 )";
 
+/*!
+ * \brief The code generator for C code.
+ */
 class CodeGenC : public IRVisitor {
-  std::string getIndent() {
-    std::string ret = "";
-    for (int i = 0; i < indent; i++) {
-      ret += '\t';
-    }
-    return ret;
-  }
-  std::ostringstream oss;
-  int indent = 1;
-
+ public:
   static std::string C_Runtime_Deps;
 
   /// Used by the parallelization.
@@ -48,6 +44,7 @@ class CodeGenC : public IRVisitor {
 
   int parallel_loop_count;
   int worker_size = 16;
+  bool parallelized = false;
 
   struct method_arguments {
     method_arguments(std::string method_name,
@@ -71,7 +68,10 @@ class CodeGenC : public IRVisitor {
   IRHandle program_;
 
  public:
-  CodeGenC() { parallel_loop_count = 0; }
+  CodeGenC() {
+    parallel_loop_count = 0;
+    parallelized = false;
+  }
   std::string genCode(IRHandle program, std::vector<IRHandle> &tensors);
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
@@ -104,10 +104,29 @@ class CodeGenC : public IRVisitor {
                      IRHandle loop);
   std::string tensor_shape_str(std::vector<int64_t> shape);
   void vec_case(int vecLen, std::string str1, std::string str2);
+  std::string getIndent() {
+    std::string ret = "";
+    for (int i = 0; i < indent; i++) {
+      ret += '\t';
+    }
+    return ret;
+  }
+  std::ostringstream oss;
+  int indent = 1;
 };
 
-class CodeGenCuda : public CodeGen {
+/*!
+ * \brief The code generator for CUDA (NVIDIA) code.
+ */
+class CodeGenCuda : public CodeGenC {
  public:
+  CodeGenCuda() { is_outter_most = false; }
+  std::string genCode(IRHandle program, std::vector<IRHandle> &tensors);
+  void visitFor(ForHandle loop) override;
+  void visitFunc(FuncHandle func) override;
+  void visitAccess(AccessHandle access) override;
+
+  bool is_outter_most = false;
 };
 
 }  // namespace polly

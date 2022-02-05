@@ -54,7 +54,7 @@ bool Mutator::IsFullyNested(IRHandle outter_loop, IRHandle inner_loop) {
       for (int i = 0; i < loop->body.size(); i++) {
         q.push(loop->body[i]);
       }
-      if (loop->body.size() > 0) {
+      if (loop->body.size() > 1) {
         return false;
       }
     }
@@ -96,11 +96,11 @@ bool Mutator::Reorder(IRHandle program, IRHandle outter_loop,
   auto oriProg = program.clone(dict);
 
   LoopReorder::runPass(
-      LoopReorder::Arg::create(program, outter_loop, inner_loop));
+      LoopReorder::Arg::create(program, outter_loop.as<ForNode>()->looping_var_,
+                               inner_loop.as<ForNode>()->looping_var_));
 
   auto ret = ReorderTransformAnalysisPass::runPass(
       ReorderTransformAnalysisPass::Arg::create(oriProg, program));
-
   return PassRet::as<ReorderTransformAnalysisPass::Ret>(ret)->legal;
 }
 

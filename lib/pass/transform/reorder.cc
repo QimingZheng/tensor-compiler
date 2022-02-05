@@ -15,7 +15,7 @@ LoopReorder::LoopReorder(IRHandle program, IRHandle i_loop, IRHandle j_loop)
   std::vector<Iteration> extractedIters;
   std::vector<IRHandle> loop_vars;
   for (int i = 0; i < model.statements_.size(); i++) {
-    bool found_i = false, found_j;
+    bool found_i = false, found_j = false;
     std::vector<Iteration> iterations = model.statements_[i].iters_.iterations_;
     for (int j = 0; j < iterations.size(); j++) {
       if (iterations[j].iterName_ == i_loop_.as<VarNode>()->id) {

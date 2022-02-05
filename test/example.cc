@@ -321,5 +321,22 @@ int main() {
     SyncParallel::runPass(SyncParallel::Arg::create(prog.module_.GetRoot()));
     prog.GenerateC();
   }
+
+  {
+    Program prog;
+    Tensor A({1024}), B({1024});
+    {
+      Variable i(0, 1024, 1);
+      A(i) = i;
+      {
+        Variable j(0, 1, 1);
+        B(i + j) = i + j;
+        A(i + 1) = A(i) + B(i + j);
+      }
+      B(i + 1) = B(i);
+    }
+    prog.GenerateCuda();
+  }
+
   return 0;
 }
