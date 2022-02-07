@@ -96,6 +96,8 @@ class IterSet {
 
   void dump() { domain_.dump(); }
 
+  bool isEmpty() { return domain_.is_empty(); }
+
   friend class AccessMap;
 
  private:

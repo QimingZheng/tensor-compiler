@@ -114,4 +114,24 @@ void ConstantBoundaryCheck::visitFunc(FuncHandle func) {
   return;
 }
 
+void ConstantBoundaryCheck::visitMin(MinHandle min) {
+  visit(min->lhs);
+  if (!isConstantBoundary) return;
+  auto lhs = value;
+  visit(min->rhs);
+  if (!isConstantBoundary) return;
+  auto rhs = value;
+  value = std::min(lhs, rhs);
+}
+
+void ConstantBoundaryCheck::visitMax(MaxHandle max) {
+  visit(max->lhs);
+  if (!isConstantBoundary) return;
+  auto lhs = value;
+  visit(max->rhs);
+  if (!isConstantBoundary) return;
+  auto rhs = value;
+  value = std::max(lhs, rhs);
+}
+
 }  // namespace polly

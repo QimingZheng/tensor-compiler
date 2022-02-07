@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-24 16:03:06 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-24 16:03:06 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-24 16:03:06
+ * @Last Modified by:   Qiming Zheng
+ * @Last Modified time: 2022-01-24 16:03:06
+ * @CopyRight: Qiming Zheng
  */
 #pragma once
 
@@ -18,8 +18,14 @@
 
 namespace polly {
 
-// Check if there are two different instances of a loop that exist data
-// dependency.
+/*!
+ * \brief Check if there are two different instances of a loop that exist data
+ * dependency.
+ *
+ * \param program The root node of the represented program.
+ * \param loop The loop node that needs to be checked for parallelism
+ * feasibility.
+ */
 class ParallelizationAnalysisPass : public Pass, public IRRecursiveVisitor {
   ParallelizationAnalysisPass(IRHandle program, IRHandle loop)
       : program_(program), loop_(loop) {

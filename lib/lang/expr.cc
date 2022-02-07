@@ -46,4 +46,11 @@ Tensor::Tensor(std::vector<int64_t> shape) : shape(shape) {
 
 Constant::Constant(const std::string name) { handle_ = ConstNode::make(name); }
 
+Max::Max(const Expr &a, const Expr &b) {
+  handle_ = MaxNode::make(a.GetIRHandle(), b.GetIRHandle());
+}
+Min::Min(const Expr &a, const Expr &b) {
+  handle_ = MinNode::make(a.GetIRHandle(), b.GetIRHandle());
+}
+
 }  // namespace polly

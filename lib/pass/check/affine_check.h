@@ -19,10 +19,14 @@
 
 namespace polly {
 
-// AffineCheck checks whether a program is an affine program or not.
-// To be an legal affine program, all the loop bounds shoud be expressed as
-// affine expressions and the incremental amount should be constant number.
-// Array access expression in statements should be affine also.
+/*!
+ * \brief AffineCheck checks whether a program is an affine program or not. To
+ * be an legal affine program, all the loop bounds shoud be expressed as affine
+ * expressions and the incremental amount should be constant number. Array
+ * access expression in statements should be affine also.
+ *
+ * \param program The root node of the represented program.
+ */
 class AffineCheck : public IRNotImplementedVisitor, public Pass {
  private:
   AffineCheck() {}
@@ -56,6 +60,9 @@ class AffineCheck : public IRNotImplementedVisitor, public Pass {
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
+
+  void visitMin(MinHandle min) override;
+  void visitMax(MaxHandle max) override;
 
   struct Arg : public PassArg {
     IRHandle program;

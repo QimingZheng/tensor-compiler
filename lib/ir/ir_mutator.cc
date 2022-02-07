@@ -98,4 +98,15 @@ void IRMutatorVisitor::visitFunc(FuncHandle func) {
   }
 }
 
+void IRMutatorVisitor::visitMin(MinHandle min) {
+  assert(min != nullptr);
+  min->lhs = _replace_subnode_helper(min->lhs);
+  min->rhs = _replace_subnode_helper(min->rhs);
+}
+void IRMutatorVisitor::visitMax(MaxHandle max) {
+  assert(max != nullptr);
+  max->lhs = _replace_subnode_helper(max->lhs);
+  max->rhs = _replace_subnode_helper(max->rhs);
+}
+
 }  // namespace polly

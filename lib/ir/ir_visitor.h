@@ -32,6 +32,9 @@ class IRVisitor {
   virtual void visitPrint(PrintHandle print) = 0;
   virtual void visitFunc(FuncHandle func) = 0;
 
+  virtual void visitMin(MinHandle min) = 0;
+  virtual void visitMax(MaxHandle max) = 0;
+
   virtual void visitVec(VecHandle vec) = 0;
   virtual void visitVecScalar(VecScalarHandle vecScalar) = 0;
   virtual void visitVecLoad(VecLoadHandle vecLoad) = 0;
@@ -62,6 +65,9 @@ class IRSimpleVisitor : public IRVisitor {
   void visitConst(ConstHandle con) override { helper(IRHandle(con)); }
   void visitPrint(PrintHandle print) override { helper(IRHandle(print)); }
   void visitFunc(FuncHandle func) override { helper(IRHandle(func)); }
+
+  void visitMin(MinHandle min) override { helper(IRHandle(min)); }
+  void visitMax(MaxHandle max) override { helper(IRHandle(max)); }
 
   void visitVec(VecHandle vec) override { helper(IRHandle(vec)); }
   void visitVecScalar(VecScalarHandle vecScalar) override {
@@ -165,6 +171,20 @@ class IRRecursiveVisitor : public IRVisitor {
     exit(IRHandle(func));
   }
 
+  void visitMin(MinHandle min) override {
+    enter(IRHandle(min));
+    min->lhs.accept(this);
+    min->rhs.accept(this);
+    exit(IRHandle(min));
+  }
+
+  void visitMax(MaxHandle max) override {
+    enter(IRHandle(max));
+    max->lhs.accept(this);
+    max->rhs.accept(this);
+    exit(IRHandle(max));
+  }
+
   void visitVec(VecHandle vec) override {
     enter(IRHandle(vec));
     exit(IRHandle(vec));
@@ -247,6 +267,9 @@ class IRNotImplementedVisitor : public IRVisitor {
   void visitPrint(PrintHandle print) override { throw_exception("Print"); }
   void visitFunc(FuncHandle func) override { throw_exception("Func"); }
 
+  void visitMin(MinHandle min) override { throw_exception("Min"); }
+  void visitMax(MaxHandle max) override { throw_exception("Max"); }
+
   void visitVec(VecHandle vec) override { throw_exception("Vec"); }
   void visitVecScalar(VecScalarHandle vecScalar) override {
     throw_exception("VecScalar");
@@ -289,6 +312,9 @@ class IRPrinterVisitor : public IRNotImplementedVisitor {
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
 
+  void visitMin(MinHandle min) override;
+  void visitMax(MaxHandle max) override;
+
   void visitVec(VecHandle vec) override;
   void visitVecScalar(VecScalarHandle vecScalar) override;
   void visitVecLoad(VecLoadHandle vecLoad) override;
@@ -330,6 +356,9 @@ class IRMutatorVisitor : public IRNotImplementedVisitor {
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
+
+  void visitMin(MinHandle min) override;
+  void visitMax(MaxHandle max) override;
 };
 
 }  // namespace polly

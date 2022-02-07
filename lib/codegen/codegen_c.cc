@@ -93,15 +93,19 @@ void CodeGenC::create_method(std::string method_name,
 void CodeGenC::visitInt(IntHandle int_expr) { oss << int_expr->value; }
 
 void CodeGenC::visitAdd(AddHandle add) {
+  oss << "(";
   add->lhs.accept(this);
   oss << " + ";
   add->rhs.accept(this);
+  oss << ")";
 }
 
 void CodeGenC::visitSub(SubHandle sub) {
+  oss << "(";
   sub->lhs.accept(this);
   oss << " - ";
   sub->rhs.accept(this);
+  oss << ")";
 }
 
 void CodeGenC::visitMul(MulHandle mul) {
@@ -292,6 +296,22 @@ void CodeGenC::visitFunc(FuncHandle func) {
   for (int i = 0; i < func->body.size(); i++) {
     func->body[i].accept(this);
   }
+}
+
+void CodeGenC::visitMin(MinHandle min) {
+  oss << "min(";
+  min->lhs.accept(this);
+  oss << ", ";
+  min->rhs.accept(this);
+  oss << ")";
+}
+
+void CodeGenC::visitMax(MaxHandle max) {
+  oss << "max(";
+  max->lhs.accept(this);
+  oss << ", ";
+  max->rhs.accept(this);
+  oss << ")";
 }
 
 void CodeGenC::visitVec(VecHandle vec) { oss << vec->id; }

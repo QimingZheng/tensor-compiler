@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:32:21 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:32:21 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:32:21
+ * @Last Modified by:   Qiming Zheng
+ * @Last Modified time: 2022-01-18 20:32:21
+ * @CopyRight: Qiming Zheng
  */
 
 #pragma once
@@ -76,6 +76,16 @@ class Constant : public Expr {
  public:
   std::string name;
   Constant(const std::string name);
+};
+
+class Min : public Expr {
+ public:
+  Min(const Expr &a, const Expr &b);
+};
+
+class Max : public Expr {
+ public:
+  Max(const Expr &a, const Expr &b);
 };
 
 }  // namespace polly

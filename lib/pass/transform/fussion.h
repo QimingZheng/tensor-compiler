@@ -52,6 +52,9 @@ class FussionTransform : public Pass, public IRNotImplementedVisitor {
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
 
+  void visitMin(MinHandle min) override;
+  void visitMax(MaxHandle max) override;
+
   bool findLoop(std::vector<IRHandle>& handles, IRHandle target);
   IRHandle replace_if_match(IRHandle origin);
 

@@ -64,14 +64,19 @@ bool Mutator::IsFullyNested(IRHandle outter_loop, IRHandle inner_loop) {
 
 bool Mutator::Parallelize(IRHandle program) {
   NormalizationPass::runPass(NormalizationPass::Arg::create(program));
+  ConstantFoldingPass::runPass(ConstantFoldingPass::Arg::create(program));
 
   LoopParallel::runPass(LoopParallel::Arg::create(program));
   return true;
 }
 
 bool Mutator::Split(IRHandle program, IRHandle loop, int splitFactor) {
+  if (loop == NullIRHandle) return false;
   if (splitFactor <= 0) return false;
+
   NormalizationPass::runPass(NormalizationPass::Arg::create(program));
+  ConstantFoldingPass::runPass(ConstantFoldingPass::Arg::create(program));
+
   // A loop in a program can be split iff the program is normalized.
   auto looping_var = loop.as<ForNode>()->looping_var_.as<VarNode>();
   if (!looping_var->min.equals(IntNode::make(0))) {
@@ -80,13 +85,23 @@ bool Mutator::Split(IRHandle program, IRHandle loop, int splitFactor) {
   if (!looping_var->increment.equals(IntNode::make(1))) {
     return false;
   }
+
   LoopSplit::runPass(LoopSplit::Arg::create(program, loop, splitFactor));
+  ConstantFoldingPass::runPass(ConstantFoldingPass::Arg::create(program));
+  DeadCodeElimination::runPass(DeadCodeElimination::Arg::create(program));
+
   return true;
 }
 
 bool Mutator::Reorder(IRHandle program, IRHandle outter_loop,
                       IRHandle inner_loop) {
+  if (outter_loop == NullIRHandle) return false;
+  if (inner_loop == NullIRHandle) return false;
+
+  DeadCodeElimination::runPass(DeadCodeElimination::Arg::create(program));
   NormalizationPass::runPass(NormalizationPass::Arg::create(program));
+  ConstantFoldingPass::runPass(ConstantFoldingPass::Arg::create(program));
+
   // Two loops can be reordered only when
   // 1. Both are in the same consecutive nestings.
   if (!Mutator::IsFullyNested(outter_loop, inner_loop)) {
@@ -101,12 +116,15 @@ bool Mutator::Reorder(IRHandle program, IRHandle outter_loop,
 
   auto ret = ReorderTransformAnalysisPass::runPass(
       ReorderTransformAnalysisPass::Arg::create(oriProg, program));
+
   return PassRet::as<ReorderTransformAnalysisPass::Ret>(ret)->legal;
 }
 
 bool Mutator::Fussion(IRHandle program, IRHandle first_loop,
                       IRHandle second_loop) {
   NormalizationPass::runPass(NormalizationPass::Arg::create(program));
+  ConstantFoldingPass::runPass(ConstantFoldingPass::Arg::create(program));
+
   auto first_looping_var = first_loop.as<ForNode>()->looping_var_.as<VarNode>();
   auto second_looping_var =
       second_loop.as<ForNode>()->looping_var_.as<VarNode>();
@@ -136,6 +154,7 @@ bool Mutator::Fussion(IRHandle program, IRHandle first_loop,
 
 bool Mutator::Fission(IRHandle program, IRHandle loop) {
   NormalizationPass::runPass(NormalizationPass::Arg::create(program));
+  ConstantFoldingPass::runPass(ConstantFoldingPass::Arg::create(program));
 
   std::map<IRNodeKey, IRHandle> dict;
   auto oriProg = program.clone(dict);
@@ -151,6 +170,7 @@ bool Mutator::Fission(IRHandle program, IRHandle loop) {
 
 bool Mutator::Unroll(IRHandle program) {
   NormalizationPass::runPass(NormalizationPass::Arg::create(program));
+  ConstantFoldingPass::runPass(ConstantFoldingPass::Arg::create(program));
 
   LoopUnroll::runPass(LoopUnroll::Arg::create(program));
 

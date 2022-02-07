@@ -138,4 +138,31 @@ void AffineCheck::visitFunc(FuncHandle func) {
   }
   isAffine = true;
 }
+
+void AffineCheck::visitMin(MinHandle min) {
+  if (!firstTimeEntering) {
+    auto ret = IsAffineIRHandle::runPass(
+        std::shared_ptr<IsAffineIRHandle::Arg>(new IsAffineIRHandle::Arg(min)));
+    isAffine = PassRet::as<IsAffineIRHandle::Ret>(ret)->isAffine;
+  } else {
+    min->lhs.accept(this);
+    if (!isAffine) return;
+    min->rhs.accept(this);
+    if (!isAffine) return;
+  }
+}
+
+void AffineCheck::visitMax(MaxHandle max) {
+  if (!firstTimeEntering) {
+    auto ret = IsAffineIRHandle::runPass(
+        std::shared_ptr<IsAffineIRHandle::Arg>(new IsAffineIRHandle::Arg(max)));
+    isAffine = PassRet::as<IsAffineIRHandle::Ret>(ret)->isAffine;
+  } else {
+    max->lhs.accept(this);
+    if (!isAffine) return;
+    max->rhs.accept(this);
+    if (!isAffine) return;
+  }
+}
+
 }  // namespace polly

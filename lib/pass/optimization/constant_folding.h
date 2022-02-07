@@ -45,6 +45,12 @@ class ConstantFoldingPass : public Pass, public IRNotImplementedVisitor {
   // 5. x % 1 = 0;
   IRHandle simplify(IRHandle node);
 
+  // 6. x +/* max/min(a, b) = max/min(a, b) +/* x = max/min(x +/* a, x +/* b);
+  // 7. x - min(x, y) = max(x-a, x-b);
+  // 8. x - max(x, y) = min(x-a, x-b);
+  // 9. max/min(a, b) / / % x = max/min(a / / % x, b / / % x);
+  IRHandle simplifyMinMaxNode(IRHandle node);
+
   void visitInt(IntHandle int_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
@@ -59,6 +65,9 @@ class ConstantFoldingPass : public Pass, public IRNotImplementedVisitor {
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
+
+  void visitMin(MinHandle min) override;
+  void visitMax(MaxHandle max) override;
 
   struct Arg : public PassArg {
     IRHandle program;

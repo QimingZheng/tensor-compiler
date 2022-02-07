@@ -148,4 +148,18 @@ void FussionTransform::visitFunc(FuncHandle func) {
   }
 }
 
+void FussionTransform::visitMin(MinHandle min) {
+  if (!searching_) {
+    min->lhs = replace_if_match(min->lhs);
+    min->rhs = replace_if_match(min->rhs);
+  }
+}
+
+void FussionTransform::visitMax(MaxHandle max) {
+  if (!searching_) {
+    max->lhs = replace_if_match(max->lhs);
+    max->rhs = replace_if_match(max->rhs);
+  }
+}
+
 }  // namespace polly

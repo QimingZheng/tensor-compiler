@@ -157,9 +157,181 @@ class ConstantFoldingEvaluator : public IRNotImplementedVisitor {
   void visitConst(ConstHandle con) { t = value_type::DEFAULT; }
   void visitPrint(PrintHandle print) { t = value_type::DEFAULT; }
   void visitFunc(FuncHandle func) { t = value_type::DEFAULT; }
+
+  void visitMin(MinHandle min) {
+    t = value_type::DEFAULT;
+    min->lhs.accept(this);
+    auto lhs_t = t;
+    auto lhs_v = v;
+    if (t == value_type::DEFAULT) return;
+    min->rhs.accept(this);
+    if (t == value_type::DEFAULT) return;
+    auto rhs_t = t;
+    auto rhs_v = v;
+    assert(lhs_t == rhs_t);
+    switch (lhs_t) {
+      case value_type::INT:
+        v.int_value = std::min(lhs_v.int_value, rhs_v.int_value);
+        break;
+      case value_type::FLOAT:
+        v.float_value = std::min(lhs_v.float_value, rhs_v.float_value);
+        break;
+      default:
+        throw std::runtime_error("error!");
+    }
+  }
+
+  void visitMax(MaxHandle max) {
+    t = value_type::DEFAULT;
+    max->lhs.accept(this);
+    auto lhs_t = t;
+    auto lhs_v = v;
+    if (t == value_type::DEFAULT) return;
+    max->rhs.accept(this);
+    if (t == value_type::DEFAULT) return;
+    auto rhs_t = t;
+    auto rhs_v = v;
+    assert(lhs_t == rhs_t);
+    switch (lhs_t) {
+      case value_type::INT:
+        v.int_value = std::max(lhs_v.int_value, rhs_v.int_value);
+        break;
+      case value_type::FLOAT:
+        v.float_value = std::max(lhs_v.float_value, rhs_v.float_value);
+        break;
+      default:
+        throw std::runtime_error("error!");
+    }
+  }
 };
 
+IRHandle ConstantFoldingPass::simplifyMinMaxNode(IRHandle node) {
+  bool already_folded = folded;
+  if (!already_folded) folded = true;
+
+  switch (node.Type()) {
+    case IRNodeType::ADD: {
+      if (node.as<AddNode>()->lhs.Type() == IRNodeType::MIN) {
+        auto minNode = node.as<AddNode>()->lhs.as<MinNode>();
+        return MinNode::make(
+            AddNode::make(minNode->lhs, node.as<AddNode>()->rhs),
+            AddNode::make(minNode->rhs, node.as<AddNode>()->rhs));
+      }
+      if (node.as<AddNode>()->lhs.Type() == IRNodeType::MAX) {
+        auto maxNode = node.as<AddNode>()->lhs.as<MaxNode>();
+        return MaxNode::make(
+            AddNode::make(maxNode->lhs, node.as<AddNode>()->rhs),
+            AddNode::make(maxNode->rhs, node.as<AddNode>()->rhs));
+      }
+      if (node.as<AddNode>()->rhs.Type() == IRNodeType::MIN) {
+        auto minNode = node.as<AddNode>()->rhs.as<MinNode>();
+        return MinNode::make(
+            AddNode::make(minNode->lhs, node.as<AddNode>()->lhs),
+            AddNode::make(minNode->rhs, node.as<AddNode>()->lhs));
+      }
+      if (node.as<AddNode>()->rhs.Type() == IRNodeType::MAX) {
+        auto maxNode = node.as<AddNode>()->rhs.as<MaxNode>();
+        return MaxNode::make(
+            AddNode::make(maxNode->lhs, node.as<AddNode>()->lhs),
+            AddNode::make(maxNode->rhs, node.as<AddNode>()->lhs));
+      }
+      break;
+    }
+    case IRNodeType::SUB: {
+      if (node.as<SubNode>()->lhs.Type() == IRNodeType::MIN) {
+        auto minNode = node.as<SubNode>()->lhs.as<MinNode>();
+        return MinNode::make(
+            SubNode::make(minNode->lhs, node.as<SubNode>()->rhs),
+            SubNode::make(minNode->rhs, node.as<SubNode>()->rhs));
+      }
+      if (node.as<SubNode>()->lhs.Type() == IRNodeType::MAX) {
+        auto maxNode = node.as<SubNode>()->lhs.as<MaxNode>();
+        return MaxNode::make(
+            SubNode::make(maxNode->lhs, node.as<SubNode>()->rhs),
+            SubNode::make(maxNode->rhs, node.as<SubNode>()->rhs));
+      }
+      if (node.as<SubNode>()->rhs.Type() == IRNodeType::MIN) {
+        auto minNode = node.as<SubNode>()->rhs.as<MinNode>();
+        return MaxNode::make(
+            SubNode::make(node.as<SubNode>()->lhs, minNode->lhs),
+            SubNode::make(node.as<SubNode>()->lhs, minNode->rhs));
+      }
+      if (node.as<SubNode>()->rhs.Type() == IRNodeType::MAX) {
+        auto maxNode = node.as<SubNode>()->rhs.as<MaxNode>();
+        return MinNode::make(
+            SubNode::make(node.as<SubNode>()->lhs, maxNode->lhs),
+            SubNode::make(node.as<SubNode>()->lhs, maxNode->rhs));
+      }
+      break;
+    }
+    case IRNodeType::MUL: {
+      if (node.as<MulNode>()->lhs.Type() == IRNodeType::MIN) {
+        auto minNode = node.as<MulNode>()->lhs.as<MinNode>();
+        return MinNode::make(
+            MulNode::make(minNode->lhs, node.as<MulNode>()->rhs),
+            MulNode::make(minNode->rhs, node.as<MulNode>()->rhs));
+      }
+      if (node.as<MulNode>()->lhs.Type() == IRNodeType::MAX) {
+        auto maxNode = node.as<MulNode>()->lhs.as<MaxNode>();
+        return MaxNode::make(
+            MulNode::make(maxNode->lhs, node.as<MulNode>()->rhs),
+            MulNode::make(maxNode->rhs, node.as<MulNode>()->rhs));
+      }
+      if (node.as<MulNode>()->rhs.Type() == IRNodeType::MIN) {
+        auto minNode = node.as<MulNode>()->rhs.as<MinNode>();
+        return MinNode::make(
+            MulNode::make(minNode->lhs, node.as<MulNode>()->lhs),
+            MulNode::make(minNode->rhs, node.as<MulNode>()->lhs));
+      }
+      if (node.as<MulNode>()->rhs.Type() == IRNodeType::MAX) {
+        auto maxNode = node.as<MulNode>()->rhs.as<MaxNode>();
+        return MaxNode::make(
+            MulNode::make(maxNode->lhs, node.as<MulNode>()->lhs),
+            MulNode::make(maxNode->rhs, node.as<MulNode>()->lhs));
+      }
+      break;
+    }
+    case IRNodeType::DIV: {
+      if (node.as<DivNode>()->lhs.Type() == IRNodeType::MIN) {
+        auto minNode = node.as<DivNode>()->lhs.as<MinNode>();
+        return MinNode::make(
+            DivNode::make(minNode->lhs, node.as<DivNode>()->rhs),
+            DivNode::make(minNode->rhs, node.as<DivNode>()->rhs));
+      }
+      if (node.as<DivNode>()->lhs.Type() == IRNodeType::MAX) {
+        auto maxNode = node.as<DivNode>()->lhs.as<MaxNode>();
+        return MaxNode::make(
+            DivNode::make(maxNode->lhs, node.as<DivNode>()->rhs),
+            DivNode::make(maxNode->rhs, node.as<DivNode>()->rhs));
+      }
+      break;
+    }
+    case IRNodeType::MOD: {
+      if (node.as<ModNode>()->lhs.Type() == IRNodeType::MIN) {
+        auto minNode = node.as<ModNode>()->lhs.as<MinNode>();
+        return MinNode::make(
+            ModNode::make(minNode->lhs, node.as<ModNode>()->rhs),
+            ModNode::make(minNode->rhs, node.as<ModNode>()->rhs));
+      }
+      if (node.as<ModNode>()->lhs.Type() == IRNodeType::MAX) {
+        auto maxNode = node.as<ModNode>()->lhs.as<MaxNode>();
+        return MaxNode::make(
+            ModNode::make(maxNode->lhs, node.as<ModNode>()->rhs),
+            ModNode::make(maxNode->rhs, node.as<ModNode>()->rhs));
+      }
+      break;
+    }
+    default:
+      break;
+  }
+
+  if (!already_folded) folded = false;
+  return node;
+}
+
 IRHandle ConstantFoldingPass::simplify(IRHandle node) {
+  node = simplifyMinMaxNode(node);
+
   bool already_folded = folded;
   if (!already_folded) folded = true;
   auto zero = IntNode::make(0);
@@ -355,6 +527,38 @@ void ConstantFoldingPass::visitFunc(FuncHandle func) {
   for (int i = 0; i < func->body.size(); i++) {
     func->body[i].accept(this);
   }
+}
+
+void ConstantFoldingPass::visitMin(MinHandle min) {
+  ConstantFoldingEvaluator evaluator;
+  min->rhs.accept(this);
+  IRHandle lhs = evaluator.Evaluate(min->lhs);
+  if (lhs != NullIRHandle) {
+    min->lhs = lhs;
+  }
+  min->lhs.accept(this);
+  IRHandle rhs = evaluator.Evaluate(min->rhs);
+  if (rhs != NullIRHandle) {
+    min->rhs = rhs;
+  }
+  min->lhs = simplify(min->lhs);
+  min->rhs = simplify(min->rhs);
+}
+
+void ConstantFoldingPass::visitMax(MaxHandle max) {
+  ConstantFoldingEvaluator evaluator;
+  max->rhs.accept(this);
+  IRHandle lhs = evaluator.Evaluate(max->lhs);
+  if (lhs != NullIRHandle) {
+    max->lhs = lhs;
+  }
+  max->lhs.accept(this);
+  IRHandle rhs = evaluator.Evaluate(max->rhs);
+  if (rhs != NullIRHandle) {
+    max->rhs = rhs;
+  }
+  max->lhs = simplify(max->lhs);
+  max->rhs = simplify(max->rhs);
 }
 
 }  // namespace polly

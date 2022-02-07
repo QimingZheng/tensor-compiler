@@ -14,8 +14,12 @@
 
 namespace polly {
 
-// Checks whether an expr node expresses a constant or not, does not accept
-// statement as input IRNode.
+/*!
+ * \brief Checks whether an expr node expresses a constant or not, does not
+ * accept statement as input IRNode.
+ *
+ * \param handle The ir node of the represented expression.
+ */
 class IsConstantIRHandle : public IRNotImplementedVisitor, public Pass {
  public:
   IsConstantIRHandle(IRHandle handle)
@@ -58,6 +62,17 @@ class IsConstantIRHandle : public IRNotImplementedVisitor, public Pass {
   void visitVar(VarHandle var) override { isConstant = false; }
   void visitAccess(AccessHandle access) override { isConstant = false; }
   void visitTensor(TensorHandle tensor) override { isConstant = false; }
+
+  void visitMin(MinHandle min) override {
+    min->lhs.accept(this);
+    if (!isConstant) return;
+    min->rhs.accept(this);
+  }
+  void visitMax(MaxHandle max) override {
+    max->lhs.accept(this);
+    if (!isConstant) return;
+    max->rhs.accept(this);
+  }
 
   struct Arg : public PassArg {
     IRHandle handle;

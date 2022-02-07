@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-24 16:02:59 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-24 16:02:59 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-24 16:02:59
+ * @Last Modified by:   Qiming Zheng
+ * @Last Modified time: 2022-01-24 16:02:59
+ * @CopyRight: Qiming Zheng
  */
 #pragma once
 
@@ -16,6 +16,10 @@
 
 namespace polly {
 
+/*!
+ * \brief TransformAnalysisPass is the base for each type of transformation
+ * analysis.
+ */
 class TransformAnalysisPass : public Pass {
  public:
   struct Arg : public PassArg {
@@ -32,16 +36,25 @@ class TransformAnalysisPass : public Pass {
   };
 };
 
+/*!
+ * \brief Analyze the legality of the Unroll Transformation.
+ */
 class UnrollTransformAnalysisPass : public TransformAnalysisPass {
  public:
   static PassRetHandle runPass(PassArgHandle arg) { return Ret::create(true); }
 };
 
+/*!
+ * \brief Analyze the legality of the Split Transformation.
+ */
 class SplitTransformAnalysisPass : public TransformAnalysisPass {
  public:
   static PassRetHandle runPass(PassArgHandle arg) { return Ret::create(true); }
 };
 
+/*!
+ * \brief Analyze the legality of the Fission Transformation.
+ */
 class FissionTransformAnalysisPass : public TransformAnalysisPass {
  public:
   static PassRetHandle runPass(PassArgHandle arg);
@@ -60,6 +73,9 @@ class FissionTransformAnalysisPass : public TransformAnalysisPass {
   };
 };
 
+/*!
+ * \brief Analyze the legality of the Fussion Transformation.
+ */
 class FussionTransformAnalysisPass : public TransformAnalysisPass {
  public:
   static PassRetHandle runPass(PassArgHandle arg);
@@ -78,6 +94,9 @@ class FussionTransformAnalysisPass : public TransformAnalysisPass {
   };
 };
 
+/*!
+ * \brief Analyze the legality of the Reorder Transformation.
+ */
 class ReorderTransformAnalysisPass : public TransformAnalysisPass {
  public:
   static PassRetHandle runPass(PassArgHandle arg);
@@ -96,6 +115,9 @@ class ReorderTransformAnalysisPass : public TransformAnalysisPass {
   };
 };
 
+/*!
+ * \brief Analyze the legality of the Vectorization Transformation.
+ */
 class VectorizationTransformAnalysisPass : public TransformAnalysisPass {
  public:
   static PassRetHandle runPass(PassArgHandle arg);

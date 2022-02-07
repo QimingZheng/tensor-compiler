@@ -16,10 +16,13 @@
 
 namespace polly {
 
-// A ConstantBoundary is a for loop bounded by [0, C) C is an integer constant,
-// and the incremental amount must be one.
-// A loop with constatnt boundary has many good properties, e.g. it can be
-// unrolled/vectorized etc.
+/*!
+ * \brief A ConstantBoundary is a for loop bounded by [0, C) C is an integer
+ * constant, and the incremental amount must be one. A loop with constatnt
+ * boundary has many good properties, e.g. it can be unrolled/vectorized etc.
+ *
+ * \param program The ir node of the represented program.
+ */
 class ConstantBoundaryCheck : public Pass, public IRNotImplementedVisitor {
  private:
   ConstantBoundaryCheck() {}
@@ -52,6 +55,9 @@ class ConstantBoundaryCheck : public Pass, public IRNotImplementedVisitor {
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
+
+  void visitMin(MinHandle min) override;
+  void visitMax(MaxHandle max) override;
 
   struct Arg : public PassArg {
     IRHandle program;

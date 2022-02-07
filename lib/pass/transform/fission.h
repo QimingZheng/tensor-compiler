@@ -52,6 +52,9 @@ class FissionTransform : public Pass, public IRNotImplementedVisitor {
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
 
+  void visitMin(MinHandle min) override;
+  void visitMax(MaxHandle max) override;
+
   IRHandle program_;
   IRHandle loop_;
   IRHandle replace_loop_;

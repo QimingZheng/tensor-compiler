@@ -19,7 +19,7 @@ namespace polly {
 
 class RandomSearchStrategy : public SearchStrategy {
  public:
-  RandomSearchStrategy(int search_budget = 2)
+  RandomSearchStrategy(int search_budget = 100)
       : search_budget_(search_budget) {}
 
   int search_budget_;

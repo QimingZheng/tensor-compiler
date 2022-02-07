@@ -16,10 +16,18 @@
 
 namespace polly {
 
+/*!
+ * \brief DataDependencyModel models the Write-After-Write, Write-After-Read,
+ * Read-After-Write data dependency inside a program.
+ *
+ * \param ctx The solver context.
+ * \param model The extracted polyhedral model.
+ */
 class DataDependencyModel {
  public:
   DataDependencyModel(solver::context &ctx, PolyhedralModel model);
-  /// Add extra constraint that prog-context should be the same across all the dependency pairs.
+  /// Add extra constraint that prog-context should be the same across all the
+  /// dependency pairs.
   DataDependencyModel(solver::context &ctx, std::vector<int> prog_context,
                       PolyhedralModel model);
 

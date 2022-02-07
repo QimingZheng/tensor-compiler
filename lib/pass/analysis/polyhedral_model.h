@@ -20,10 +20,11 @@ typedef std::string VarKey;
 typedef std::string StatementKey;
 typedef std::string ArrayKey;
 
-/// QuasiAffineExpr represents formulas in the form of:
-/// (\sum_{i = 1}^{n} c_i x_i + c_0) / d
-/// where c_i is constant integer coefficients
-/// x_i is integer variable
+/*!
+ * \brief QuasiAffineExpr describes a linear combination of variables. It
+ * represents formulas in the form of: (\sum_{i = 1}^{n} c_i x_i + c_0) / d,
+ * where c_i is constant integer coefficients, x_i is integer variable.
+ */
 class QuasiAffineExpr {
  public:
   QuasiAffineExpr() { clear(); }
@@ -46,8 +47,7 @@ class QuasiAffineExpr {
     constant = 0;
     divisor = 1;
   }
-  // std::vector<VarKey> varNames;
-  // std::vector<int> coeffs;
+
   std::map<VarKey, int> coeffs;
   int constant;
   int divisor;
@@ -65,24 +65,46 @@ class QuasiAffineExpr {
   }
 };
 
+/*!
+ * \brief Iteration describes one for loop through the boundary of the
+ * corresponding iteration variable.
+ */
 class Iteration {
  public:
   Iteration() {}
-  Iteration(VarKey iter_name, QuasiAffineExpr lower, QuasiAffineExpr upper)
-      : iterName_(iter_name), lowerBound_(lower), upperBound_(upper) {
-    ///
-  }
+  // Iteration(VarKey iter_name, QuasiAffineExpr lower, QuasiAffineExpr upper)
+  //     : iterName_(iter_name), lowerBound_(lower), upperBound_(upper) {}
+  Iteration(VarKey iter_name, std::vector<QuasiAffineExpr> lower,
+            std::vector<QuasiAffineExpr> upper)
+      : iterName_(iter_name), lowerBounds_(lower), upperBounds_(upper) {}
+
   VarKey iterName_;
-  QuasiAffineExpr lowerBound_;
-  QuasiAffineExpr upperBound_;
+  // TODO: make the lowerBounds and upperBounds accept multiple
+  // affine-expressions.
+  std::vector<QuasiAffineExpr> lowerBounds_;
+  std::vector<QuasiAffineExpr> upperBounds_;
+
+  // QuasiAffineExpr lowerBound_;
+  // QuasiAffineExpr upperBound_;
   // increment is always +1.
 
   std::string DbgMsg() {
-    return lowerBound_.DbgMsg() + " <= " + iterName_ + " < " +
-           upperBound_.DbgMsg();
+    std::string ret = "";
+    for (auto expr : lowerBounds_) {
+      ret += expr.DbgMsg() + " <= " + iterName_ + "\n";
+    }
+    for (auto expr : upperBounds_) {
+      ret += iterName_ + " < " + expr.DbgMsg() + "\n";
+    }
+    return ret;
   }
 };
 
+/*!
+ * \brief The iteration domain describe a polyhedral constructed by several for
+ * loop iteration varaibles. Usually used for describing the space of a
+ * statement.
+ */
 class IterDomain {
  public:
   IterDomain() {}
@@ -105,6 +127,10 @@ class IterDomain {
   }
 };
 
+/*!
+ * \brief ReorderedBounds encapsulates the helper functions to obtain the
+ * boundary after the reordering transformation.
+ */
 class ReorderedBounds {
  public:
   ReorderedBounds() {}
@@ -123,6 +149,15 @@ class ReorderedBounds {
   int jth;
 };
 
+class EmptyBounds {
+ public:
+  static bool IsEmptyPolyhedral(std::vector<IRHandle> loop_vars,
+                                std::vector<Iteration> extractedIters);
+};
+
+/*!
+ * \brief ProgDomain describe the context of a statement inside a program.
+ */
 class ProgDomain {
  public:
   ProgDomain() {}
@@ -140,6 +175,10 @@ class ProgDomain {
   }
 };
 
+/*!
+ * \brief ArrayDomain describe one array access from one statement, including
+ * the accessed array name, read/write type, affine-map to the array indices.
+ */
 class ArrayDomain {
  public:
   enum AccessType {
@@ -162,7 +201,9 @@ class ArrayDomain {
   }
 };
 
-/// An array access instance is an array access from a certain statement.
+/*!
+ * \brief  An array access instance is an array access from a certain statement.
+ */
 class ArrayAccess {
  public:
   ArrayAccess(ArrayDomain access, StatementKey statementName)
@@ -173,7 +214,9 @@ class ArrayAccess {
   std::string DbgMsg() { return access.DbgMsg(); }
 };
 
-/// Contains all the access from a statement.
+/*!
+ * \brief A Statement describeds all the array access from of statement.
+ */
 class Statement {
  public:
   Statement() {}
@@ -197,7 +240,10 @@ class Statement {
   }
 };
 
-/// The whole program is modeled with Polyhedral.
+/*!
+ * \brief The whole program is modeled as a Polyhedral Model by expressing every
+ * statetment in the program with affine expresions.
+ */
 class PolyhedralModel {
  public:
   PolyhedralModel() {}

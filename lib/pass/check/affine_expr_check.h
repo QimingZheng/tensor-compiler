@@ -17,8 +17,12 @@
 
 namespace polly {
 
-// Checks whether an expr node represents an affine expression or not, does not
-// accept statement as input IRNode.
+/*!
+ * \brief Checks whether an expr node represents an affine expression or not,
+ * does not accept statement as input IRNode.
+ *
+ * \param handle The ir node of the represented expression.
+ */
 class IsAffineIRHandle : public IRNotImplementedVisitor, public Pass {
  public:
   IsAffineIRHandle(IRHandle handle)
@@ -87,6 +91,21 @@ class IsAffineIRHandle : public IRNotImplementedVisitor, public Pass {
   void visitVar(VarHandle var) override { isAffine = true; }
   void visitAccess(AccessHandle access) override { isAffine = false; }
   void visitTensor(TensorHandle tensor) override { isAffine = false; }
+
+  // TODO: check this.
+  void visitMin(MinHandle min) override {
+    min->lhs.accept(this);
+    if (!isAffine) return;
+    min->rhs.accept(this);
+    if (!isAffine) return;
+  }
+  // TODO: check this.
+  void visitMax(MaxHandle max) override {
+    max->lhs.accept(this);
+    if (!isAffine) return;
+    max->rhs.accept(this);
+    if (!isAffine) return;
+  }
 
   struct Arg : public PassArg {
     IRHandle handle;

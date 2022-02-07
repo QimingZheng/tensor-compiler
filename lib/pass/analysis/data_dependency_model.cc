@@ -27,19 +27,23 @@ solver::AccessMap DataDependencyModel::BuildAccessMap(solver::context &ctx,
 
   for (int i = 0; i < st.iters_.iterations_.size(); i++) {
     Iteration iter = st.iters_.iterations_[i];
-    std::map<std::string, int> bound = iter.lowerBound_.coeffs;
-    for (auto &i : bound) {
-      i.second = -i.second;
+    for (auto lb : iter.lowerBounds_) {
+      std::map<std::string, int> bound = lb.coeffs;
+      for (auto &i : bound) {
+        i.second = -i.second;
+      }
+      bound[iter.iterName_] = 1;
+      ret.add_constraint(ret.CreateInequality(bound, -lb.constant));
     }
-    bound[iter.iterName_] = 1;
-    ret.add_constraint(ret.CreateInequality(bound, -iter.lowerBound_.constant));
   }
 
   for (int i = 0; i < st.iters_.iterations_.size(); i++) {
     Iteration iter = st.iters_.iterations_[i];
-    std::map<std::string, int> bound = iter.upperBound_.coeffs;
-    bound[iter.iterName_] = -1;
-    ret.add_constraint(ret.CreateInequality(bound, iter.upperBound_.constant));
+    for (auto ub : iter.upperBounds_) {
+      std::map<std::string, int> bound = ub.coeffs;
+      bound[iter.iterName_] = -1;
+      ret.add_constraint(ret.CreateInequality(bound, ub.constant));
+    }
   }
   return ret;
 }

@@ -45,7 +45,7 @@ IRModule RandomSearchStrategy::Search(IRModule module) {
           break;
         }
       }
-      if (seed = 4) {
+      if (seed == 4) {
         // Parallelize
         if (Mutator::Parallelize(cloned_module.GetRoot())) {
           module = cloned_module;

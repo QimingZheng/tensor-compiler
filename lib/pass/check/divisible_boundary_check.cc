@@ -77,4 +77,20 @@ void DivisibleBoundaryCheck::visitFunc(FuncHandle func) {
   throw std::runtime_error("Should not visit a func node");
 }
 
+void DivisibleBoundaryCheck::visitMin(MinHandle min) {
+  visit(min->lhs);
+  auto lhs = value;
+  visit(min->rhs);
+  auto rhs = value;
+  value = std::min(lhs, rhs);
+}
+
+void DivisibleBoundaryCheck::visitMax(MaxHandle max) {
+  visit(max->lhs);
+  auto lhs = value;
+  visit(max->rhs);
+  auto rhs = value;
+  value = std::max(lhs, rhs);
+}
+
 }  // namespace polly

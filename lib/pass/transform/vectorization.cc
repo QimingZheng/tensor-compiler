@@ -54,6 +54,14 @@ void LoopVectorization::visitMod(ModHandle mod) {
   throw std::runtime_error("Cannot vectorized a mod operation");
 }
 
+void LoopVectorization::visitMin(MinHandle min) {
+  throw std::runtime_error("Cannot vectorized a min operation");
+}
+
+void LoopVectorization::visitMax(MaxHandle max) {
+  throw std::runtime_error("Cannot vectorized a max operation");
+}
+
 void LoopVectorization::visitVar(VarHandle var) {
   auto vec = VecNode::make(IRNodeKeyGen::GetInstance()->YieldVecKey(), vecLen);
   vectorizationBody.push_back(VecScalarNode::make(vec, IRHandle(var), vecLen));

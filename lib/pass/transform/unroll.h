@@ -47,6 +47,9 @@ class LoopUnroll : public Pass, public IRNotImplementedVisitor {
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
 
+  void visitMin(MinHandle min) override;
+  void visitMax(MaxHandle max) override;
+
   struct Arg : public PassArg {
     IRHandle program;
     Arg() {}

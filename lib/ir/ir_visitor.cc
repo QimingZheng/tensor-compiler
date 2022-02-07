@@ -49,6 +49,13 @@ void IRVisitor::visit(IRHandle expr) {
       this->visitFunc(expr.as<FuncNode>());
       break;
 
+    case IRNodeType::MIN:
+      this->visitMin(expr.as<MinNode>());
+      break;
+    case IRNodeType::MAX:
+      this->visitMax(expr.as<MaxNode>());
+      break;
+
     case IRNodeType::VEC:
       this->visitVec(expr.as<VecNode>());
       break;
@@ -151,6 +158,21 @@ void IRPrinterVisitor::visitFunc(FuncHandle func) {
   for (int i = 0; i < func->body.size(); i++) {
     func->body[i].accept(this);
   }
+}
+
+void IRPrinterVisitor::visitMin(MinHandle min) {
+  std::cout << "min(";
+  min->lhs.accept(this);
+  std::cout << ", ";
+  min->rhs.accept(this);
+  std::cout << ")";
+}
+void IRPrinterVisitor::visitMax(MaxHandle max) {
+  std::cout << "max(";
+  max->lhs.accept(this);
+  std::cout << ", ";
+  max->rhs.accept(this);
+  std::cout << ")";
 }
 
 void IRPrinterVisitor::visitVec(VecHandle vec) { std::cout << vec->id; }

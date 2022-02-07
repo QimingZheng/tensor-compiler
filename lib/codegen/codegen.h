@@ -88,6 +88,9 @@ class CodeGenC : public IRVisitor {
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
 
+  void visitMin(MinHandle min) override;
+  void visitMax(MaxHandle max) override;
+
   void visitVec(VecHandle vec) override;
   void visitVecScalar(VecScalarHandle vecScalar) override;
   void visitVecLoad(VecLoadHandle vecLoad) override;

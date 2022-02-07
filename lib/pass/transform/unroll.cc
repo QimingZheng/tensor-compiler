@@ -305,6 +305,26 @@ void LoopUnroll::visitFunc(FuncHandle func) {
   }
 }
 
+void LoopUnroll::visitMin(MinHandle min) {
+  min->lhs.accept(this);
+  min->rhs.accept(this);
+  auto rhs = tape_.top();
+  tape_.pop();
+  auto lhs = tape_.top();
+  tape_.pop();
+  tape_.push(MinNode::make(lhs, rhs));
+}
+
+void LoopUnroll::visitMax(MaxHandle max) {
+  max->lhs.accept(this);
+  max->rhs.accept(this);
+  auto rhs = tape_.top();
+  tape_.pop();
+  auto lhs = tape_.top();
+  tape_.pop();
+  tape_.push(MaxNode::make(lhs, rhs));
+}
+
 IRHandle LoopUnroll::replaceVarWithInt(IRHandle node, IRHandle var,
                                        IRHandle int_expr) {
   assert(tape_.size() == 0);

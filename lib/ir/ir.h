@@ -31,6 +31,9 @@ enum IRNodeType {
   PRINT = 12,
   FUNC = 13,
 
+  MIN,
+  MAX,
+
   VEC,
   VEC_ADD,
   VEC_SUB,
@@ -59,6 +62,9 @@ class ForNode;
 class PrintNode;
 class FuncNode;
 
+class MinNode;
+class MaxNode;
+
 // SIMD related nodes
 class VecNode;
 class VecScalarNode;
@@ -86,6 +92,9 @@ typedef std::shared_ptr<ForNode> ForHandle;
 typedef std::shared_ptr<ConstNode> ConstHandle;
 typedef std::shared_ptr<PrintNode> PrintHandle;
 typedef std::shared_ptr<FuncNode> FuncHandle;
+
+typedef std::shared_ptr<MinNode> MinHandle;
+typedef std::shared_ptr<MaxNode> MaxHandle;
 
 typedef std::shared_ptr<VecNode> VecHandle;
 typedef std::shared_ptr<VecScalarNode> VecScalarHandle;
@@ -513,9 +522,33 @@ class SignNode : public UnaryNode {};
 class SqrtNode : public UnaryNode {};
 
 // min(a, b)
-class MinNode : public BinaryNode {};
+class MinNode : public BinaryNode {
+ private:
+  MinNode() {}
+
+ public:
+  static IRHandle make(IRHandle lhs, IRHandle rhs);
+
+  bool equals(const IRNode *other) override {
+    return BinaryNode::equals<MinNode>(other);
+  }
+
+  IRNodeType Type() const override { return IRNodeType::MIN; }
+};
 // max(a, b)
-class MaxNode : public BinaryNode {};
+class MaxNode : public BinaryNode {
+ private:
+  MaxNode() {}
+
+ public:
+  static IRHandle make(IRHandle lhs, IRHandle rhs);
+
+  bool equals(const IRNode *other) override {
+    return BinaryNode::equals<MaxNode>(other);
+  }
+
+  IRNodeType Type() const override { return IRNodeType::MAX; }
+};
 // >=
 class GeNode : public BinaryNode {};
 // <=

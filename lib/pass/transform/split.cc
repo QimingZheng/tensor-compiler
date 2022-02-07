@@ -178,6 +178,20 @@ void LoopSplit::visitFunc(FuncHandle func) {
   }
 }
 
+void LoopSplit::visitMin(MinHandle min) {
+  if (!searching_) {
+    min->lhs = replace_with(min->lhs);
+    min->rhs = replace_with(min->rhs);
+  }
+}
+
+void LoopSplit::visitMax(MaxHandle max) {
+  if (!searching_) {
+    max->lhs = replace_with(max->lhs);
+    max->rhs = replace_with(max->rhs);
+  }
+}
+
 IRHandle LoopSplit::get_outter_loop_var(IRHandle loop_var) {
   return VarNode::make(
       IRNodeKeyGen::GetInstance()->YieldVarKey(), IntNode::make(0),
@@ -295,6 +309,22 @@ class LoopSplitHelper : public IRNotImplementedVisitor {
   }
   void visitFunc(FuncHandle func) override {
     throw std::runtime_error("Should Not visit this node");
+  }
+
+  void visitMin(MinHandle min) override {
+    min->lhs.accept(this);
+    auto lhs = node;
+    min->rhs.accept(this);
+    auto rhs = node;
+    node = MinNode::make(lhs, rhs);
+  }
+
+  void visitMax(MaxHandle max) override {
+    max->lhs.accept(this);
+    auto lhs = node;
+    max->rhs.accept(this);
+    auto rhs = node;
+    node = MaxNode::make(lhs, rhs);
   }
 };
 

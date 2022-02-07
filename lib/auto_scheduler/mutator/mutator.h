@@ -27,6 +27,9 @@
 #include "pass/analysis/transform_analysis_pass.h"
 #include "pass/analysis/parallelization_analysis_pass.h"
 
+#include "pass/optimization/constant_folding.h"
+#include "pass/optimization/dead_code_elimination.h"
+
 namespace polly {
 
 // Check if a certain transform is legal and do the transformation if

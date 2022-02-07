@@ -76,6 +76,16 @@ class NormalizationHelper : public IRNotImplementedVisitor {
     }
   }
 
+  void visitMin(MinHandle min) override {
+    min->lhs = replace_with(min->lhs);
+    min->rhs = replace_with(min->rhs);
+  }
+
+  void visitMax(MaxHandle max) override {
+    max->lhs = replace_with(max->lhs);
+    max->rhs = replace_with(max->rhs);
+  }
+
   IRHandle replace_with(IRHandle handle) {
     if (handle.equals(loop_var_)) return replace_var_;
     handle.accept(this);

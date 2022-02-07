@@ -16,9 +16,14 @@
 
 namespace polly {
 
-/// DivisibleBoundaryCheck checks whether the boundary of a loop can be
-/// divided by a certain divisor. Please make sure that the boundary of it is
-/// checked by the IRConstantBoundaryCheckVisitor checker first.
+/*!
+ * \brief DivisibleBoundaryCheck checks whether the boundary of a loop can be
+ * divided by a certain divisor. Please make sure that the boundary of it is
+ * checked by the IRConstantBoundaryCheckVisitor checker first.
+ *
+ * \param loop The ir node (a ForNode) of the loop to be checked.
+ * \param divisor The division factor.
+ */
 class DivisibleBoundaryCheck : public Pass, public IRNotImplementedVisitor {
  private:
   DivisibleBoundaryCheck() {}
@@ -58,6 +63,9 @@ class DivisibleBoundaryCheck : public Pass, public IRNotImplementedVisitor {
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
+
+  void visitMin(MinHandle min) override;
+  void visitMax(MaxHandle max) override;
 
   struct Arg : public PassArg {
     IRHandle loop;

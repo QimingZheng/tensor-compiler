@@ -72,19 +72,22 @@ void ReorderedBounds::GetReorderedBound(std::vector<IRHandle> loop_vars_,
   solver::IterSet polyhedral(ctx, "S", iter_names);
 
   for (int i = 0; i < extractedIters.size(); i++) {
-    auto coeff = extractedIters[i].lowerBound_.coeffs;
-    for (auto &it : coeff) {
-      it.second = -it.second;
+    for (auto lb : extractedIters[i].lowerBounds_) {
+      auto coeff = lb.coeffs;
+      for (auto &it : coeff) {
+        it.second = -it.second;
+      }
+      coeff[extractedIters[i].iterName_] = 1;
+      auto lb_c = polyhedral.CreateInequality(coeff, -lb.constant);
+      polyhedral.add_constraint(lb_c);
     }
-    coeff[extractedIters[i].iterName_] = 1;
-    auto lb_c = polyhedral.CreateInequality(
-        coeff, extractedIters[i].lowerBound_.constant);
-    polyhedral.add_constraint(lb_c);
-    coeff = extractedIters[i].upperBound_.coeffs;
-    coeff[extractedIters[i].iterName_] = -1;
-    auto ub_c = polyhedral.CreateInequality(
-        coeff, extractedIters[i].upperBound_.constant);
-    polyhedral.add_constraint(ub_c);
+
+    for (auto ub : extractedIters[i].upperBounds_) {
+      auto coeff = ub.coeffs;
+      coeff[extractedIters[i].iterName_] = -1;
+      auto ub_c = polyhedral.CreateInequality(coeff, ub.constant);
+      polyhedral.add_constraint(ub_c);
+    }
   }
 
   std::swap(loop_vars[ith], loop_vars[jth]);
@@ -93,17 +96,77 @@ void ReorderedBounds::GetReorderedBound(std::vector<IRHandle> loop_vars_,
     auto ubs = polyhedral.GetUpperBounds(loop_vars[i].as<VarNode>()->id);
     auto lbs = polyhedral.GetLowerBounds(loop_vars[i].as<VarNode>()->id);
 
-    assert(ubs.size() == 1);
-    assert(lbs.size() == 1);
+    if (ubs.size() == 0 || lbs.size() == 0) {
+      throw std::runtime_error("No upper/lower bound after reordering");
+    }
 
-    loop_vars[i].as<VarNode>()->max =
-        IslConstraintToBound(ubs[0], loop_vars[i].as<VarNode>()->id);
-    loop_vars[i].as<VarNode>()->min =
-        IslConstraintToBound(lbs[0], loop_vars[i].as<VarNode>()->id);
+    {
+      std::vector<IRHandle> ubs_;
+      for (auto ub : ubs) {
+        ubs_.push_back(
+            IslConstraintToBound(ub, loop_vars[i].as<VarNode>()->id));
+      }
+      assert(ubs_.size() > 0);
+      while (ubs_.size() > 1) {
+        auto first = ubs_.back();
+        ubs_.pop_back();
+        auto second = ubs_.back();
+        ubs_.pop_back();
+        ubs_.push_back(MinNode::make(first, second));
+      }
+      loop_vars[i].as<VarNode>()->max = ubs_.back();
+    }
+
+    {
+      std::vector<IRHandle> lbs_;
+      for (auto lb : lbs) {
+        lbs_.push_back(
+            IslConstraintToBound(lb, loop_vars[i].as<VarNode>()->id));
+      }
+      assert(lbs_.size() > 0);
+      while (lbs_.size() > 1) {
+        auto first = lbs_.back();
+        lbs_.pop_back();
+        auto second = lbs_.back();
+        lbs_.pop_back();
+        lbs_.push_back(MaxNode::make(first, second));
+      }
+      loop_vars[i].as<VarNode>()->min = lbs_.back();
+    }
+
     loop_vars[i].as<VarNode>()->increment = IntNode::make(1);
 
     polyhedral = polyhedral.project_onto(loop_vars[i].as<VarNode>()->id);
   }
+}
+bool EmptyBounds::IsEmptyPolyhedral(std::vector<IRHandle> loop_vars,
+                                    std::vector<Iteration> extractedIters) {
+  solver::context ctx;
+  std::vector<std::string> iter_names;
+  for (int i = 0; i < loop_vars.size(); i++) {
+    iter_names.push_back(loop_vars[i].as<VarNode>()->id);
+  }
+  solver::IterSet polyhedral(ctx, "S", iter_names);
+
+  for (int i = 0; i < extractedIters.size(); i++) {
+    for (auto lb : extractedIters[i].lowerBounds_) {
+      auto coeff = lb.coeffs;
+      for (auto &it : coeff) {
+        it.second = -it.second;
+      }
+      coeff[extractedIters[i].iterName_] = 1;
+      auto lb_c = polyhedral.CreateInequality(coeff, -lb.constant);
+      polyhedral.add_constraint(lb_c);
+    }
+
+    for (auto ub : extractedIters[i].upperBounds_) {
+      auto coeff = ub.coeffs;
+      coeff[extractedIters[i].iterName_] = -1;
+      auto ub_c = polyhedral.CreateInequality(coeff, ub.constant);
+      polyhedral.add_constraint(ub_c);
+    }
+  }
+  return polyhedral.isEmpty();
 }
 
 }  // namespace polly

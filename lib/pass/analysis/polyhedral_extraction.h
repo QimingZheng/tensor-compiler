@@ -17,6 +17,13 @@
 
 namespace polly {
 
+/*!
+ * \brief PolyhedralExtraction extracts the polyhedral model representation of
+ * each statement in the program. Constant Folding/Propagation pass must run
+ * before ezxtraction to handle the min/max expressions.
+ *
+ * \param func The root node of the represented program (i.e. a FuncNode).
+ */
 class PolyhedralExtraction : public IRNotImplementedVisitor {
  public:
   PolyhedralExtraction() {}
@@ -24,20 +31,30 @@ class PolyhedralExtraction : public IRNotImplementedVisitor {
   // Extract the polyhedral model nested inside a certain node.
   PolyhedralExtraction(std::vector<IRHandle> enclosing_looping_vars,
                        std::vector<int> prog_ctx, IRHandle node) {
-    // for (int i = 0; i < enclosing_looping_vars.size() + 1; i++) {
-    //   progContext.push_back(0);
-    // }
     progContext = prog_ctx;
     for (int i = 0; i < enclosing_looping_vars.size(); i++) {
       auto var = enclosing_looping_vars[i].as<VarNode>();
-      expr.clear();
+
+      workspace.clear();
       var->min.accept(this);
-      auto min_ = expr;
-      expr.clear();
+      auto min_ws = workspace;
+      auto mins_ = workspace.max_exprs.size() > 0
+                       ? workspace.max_exprs
+                       : std::vector<QuasiAffineExpr>{workspace.expr};
+      workspace.clear();
       var->max.accept(this);
-      auto max_ = expr;
-      max_.constant -= 1 * max_.divisor;
-      loops.push_back(Iteration(var->id, min_, max_));
+      auto max_ws = workspace;
+      auto maxs_ = workspace.min_exprs.size() > 0
+                       ? workspace.min_exprs
+                       : std::vector<QuasiAffineExpr>{workspace.expr};
+
+      for (auto &max_ : maxs_) {
+        // max_ is a non-inclusive bound
+        // max_.constant -= 1;
+        max_.constant -= 1 * max_.divisor;
+      }
+
+      loops.push_back(Iteration(var->id, mins_, maxs_));
     }
     node.accept(this);
   }
@@ -56,9 +73,46 @@ class PolyhedralExtraction : public IRNotImplementedVisitor {
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
 
+  void visitMin(MinHandle min) override;
+  void visitMax(MaxHandle max) override;
+
   static QuasiAffineExpr IRHandleToQuasiAffine(IRHandle handle) {
     PolyhedralExtraction model(handle);
-    return model.expr;
+    return model.workspace.expr;
+  }
+
+  static IterDomain ExtractIterDomain(
+      std::vector<IRHandle> enclosing_looping_vars) {
+    IterDomain ret;
+    for (int i = 0; i < enclosing_looping_vars.size(); i++) {
+      auto var = enclosing_looping_vars[i].as<VarNode>();
+
+      PolyhedralExtraction extractor;
+
+      extractor.workspace.clear();
+      // var->min.accept(this);
+      extractor.visit(var->min);
+      auto min_ws = extractor.workspace;
+      auto mins_ = extractor.workspace.max_exprs.size() > 0
+                       ? extractor.workspace.max_exprs
+                       : std::vector<QuasiAffineExpr>{extractor.workspace.expr};
+      extractor.workspace.clear();
+      // var->max.accept(this);
+      extractor.visit(var->max);
+      auto max_ws = extractor.workspace;
+      auto maxs_ = extractor.workspace.min_exprs.size() > 0
+                       ? extractor.workspace.min_exprs
+                       : std::vector<QuasiAffineExpr>{extractor.workspace.expr};
+
+      for (auto &max_ : maxs_) {
+        // max_ is a non-inclusive bound
+        // max_.constant -= 1;
+        max_.constant -= 1 * max_.divisor;
+      }
+
+      ret.iterations_.push_back(Iteration(var->id, mins_, maxs_));
+    }
+    return ret;
   }
 
   PolyhedralModel model;
@@ -68,7 +122,20 @@ class PolyhedralExtraction : public IRNotImplementedVisitor {
   std::vector<int> progContext;
   // affine access to arrays in a single statement
   std::vector<std::pair<ArrayKey, std::vector<QuasiAffineExpr>>> affineAccesses;
-  QuasiAffineExpr expr;
+  // temporary workspace.
+  struct WorkSpace {
+    std::vector<QuasiAffineExpr> min_exprs;
+    std::vector<QuasiAffineExpr> max_exprs;
+    QuasiAffineExpr expr;
+    void clear() {
+      min_exprs.clear();
+      max_exprs.clear();
+      expr.clear();
+    }
+  };
+
+  WorkSpace workspace;
+
   // affine iterations space.
   std::vector<Iteration> loops;
 };

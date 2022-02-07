@@ -123,6 +123,18 @@ IRHandle IRHandle::clone(std::map<IRNodeKey, IRHandle> &irHandleDict) {
       break;
     }
 
+    case IRNodeType::MIN: {
+      ret = MinNode::make(as<MinNode>()->lhs.clone(irHandleDict),
+                          as<MinNode>()->rhs.clone(irHandleDict));
+      break;
+    }
+
+    case IRNodeType::MAX: {
+      ret = MaxNode::make(as<MaxNode>()->lhs.clone(irHandleDict),
+                          as<MaxNode>()->rhs.clone(irHandleDict));
+      break;
+    }
+
     default:
       throw std::runtime_error("Unknown IRHandle Type, cannot clone");
   }
@@ -228,6 +240,20 @@ IRHandle FuncNode::make(std::vector<IRHandle> body) {
 }
 
 void IRHandle::accept(IRVisitor *visitor) { visitor->visit(*this); }
+
+IRHandle MinNode::make(IRHandle lhs, IRHandle rhs) {
+  MinNode *min = new MinNode();
+  min->lhs = lhs;
+  min->rhs = rhs;
+  return IRHandle(min);
+}
+
+IRHandle MaxNode::make(IRHandle lhs, IRHandle rhs) {
+  MaxNode *max = new MaxNode();
+  max->lhs = lhs;
+  max->rhs = rhs;
+  return IRHandle(max);
+}
 
 IRHandle VecNode::make(IRNodeKey id, int length) {
   VecNode *node = new VecNode();

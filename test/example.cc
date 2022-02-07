@@ -338,5 +338,60 @@ int main() {
     prog.GenerateCuda();
   }
 
+  {
+    Program prog;
+    Tensor A({1024});
+    {
+      Variable i(1, 1024, 1);
+      {
+        Variable j(Max(i, 10) - Min(i, 10), 1024, 1);
+        A(j) = A(i);
+      }
+    }
+
+    ConstantFoldingPass::runPass(std::shared_ptr<ConstantFoldingPass::Arg>(
+        new ConstantFoldingPass::Arg(prog.module_.GetRoot())));
+    prog.GenerateC();
+  }
+
+  {
+    Program prog;
+    Tensor A({1024, 1024}), B({1024, 1024}), C({1024, 1024});
+    IRNodeKey I, J;
+    {
+      Variable i(0, (256) / (4), 1);
+      I = i.id;
+      {
+        Variable j(0, 4, 1);
+        J = j.id;
+      }
+    }
+    auto root = prog.module_.GetRoot();
+    auto i_loop = prog.module_.GetLoop(I).as<ForNode>()->looping_var_;
+    auto j_loop = prog.module_.GetLoop(J).as<ForNode>()->looping_var_;
+    // LoopReorder::runPass(LoopReorder::Arg::create(root, i_loop, j_loop));
+    prog.GenerateC();
+  }
+
+  {
+    Program prog;
+    Tensor A({1024, 1024}), B({1024, 1024}), C({1024, 1024});
+    IRNodeKey I;
+    {
+      Variable i(0, 1, 1);
+      I = i.id;
+      A(i) = i;
+    }
+    auto root = prog.module_.GetRoot();
+    auto i_loop = prog.module_.GetLoop(I);
+    LoopSplit::runPass(
+        LoopSplit::Arg::create(prog.module_.GetRoot(), i_loop, 4));
+    ConstantFoldingPass::runPass(
+        ConstantFoldingPass::Arg::create(prog.module_.GetRoot()));
+    DeadCodeElimination::runPass(
+        DeadCodeElimination::Arg::create(prog.module_.GetRoot()));
+    prog.GenerateC();
+  }
+
   return 0;
 }

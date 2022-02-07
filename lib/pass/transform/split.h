@@ -46,6 +46,9 @@ class LoopSplit : public Pass, public IRNotImplementedVisitor {
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;
 
+  void visitMin(MinHandle min) override;
+  void visitMax(MaxHandle max) override;
+
   IRHandle replace_with(IRHandle node);
 
   IRHandle get_outter_loop_var(IRHandle loop_var);

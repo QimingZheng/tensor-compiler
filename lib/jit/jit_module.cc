@@ -179,6 +179,7 @@ void JitModule::visitTensor(TensorHandle tensor) {
       size *= tensor->shape[i];
     }
     tensors_[tensor->id] = new float[size];
+    for (int i = 0; i < size; i++) tensors_[tensor->id][i] = .0;
   }
   tensor_ptr = tensors_[tensor->id];
 }
@@ -223,6 +224,52 @@ void JitModule::visitPrint(PrintHandle print) {
 void JitModule::visitFunc(FuncHandle func) {
   for (int i = 0; i < func->body.size(); i++) {
     func->body[i].accept(this);
+  }
+}
+
+void JitModule::visitMin(MinHandle min) {
+  min->lhs.accept(this);
+  value lhs = v;
+  value_type lhs_type = t;
+  min->rhs.accept(this);
+  value rhs = v;
+  value_type rhs_type = t;
+  if (lhs_type != rhs_type) {
+    throw std::runtime_error(
+        "Jitter Interpret error: cannot min two expression of different type");
+  }
+  switch (t) {
+    case value_type::INT:
+      v.int_value = std::min(lhs.int_value, rhs.int_value);
+      break;
+    case value_type::FLOAT:
+      v.float_value = std::min(lhs.float_value, rhs.float_value);
+      break;
+    default:
+      throw std::runtime_error("Unknown value type");
+  }
+}
+
+void JitModule::visitMax(MaxHandle max) {
+  max->lhs.accept(this);
+  value lhs = v;
+  value_type lhs_type = t;
+  max->rhs.accept(this);
+  value rhs = v;
+  value_type rhs_type = t;
+  if (lhs_type != rhs_type) {
+    throw std::runtime_error(
+        "Jitter Interpret error: cannot max two expression of different type");
+  }
+  switch (t) {
+    case value_type::INT:
+      v.int_value = std::max(lhs.int_value, rhs.int_value);
+      break;
+    case value_type::FLOAT:
+      v.float_value = std::max(lhs.float_value, rhs.float_value);
+      break;
+    default:
+      throw std::runtime_error("Unknown value type");
   }
 }
 

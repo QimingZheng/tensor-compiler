@@ -15,4 +15,4 @@ constraint_list constraint_list::from_basic_set(basic_set set) {
   return constraint_list(isl_basic_set_get_constraint_list(set.get()));
 }
 }  // namespace isl
-}
+}  // namespace polly
