@@ -55,6 +55,9 @@ void IRMutatorVisitor::visitMod(ModHandle mod) {
 
 void IRMutatorVisitor::visitVar(VarHandle var) {
   // PASS
+  var->min = _replace_subnode_helper(var->min);
+  var->max = _replace_subnode_helper(var->max);
+  var->increment = _replace_subnode_helper(var->increment);
 }
 
 void IRMutatorVisitor::visitAccess(AccessHandle access) {

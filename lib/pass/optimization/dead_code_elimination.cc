@@ -8,15 +8,17 @@ void DeadCodeElimination::visitFor(ForHandle loop) {
       enclosing_looping_vars_.push_back(
           loop->body[i].as<ForNode>()->looping_var_);
 
-      if (EmptyBounds::IsEmptyPolyhedral(
+      loop->body[i].accept(this);
+
+      if (loop->body[i].as<ForNode>()->body.size() == 0 ||
+          EmptyBounds::IsEmptyPolyhedral(
               enclosing_looping_vars_,
               PolyhedralExtraction::ExtractIterDomain(enclosing_looping_vars_)
                   .iterations_)) {
         loop->body.erase(loop->body.begin() + i);
         i -= 1;
-      } else {
-        loop->body[i].accept(this);
       }
+
       enclosing_looping_vars_.pop_back();
     }
   }

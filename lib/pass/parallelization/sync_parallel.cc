@@ -7,6 +7,96 @@ PassRetHandle SyncParallel::runPass(PassArgHandle arg) {
   return SyncParallel::Ret::create();
 }
 
+class SyncParallelHelper : public IRNotImplementedVisitor {
+ public:
+  IRHandle loop_, replace_loop_;
+
+  SyncParallelHelper(IRHandle loop, IRHandle replace_loop)
+      : loop_(loop), replace_loop_(replace_loop) {}
+
+  IRHandle replace_if_match(IRHandle origin) {
+    origin.accept(this);
+    if (origin.equals(loop_.as<ForNode>()->looping_var_)) {
+      return replace_loop_.as<ForNode>()->looping_var_;
+    } else {
+      return origin;
+    }
+  }
+
+  void visitInt(IntHandle int_expr) override {
+    /// Pass
+  }
+  void visitAdd(AddHandle add) override {
+    add->lhs = replace_if_match(add->lhs);
+    add->rhs = replace_if_match(add->rhs);
+  }
+
+  void visitSub(SubHandle sub) override {
+    sub->lhs = replace_if_match(sub->lhs);
+    sub->rhs = replace_if_match(sub->rhs);
+  }
+
+  void visitMul(MulHandle mul) override {
+    mul->lhs = replace_if_match(mul->lhs);
+    mul->rhs = replace_if_match(mul->rhs);
+  }
+
+  void visitDiv(DivHandle div) override {
+    div->lhs = replace_if_match(div->lhs);
+    div->rhs = replace_if_match(div->rhs);
+  }
+
+  void visitMod(ModHandle mod) override {
+    mod->lhs = replace_if_match(mod->lhs);
+    mod->rhs = replace_if_match(mod->rhs);
+  }
+
+  void visitVar(VarHandle var) override {
+    var->min = replace_if_match(var->min);
+    var->max = replace_if_match(var->max);
+    var->increment = replace_if_match(var->increment);
+  }
+
+  void visitAccess(AccessHandle access) override {
+    for (int i = 0; i < access->indices.size(); i++) {
+      access->indices[i] = replace_if_match(access->indices[i]);
+    }
+  }
+
+  void visitAssign(AssignmentHandle assign) override {
+    assign->lhs = replace_if_match(assign->lhs);
+    assign->rhs = replace_if_match(assign->rhs);
+  }
+
+  void visitTensor(TensorHandle tensor) override {
+    /// Pass
+  }
+
+  void visitConst(ConstHandle con) override {
+    // Pass
+  }
+
+  void visitPrint(PrintHandle print) override {
+    /// TODO
+  }
+
+  void visitFor(ForHandle loop) override {
+    loop->looping_var_ = replace_if_match(loop->looping_var_);
+    for (int i = 0; i < loop->body.size(); i++) {
+      loop->body[i] = replace_if_match(loop->body[i]);
+    }
+  }
+
+  void visitMin(MinHandle min) override {
+    min->lhs = replace_if_match(min->lhs);
+    min->rhs = replace_if_match(min->rhs);
+  }
+  void visitMax(MaxHandle max) override {
+    max->lhs = replace_if_match(max->lhs);
+    max->rhs = replace_if_match(max->rhs);
+  }
+};
+
 std::vector<IRHandle> SyncParallel::Adjust(
     std::vector<IRHandle> enclosing_looping_vars, IRHandle loop) {
   using namespace internal;
@@ -93,9 +183,11 @@ std::vector<IRHandle> SyncParallel::Adjust(
 
   std::vector<IRHandle> ret;
 
-  for (int i = 0; i < order.size(); i++) {
+  int counter = 0;
+
+  for (int c = 0; c < order.size(); c++) {
     auto cpn =
-        components[std::stoi(component_nodes[std::stoi(order[i]->id)]->id)];
+        components[std::stoi(component_nodes[std::stoi(order[c]->id)]->id)];
     std::vector<IRHandle> region;
     for (int i = 0; i < cpn.size(); i++) {
       region.push_back(loop.as<ForNode>()->body[std::stoi(cpn[i]->id)]);
@@ -105,14 +197,27 @@ std::vector<IRHandle> SyncParallel::Adjust(
         loop.as<ForNode>()->looping_var_.as<VarNode>()->min,
         loop.as<ForNode>()->looping_var_.as<VarNode>()->max,
         loop.as<ForNode>()->looping_var_.as<VarNode>()->increment));
+
+    SyncParallelHelper helper(loop, splitedLoop);
     for (int i = 0; i < region.size(); i++) {
-      splitedLoop.as<ForNode>()->Insert(region[i]);
+      std::map<IRNodeKey, IRHandle> dict;
+
+      for (auto var : enclosing_looping_vars) {
+        dict[var.as<VarNode>()->id] = var;
+      }
+      auto clone = region[i].clone(dict);
+      helper.visit(clone);
+
+      splitedLoop.as<ForNode>()->Insert(clone);
     }
-    IRMutatorVisitor(loop.as<ForNode>()->looping_var_,
-                     splitedLoop.as<ForNode>()->looping_var_, false)
-        .visit(splitedLoop);
+    counter += region.size();
+    // IRMutatorVisitor(loop.as<ForNode>()->looping_var_,
+    //                  splitedLoop.as<ForNode>()->looping_var_, false)
+    //     .visit(splitedLoop);
+
     ret.push_back(splitedLoop);
   }
+  assert(counter == loop.as<ForNode>()->body.size());
   return ret;
 }
 
@@ -124,9 +229,15 @@ void SyncParallel::visitFor(ForHandle loop) {
       // adjust it
       auto adjusted =
           SyncParallel::Adjust(enclosing_looping_vars_, loop->body[i]);
+      // std::cout << "erase "
+      //           << loop->body[i].as<ForNode>()->looping_var_.as<VarNode>()->id
+      //           << "\n";
       loop->body.erase(loop->body.begin() + i);
       for (int j = adjusted.size() - 1; j >= 0; j--) {
         loop->body.insert(loop->body.begin() + i, adjusted[j]);
+        // std::cout << "create "
+        //           << loop->body[i].as<ForNode>()->looping_var_.as<VarNode>()->id
+        //           << "\n";
       }
     }
   }
@@ -139,11 +250,18 @@ void SyncParallel::visitFunc(FuncHandle func) {
       func->body[i].accept(this);
       // adjust it
       auto adjusted = Adjust(enclosing_looping_vars_, func->body[i]);
+      // std::cout << "erase "
+      //           << func->body[i].as<ForNode>()->looping_var_.as<VarNode>()->id
+      //           << "\n";
       func->body.erase(func->body.begin() + i);
       for (int j = adjusted.size() - 1; j >= 0; j--) {
         func->body.insert(func->body.begin() + i, adjusted[j]);
+        // std::cout << "create "
+        //           << func->body[i].as<ForNode>()->looping_var_.as<VarNode>()->id
+        //           << "\n";
       }
     }
   }
 }
+
 }  // namespace polly

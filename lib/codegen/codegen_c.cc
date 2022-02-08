@@ -281,6 +281,7 @@ void CodeGenC::visitFor(ForHandle loop) {
     oss << getIndent();
     oss << "}\n";
   }
+  parallelized = false;
 }
 
 void CodeGenC::visitConst(ConstHandle con) { oss << con->name; }

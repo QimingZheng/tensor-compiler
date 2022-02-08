@@ -23,6 +23,7 @@
 #include "pass/transform/vectorization.h"
 
 #include "pass/parallelization/loop_parallel.h"
+#include "pass/parallelization/sync_parallel.h"
 
 #include "pass/analysis/transform_analysis_pass.h"
 #include "pass/analysis/parallelization_analysis_pass.h"

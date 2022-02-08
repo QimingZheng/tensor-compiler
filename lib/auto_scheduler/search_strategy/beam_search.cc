@@ -94,7 +94,12 @@ IRModule BeamSearchStrategy::Search(IRModule module) {
     std::transform(
         childrens.begin(), childrens.end(), childrens.begin(),
         [&](const std::pair<IRModule, float> &x) -> std::pair<IRModule, float> {
-          return {x.first, model.Evaluate(x.first)};
+          IRModule ori = x.first;
+          auto cloned = ori.CreateSubSpace();
+
+          Mutator::Parallelize(cloned.GetRoot());
+          return {x.first, model.Evaluate(cloned)};
+          // return {x.first, model.Evaluate(x.first)};
         });
     std::sort(childrens.begin(), childrens.end(),
               [&](const std::pair<IRModule, float> &x,
@@ -110,6 +115,7 @@ IRModule BeamSearchStrategy::Search(IRModule module) {
                    [](const std::pair<IRModule, float> &x) { return x.first; });
     candidates.resize(candidate_size_);
   }
+  Mutator::Parallelize(best_module_.GetRoot());
   return best_module_;
 }
 }  // namespace polly

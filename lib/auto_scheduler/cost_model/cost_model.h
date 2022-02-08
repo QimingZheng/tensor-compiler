@@ -28,9 +28,12 @@ class CostModel {
     f.close();
 
     // Compile
-    executeCommands("g++ --std=c++11 -O3 -mfma -o .main .polly_cost_model.cc");
+
+    auto res = executeCommands(
+        "g++ --std=c++11 -O3 -mfma -fopenmp -o .main .polly_cost_model.cc");
+
     // Execute & get running time
-    auto res = executeCommands("./.main");
+    res = executeCommands("./.main");
     std::cout << res;
 
     float runtime = atof(res.c_str());

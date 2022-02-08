@@ -66,6 +66,8 @@ bool Mutator::Parallelize(IRHandle program) {
   NormalizationPass::runPass(NormalizationPass::Arg::create(program));
   ConstantFoldingPass::runPass(ConstantFoldingPass::Arg::create(program));
 
+  SyncParallel::runPass(SyncParallel::Arg::create(program));
+
   LoopParallel::runPass(LoopParallel::Arg::create(program));
   return true;
 }
