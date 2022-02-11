@@ -1,10 +1,10 @@
 /*
- * @Description: Polly: A DSL compiler for Tensor Program 
- * @Author: Qiming Zheng 
- * @Date: 2022-01-18 20:32:29 
- * @Last Modified by:   Qiming Zheng 
- * @Last Modified time: 2022-01-18 20:32:29 
- * @CopyRight: Qiming Zheng 
+ * @Description: Polly: A DSL compiler for Tensor Program
+ * @Author: Qiming Zheng
+ * @Date: 2022-01-18 20:32:29
+ * @Last Modified by:   Qiming Zheng
+ * @Last Modified time: 2022-01-18 20:32:29
+ * @CopyRight: Qiming Zheng
  */
 #pragma once
 
@@ -24,6 +24,11 @@ class Stmt {
 class Assignment : public Stmt {
  public:
   Assignment(const Expr lhs, const Expr &rhs);
+};
+
+class Declaration : public Stmt {
+ public:
+  Declaration(const Expr decl);
 };
 
 class Print : public Stmt {

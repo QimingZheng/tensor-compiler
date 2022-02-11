@@ -32,6 +32,7 @@ class LoopSplit : public Pass, public IRNotImplementedVisitor {
   static PassRetHandle runPass(PassArgHandle arg);
 
   void visitInt(IntHandle int_expr) override;
+  void visitFloat(FloatHandle float_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
   void visitMul(MulHandle mul) override;
@@ -41,6 +42,8 @@ class LoopSplit : public Pass, public IRNotImplementedVisitor {
   void visitAccess(AccessHandle access) override;
   void visitAssign(AssignmentHandle assign) override;
   void visitTensor(TensorHandle tensor) override;
+  void visitVal(ValHandle val) override;
+  void visitDecl(DeclHandle decl) override;
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
@@ -75,6 +78,11 @@ class LoopSplit : public Pass, public IRNotImplementedVisitor {
   IRHandle program_;
   IRHandle loop_;
   IRHandle replace_;
+
+  std::vector<IRHandle> enclosing_looping_vars_;
+  std::map<IRNodeKey, IRHandle> outter_dict;
+
+  IRHandle outter_loop_var_, inner_loop_var_;
   int splitFactor;
 
   bool searching_;

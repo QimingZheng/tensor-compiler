@@ -5,6 +5,10 @@ namespace polly {
 void DivisibleBoundaryCheck::visitInt(IntHandle int_expr) {
   value = int_expr->value;
 }
+
+void DivisibleBoundaryCheck::visitFloat(FloatHandle float_expr) {
+  throw std::runtime_error("Should not visit a float node");
+}
 void DivisibleBoundaryCheck::visitAdd(AddHandle add) {
   visit(add->lhs);
   auto lhs = value;
@@ -55,6 +59,10 @@ void DivisibleBoundaryCheck::visitAssign(AssignmentHandle assign) {
 void DivisibleBoundaryCheck::visitTensor(TensorHandle tensor) {
   /// PASS
   throw std::runtime_error("Should not visit a tensor node");
+}
+void DivisibleBoundaryCheck::visitVal(ValHandle val) {
+  /// PASS
+  throw std::runtime_error("Should not visit an val node");
 }
 void DivisibleBoundaryCheck::visitFor(ForHandle loop) {
   visit(loop->looping_var_.as<VarNode>()->max);

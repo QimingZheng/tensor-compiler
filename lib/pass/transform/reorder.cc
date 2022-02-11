@@ -4,6 +4,44 @@
 
 namespace polly {
 
+class LoopReorderHelper : public IRNotImplementedVisitor {
+ public:
+  LoopReorderHelper(IRHandle i_loop, IRHandle j_loop)
+      : i_loop_(i_loop), j_loop_(j_loop) {}
+
+  IRHandle i_loop_, j_loop_;
+
+  void replace_reordered_loop(DeclHandle decl) {
+    auto val = decl->decl.as<ValNode>();
+    for (int i = 0; i < val->enclosing_looping_vars_.size(); i++) {
+      if (val->enclosing_looping_vars_[i].equals(i_loop_)) {
+        val->enclosing_looping_vars_[i] = j_loop_;
+      } else if (val->enclosing_looping_vars_[i].equals(j_loop_)) {
+        val->enclosing_looping_vars_[i] = i_loop_;
+      }
+    }
+  }
+
+  void visitFor(ForHandle loop) override {
+    for (int i = 0; i < loop->body.size(); i++) {
+      if (loop->body[i].Type() == IRNodeType::FOR) {
+        loop->body[i].accept(this);
+      } else if (loop->body[i].Type() == IRNodeType::DECLARATION) {
+        replace_reordered_loop(loop->body[i].as<DeclNode>());
+      }
+    }
+  }
+  void visitFunc(FuncHandle func) override {
+    for (int i = 0; i < func->body.size(); i++) {
+      if (func->body[i].Type() == IRNodeType::FOR) {
+        func->body[i].accept(this);
+      } else if (func->body[i].Type() == IRNodeType::DECLARATION) {
+        replace_reordered_loop(func->body[i].as<DeclNode>());
+      }
+    }
+  }
+};
+
 LoopReorder::LoopReorder(IRHandle program, IRHandle i_loop, IRHandle j_loop)
     : program_(program), i_loop_(i_loop), j_loop_(j_loop) {
   modeling_ = true;
@@ -43,6 +81,9 @@ LoopReorder::LoopReorder(IRHandle program, IRHandle i_loop, IRHandle j_loop)
 PassRetHandle LoopReorder::runPass(PassArgHandle arg) {
   LoopReorder(PassArg::as<Arg>(arg)->program, PassArg::as<Arg>(arg)->i_loop,
               PassArg::as<Arg>(arg)->j_loop);
+  LoopReorderHelper(PassArg::as<Arg>(arg)->i_loop,
+                    PassArg::as<Arg>(arg)->j_loop)
+      .visit(PassArg::as<Arg>(arg)->program);
   return Ret::create();
 }
 

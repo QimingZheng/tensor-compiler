@@ -9,16 +9,23 @@ PassRetHandle NormalizationPass::runPass(PassArgHandle arg) {
 
 class NormalizationHelper : public IRNotImplementedVisitor {
  public:
-  NormalizationHelper(IRHandle program, IRHandle loop_var, IRHandle replace_var)
-      : program_(program), loop_var_(loop_var), replace_var_(replace_var) {}
+  NormalizationHelper(IRHandle program, IRHandle loop_var, IRHandle replace_var,
+                      IRHandle new_loop_var)
+      : program_(program),
+        loop_var_(loop_var),
+        replace_var_(replace_var),
+        new_loop_var_(new_loop_var) {}
 
   static void Normalize(IRHandle program, IRHandle loop_var,
-                        IRHandle replace_var) {
-    NormalizationHelper norm(program, loop_var, replace_var);
+                        IRHandle replace_var, IRHandle new_loop_var) {
+    NormalizationHelper norm(program, loop_var, replace_var, new_loop_var);
     norm.visit(program);
   }
 
   void visitInt(IntHandle int_expr) override {
+    /// Pass
+  }
+  void visitFloat(FloatHandle float_expr) override {
     /// Pass
   }
   void visitAdd(AddHandle add) override {
@@ -58,6 +65,20 @@ class NormalizationHelper : public IRNotImplementedVisitor {
   void visitTensor(TensorHandle tensor) override {
     /// Pass
   }
+  void visitVal(ValHandle val) override {
+    /// Pass
+  }
+  void visitDecl(DeclHandle decl) override {
+    /// Pass
+    auto tmp = replace_var_;
+    replace_var_ = new_loop_var_;
+    auto val = decl->decl.as<ValNode>();
+    for (int i = 0; i < val->enclosing_looping_vars_.size(); i++) {
+      val->enclosing_looping_vars_[i] =
+          replace_with(val->enclosing_looping_vars_[i]);
+    }
+    replace_var_ = tmp;
+  }
   void visitFor(ForHandle loop) override {
     loop->looping_var_ = replace_with(loop->looping_var_);
     for (int i = 0; i < loop->body.size(); i++) {
@@ -95,6 +116,7 @@ class NormalizationHelper : public IRNotImplementedVisitor {
   IRHandle program_;
   IRHandle loop_var_;
   IRHandle replace_var_;
+  IRHandle new_loop_var_;
 };
 
 void NormalizationPass::visitFor(ForHandle loop) {
@@ -116,7 +138,8 @@ void NormalizationPass::visitFor(ForHandle loop) {
         NormalizationHelper::Normalize(
             loop->body[i], var,
             AddNode::make(MulNode::make(var.as<VarNode>()->increment, newVar),
-                          var.as<VarNode>()->min));
+                          var.as<VarNode>()->min),
+            newVar);
       }
       loop->body[i].accept(this);
     }
@@ -142,7 +165,8 @@ void NormalizationPass::visitFunc(FuncHandle func) {
         NormalizationHelper::Normalize(
             func->body[i], var,
             AddNode::make(MulNode::make(var.as<VarNode>()->increment, newVar),
-                          var.as<VarNode>()->min));
+                          var.as<VarNode>()->min),
+            newVar);
       }
       func->body[i].accept(this);
     }

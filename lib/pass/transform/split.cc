@@ -25,6 +25,9 @@ IRHandle LoopSplit::replace_with(IRHandle node) {
 void LoopSplit::visitInt(IntHandle int_expr) {
   /// Pass
 }
+void LoopSplit::visitFloat(FloatHandle float_expr) {
+  /// Pass
+}
 
 void LoopSplit::visitAdd(AddHandle add) {
   if (!searching_) {
@@ -88,7 +91,26 @@ void LoopSplit::visitTensor(TensorHandle tensor) {
   /// Pass
 }
 
+void LoopSplit::visitVal(ValHandle val) {
+  /// Pass
+}
+
+void LoopSplit::visitDecl(DeclHandle decl) {
+  auto val = decl->decl.as<ValNode>();
+  for (int i = 0; i < val->enclosing_looping_vars_.size(); i++) {
+    if (val->enclosing_looping_vars_[i].equals(
+            loop_.as<ForNode>()->looping_var_)) {
+      val->enclosing_looping_vars_[i] = outter_loop_var_;
+      val->enclosing_looping_vars_.insert(
+          val->enclosing_looping_vars_.begin() + i + 1, inner_loop_var_);
+      break;
+    }
+  }
+  outter_dict[val->id] = decl->decl;
+}
+
 void LoopSplit::visitFor(ForHandle loop) {
+  enclosing_looping_vars_.push_back(loop->looping_var_);
   if (searching_) {
     for (int i = 0; i < loop->body.size(); i++) {
       if (loop->body[i].equals(loop_)) {
@@ -98,6 +120,9 @@ void LoopSplit::visitFor(ForHandle loop) {
         auto outter_loop = ForNode::make(outter_loop_var);
         auto inner_loop_var = get_inner_loop_var();
         auto inner_loop = ForNode::make(inner_loop_var);
+
+        outter_loop_var_ = outter_loop_var;
+        inner_loop_var_ = inner_loop_var;
 
         outter_loop.as<ForNode>()->Insert(inner_loop);
 
@@ -130,6 +155,7 @@ void LoopSplit::visitFor(ForHandle loop) {
       loop->body[i].accept(this);
     }
   }
+  enclosing_looping_vars_.pop_back();
 }
 
 void LoopSplit::visitConst(ConstHandle con) {
@@ -216,11 +242,23 @@ IRHandle LoopSplit::get_remainder_loop_var(IRHandle loop_var) {
 class LoopSplitHelper : public IRNotImplementedVisitor {
  public:
   std::map<IRNodeKey, IRHandle> dict;
+  std::map<IRNodeKey, IRHandle> outter_dict;
+  std::map<IRNodeKey, IRNodeKey> valNameMap;
+  std::vector<IRHandle> enclosing_looping_vars_;
+
+  LoopSplitHelper(std::vector<IRHandle> enclosing_looping_vars,
+                  std::map<IRNodeKey, IRHandle> outter_dict_)
+      : enclosing_looping_vars_(enclosing_looping_vars),
+        outter_dict(outter_dict_) {}
 
   IRHandle node;
   void visitInt(IntHandle int_expr) override {
     node = IntNode::make(int_expr->value);
   }
+  void visitFloat(FloatHandle float_expr) override {
+    node = FloatNode::make(float_expr->value);
+  }
+
   void visitAdd(AddHandle add) override {
     add->lhs.accept(this);
     auto lhs = node;
@@ -282,6 +320,20 @@ class LoopSplitHelper : public IRNotImplementedVisitor {
         IRNodeKeyGen::GetInstance()->YieldStatementKey(), lhs, rhs);
   }
   void visitTensor(TensorHandle tensor) override { node = IRHandle(tensor); }
+  void visitVal(ValHandle val) override {
+    if (dict.find(val->id) != dict.end())
+      node = dict[val->id];
+    else {
+      node = outter_dict[val->id];
+    }
+  }
+  void visitDecl(DeclHandle decl) override {
+    auto val = ValNode::make(IRNodeKeyGen::GetInstance()->YieldValKey(),
+                             enclosing_looping_vars_);
+    dict[decl->decl.as<ValNode>()->id] = val;
+    node =
+        DeclNode::make(IRNodeKeyGen::GetInstance()->YieldStatementKey(), val);
+  }
   void visitFor(ForHandle loop) override {
     loop->looping_var_.as<VarNode>()->min.accept(this);
     auto min = node;
@@ -291,6 +343,8 @@ class LoopSplitHelper : public IRNotImplementedVisitor {
     auto increment = node;
     dict[loop->looping_var_.as<VarNode>()->id] = VarNode::make(
         IRNodeKeyGen::GetInstance()->YieldVarKey(), min, max, increment);
+    enclosing_looping_vars_.push_back(
+        dict[loop->looping_var_.as<VarNode>()->id]);
     std::vector<IRHandle> body;
     for (int i = 0; i < loop->body.size(); i++) {
       loop->body[i].accept(this);
@@ -298,6 +352,7 @@ class LoopSplitHelper : public IRNotImplementedVisitor {
     }
     node = ForNode::make(dict[loop->looping_var_.as<VarNode>()->id]);
     node.as<ForNode>()->body = body;
+    enclosing_looping_vars_.pop_back();
   }
   void visitConst(ConstHandle con) override {
     throw std::runtime_error("Should Not visit this node");
@@ -331,7 +386,7 @@ class LoopSplitHelper : public IRNotImplementedVisitor {
 IRHandle LoopSplit::create_remainder_loop(IRHandle loop,
                                           IRHandle remainder_loop_var) {
   // clone and replace statement/var/print ids
-  LoopSplitHelper helper;
+  LoopSplitHelper helper(enclosing_looping_vars_, outter_dict);
   helper.visit(loop);
   auto clonedLoop = helper.node;
 

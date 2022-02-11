@@ -12,6 +12,10 @@ void FissionTransform::visitInt(IntHandle int_expr) {
   /// Pass
 }
 
+void FissionTransform::visitFloat(FloatHandle float_expr) {
+  /// Pass
+}
+
 IRHandle FissionTransform::replace_if_match(IRHandle origin) {
   origin.accept(this);
   if (origin.equals(loop_.as<ForNode>()->looping_var_)) {
@@ -81,6 +85,22 @@ void FissionTransform::visitAssign(AssignmentHandle assign) {
 
 void FissionTransform::visitTensor(TensorHandle tensor) {
   /// Pass
+}
+
+void FissionTransform::visitVal(ValHandle val) {
+  /// Pass
+  if (!searching_) {
+    for (int i = 0; i < val->enclosing_looping_vars_.size(); i++) {
+      val->enclosing_looping_vars_[i] =
+          replace_if_match(val->enclosing_looping_vars_[i]);
+    }
+  }
+}
+
+void FissionTransform::visitDecl(DeclHandle decl) {
+  if (!searching_) {
+    decl->decl.accept(this);
+  }
 }
 
 void FissionTransform::visitFor(ForHandle loop) {

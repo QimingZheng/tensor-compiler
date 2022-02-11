@@ -109,6 +109,29 @@ IRHandle IRHandle::clone(std::map<IRNodeKey, IRHandle> &irHandleDict) {
       ret = IntNode::make(as<IntNode>()->value);
       break;
     }
+    case IRNodeType::FLOAT: {
+      ret = FloatNode::make(as<FloatNode>()->value);
+      break;
+    }
+    case IRNodeType::VALUE: {
+      if (irHandleDict.find(as<ValNode>()->id) != irHandleDict.end()) {
+        ret = irHandleDict[as<ValNode>()->id];
+      } else {
+        ret = ValNode::make(as<ValNode>()->id,
+                            as<ValNode>()->enclosing_looping_vars_);
+        irHandleDict[as<ValNode>()->id] = ret;
+      }
+      break;
+    }
+    case IRNodeType::DECLARATION: {
+      if (irHandleDict.find(as<DeclNode>()->id) != irHandleDict.end()) {
+        ret = irHandleDict[as<DeclNode>()->id];
+      } else {
+        ret = DeclNode::make(as<DeclNode>()->id, as<DeclNode>()->decl);
+        irHandleDict[as<DeclNode>()->id] = ret;
+      }
+      break;
+    }
     case IRNodeType::PRINT: {
       ret = PrintNode::make(as<PrintNode>()->id,
                             as<PrintNode>()->print.clone(irHandleDict));
@@ -191,11 +214,31 @@ IRHandle IntNode::make(int x) {
   return IRHandle(node);
 }
 
+IRHandle FloatNode::make(float x) {
+  FloatNode *node = new FloatNode(x);
+  return IRHandle(node);
+}
+
 IRHandle TensorNode::make(const IRNodeKey id, std::vector<int64_t> &shape) {
   TensorNode *tensor = new TensorNode();
   tensor->id = id;
   tensor->shape = shape;
   return IRHandle(tensor);
+}
+
+IRHandle ValNode::make(const IRNodeKey id,
+                       std::vector<IRHandle> enclosing_looping_vars) {
+  ValNode *val = new ValNode();
+  val->id = id;
+  val->enclosing_looping_vars_ = enclosing_looping_vars;
+  return IRHandle(val);
+}
+
+IRHandle DeclNode::make(const IRNodeKey id, IRHandle decl) {
+  DeclNode *dec = new DeclNode();
+  dec->id = id;
+  dec->decl = decl;
+  return IRHandle(dec);
 }
 
 IRHandle AccessNode::make(IRHandle tensor, std::vector<IRHandle> indices) {

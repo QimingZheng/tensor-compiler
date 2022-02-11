@@ -24,6 +24,9 @@ void IRVisitor::visit(IRHandle expr) {
     case IRNodeType::INT:
       this->visitInt(expr.as<IntNode>());
       break;
+    case IRNodeType::FLOAT:
+      this->visitFloat(expr.as<FloatNode>());
+      break;
     case IRNodeType::ASSIGN:
       this->visitAssign(expr.as<AssignmentNode>());
       break;
@@ -35,6 +38,12 @@ void IRVisitor::visit(IRHandle expr) {
       break;
     case IRNodeType::TENSOR:
       this->visitTensor(expr.as<TensorNode>());
+      break;
+    case IRNodeType::VALUE:
+      this->visitVal(expr.as<ValNode>());
+      break;
+    case IRNodeType::DECLARATION:
+      this->visitDecl(expr.as<DeclNode>());
       break;
     case IRNodeType::FOR:
       this->visitFor(expr.as<ForNode>());
@@ -93,6 +102,9 @@ void IRVisitor::visit(IRHandle expr) {
 void IRPrinterVisitor::visitInt(IntHandle int_expr) {
   std::cout << int_expr->value;
 }
+void IRPrinterVisitor::visitFloat(FloatHandle float_expr) {
+  std::cout << float_expr->value;
+}
 void IRPrinterVisitor::visitAdd(AddHandle add) {
   add->lhs.accept(this);
   std::cout << " + ";
@@ -137,6 +149,8 @@ void IRPrinterVisitor::visitAssign(AssignmentHandle assign) {
 void IRPrinterVisitor::visitTensor(TensorHandle tensor) {
   std::cout << tensor->id;
 }
+void IRPrinterVisitor::visitVal(ValHandle val) { std::cout << val->id; }
+void IRPrinterVisitor::visitDecl(DeclHandle decl) { decl->decl.accept(this); }
 void IRPrinterVisitor::visitFor(ForHandle loop) {
   loop->looping_var_.accept(this);
   std::cout << " {\n";

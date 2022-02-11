@@ -6,6 +6,9 @@ void ConstantBoundaryCheck::visitInt(IntHandle int_expr) {
   isConstantBoundary = true;
   value = int_expr->value;
 }
+void ConstantBoundaryCheck::visitFloat(FloatHandle float_expr) {
+  isConstantBoundary = false;
+}
 void ConstantBoundaryCheck::visitAdd(AddHandle add) {
   visit(add->lhs);
   if (!isConstantBoundary) return;
@@ -61,6 +64,10 @@ void ConstantBoundaryCheck::visitAssign(AssignmentHandle assign) {
   isConstantBoundary = false;
 }
 void ConstantBoundaryCheck::visitTensor(TensorHandle tensor) {
+  isConstantBoundary = false;
+}
+
+void ConstantBoundaryCheck::visitVal(ValHandle val) {
   isConstantBoundary = false;
 }
 

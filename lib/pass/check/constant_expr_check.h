@@ -34,6 +34,7 @@ class IsConstantIRHandle : public IRNotImplementedVisitor, public Pass {
   }
 
   void visitInt(IntHandle int_expr) override { isConstant = true; }
+  void visitFloat(FloatHandle float_expr) override { isConstant = false; }
   void visitAdd(AddHandle add) override {
     add->lhs.accept(this);
     if (!isConstant) return;
@@ -62,6 +63,8 @@ class IsConstantIRHandle : public IRNotImplementedVisitor, public Pass {
   void visitVar(VarHandle var) override { isConstant = false; }
   void visitAccess(AccessHandle access) override { isConstant = false; }
   void visitTensor(TensorHandle tensor) override { isConstant = false; }
+
+  void visitVal(ValHandle val) override { isConstant = false; }
 
   void visitMin(MinHandle min) override {
     min->lhs.accept(this);

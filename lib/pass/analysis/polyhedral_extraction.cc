@@ -13,6 +13,11 @@ void PolyhedralExtraction::visitInt(IntHandle int_expr) {
   workspace.expr.constant = int_expr->value;
 }
 
+void PolyhedralExtraction::visitFloat(FloatHandle float_expr) {
+  throw std::runtime_error(
+      "Shall not visit a float node when extract polyhedral model");
+}
+
 void PolyhedralExtraction::visitAdd(AddHandle add) {
   workspace.clear();
   add->lhs.accept(this);
@@ -162,6 +167,20 @@ void PolyhedralExtraction::visitTensor(TensorHandle tensor) {
   /// Pass
 }
 
+void PolyhedralExtraction::visitVal(ValHandle val) {
+  std::vector<QuasiAffineExpr> placeholder;
+  for (int i = 0; i < val->enclosing_looping_vars_.size(); i++) {
+    workspace.clear();
+    val->enclosing_looping_vars_[i].accept(this);
+    placeholder.push_back(workspace.expr);
+  }
+  affineAccesses.push_back({val->id, placeholder});
+}
+
+void PolyhedralExtraction::visitDecl(DeclHandle decl) {
+  /// Pass
+}
+
 void PolyhedralExtraction::visitFor(ForHandle loop) {
   workspace.clear();
   loop->looping_var_.as<VarNode>()->min.accept(this);
@@ -182,7 +201,8 @@ void PolyhedralExtraction::visitFor(ForHandle loop) {
     max_.constant -= 1 * max_.divisor;
   }
 
-  loops.push_back(Iteration(loop->looping_var_.as<VarNode>()->id, mins_, maxs_));
+  loops.push_back(
+      Iteration(loop->looping_var_.as<VarNode>()->id, mins_, maxs_));
   for (int i = 0; i < loop->body.size(); i++) {
     progContext.push_back(i);
     loop->body[i].accept(this);

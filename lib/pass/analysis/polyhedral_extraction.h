@@ -60,6 +60,7 @@ class PolyhedralExtraction : public IRNotImplementedVisitor {
   }
 
   void visitInt(IntHandle int_expr) override;
+  void visitFloat(FloatHandle float_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
   void visitMul(MulHandle mul) override;
@@ -69,6 +70,8 @@ class PolyhedralExtraction : public IRNotImplementedVisitor {
   void visitAccess(AccessHandle access) override;
   void visitAssign(AssignmentHandle assign) override;
   void visitTensor(TensorHandle tensor) override;
+  void visitVal(ValHandle val) override;
+  void visitDecl(DeclHandle decl) override;
   void visitFor(ForHandle loop) override;
   void visitPrint(PrintHandle print) override;
   void visitFunc(FuncHandle func) override;

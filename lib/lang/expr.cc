@@ -44,6 +44,20 @@ Tensor::Tensor(std::vector<int64_t> shape) : shape(shape) {
   Program::GetInstance()->DeclareTensor(this);
 }
 
+Value::Value() {
+  id = IRNodeKeyGen::GetInstance()->YieldValKey();
+  handle_ = ValNode::make(id, Program::GetInstance()->GetLoopingVars());
+  Declaration(Expr(GetIRHandle()));
+}
+
+Value &Value::operator=(const Expr &rhs) {
+  id = IRNodeKeyGen::GetInstance()->YieldValKey();
+  handle_ = ValNode::make(id, Program::GetInstance()->GetLoopingVars());
+  Declaration(Expr(GetIRHandle()));
+  // make assignment
+  Assignment(Expr(GetIRHandle()), rhs);
+}
+
 Constant::Constant(const std::string name) { handle_ = ConstNode::make(name); }
 
 Max::Max(const Expr &a, const Expr &b) {

@@ -37,6 +37,7 @@ class IsAffineIRHandle : public IRNotImplementedVisitor, public Pass {
   }
 
   void visitInt(IntHandle int_expr) override { isAffine = true; }
+  void visitFloat(FloatHandle float_expr) override { isAffine = false; }
   void visitAdd(AddHandle add) override {
     add->lhs.accept(this);
     if (!isAffine) return;
@@ -91,6 +92,8 @@ class IsAffineIRHandle : public IRNotImplementedVisitor, public Pass {
   void visitVar(VarHandle var) override { isAffine = true; }
   void visitAccess(AccessHandle access) override { isAffine = false; }
   void visitTensor(TensorHandle tensor) override { isAffine = false; }
+
+  void visitVal(ValHandle val) override { isAffine = false; }
 
   // TODO: check this.
   void visitMin(MinHandle min) override {

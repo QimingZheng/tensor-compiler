@@ -115,6 +115,18 @@ class Program {
     // current_loop_ = loopScopes_.top();
     return false;
   }
+  std::vector<IRHandle> GetLoopingVars() {
+    std::vector<IRHandle> ret;
+    for (int i = 0; i < loopScopes_.size(); i++) {
+      ret.push_back(loopScopes_.top());
+      loopScopes_.pop();
+    }
+    std::reverse(ret.begin(), ret.end());
+    for (int i = 0; i++; i++) {
+      loopScopes_.push(ret[i]);
+    }
+    return ret;
+  }
 
   bool AddStmt(Stmt *stmt) {
     if (module_.GetRoot() == NullIRHandle) {

@@ -10,6 +10,13 @@ void LoopVectorization::visitInt(IntHandle int_expr) {
   node = vec;
 }
 
+void LoopVectorization::visitFloat(FloatHandle float_expr) {
+  auto vec = VecNode::make(IRNodeKeyGen::GetInstance()->YieldVecKey(), vecLen);
+  vectorizationBody.push_back(
+      VecScalarNode::make(vec, IRHandle(float_expr), vecLen));
+  node = vec;
+}
+
 void LoopVectorization::visitAdd(AddHandle add) {
   auto res = VecNode::make(IRNodeKeyGen::GetInstance()->YieldVecKey(), vecLen);
   add->lhs.accept(this);

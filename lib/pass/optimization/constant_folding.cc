@@ -26,12 +26,20 @@ class ConstantFoldingEvaluator : public IRNotImplementedVisitor {
       return IRHandle(IntNode::make(v.int_value));
     }
     /// add the case for float when FloatNode is added
+    if (t == value_type::FLOAT) {
+      return IRHandle(FloatNode::make(v.float_value));
+    }
     return NullIRHandle;
   }
 
   void visitInt(IntHandle int_expr) {
     t = value_type::INT;
     v.int_value = int_expr->value;
+  }
+
+  void visitFloat(FloatHandle float_expr) {
+    t = value_type::FLOAT;
+    v.float_value = float_expr->value;
   }
 
   void visitAdd(AddHandle add) {
@@ -153,6 +161,7 @@ class ConstantFoldingEvaluator : public IRNotImplementedVisitor {
   void visitAccess(AccessHandle access) { t = value_type::DEFAULT; }
   void visitAssign(AssignmentHandle assign) { t = value_type::DEFAULT; }
   void visitTensor(TensorHandle tensor) { t = value_type::DEFAULT; }
+  void visitVal(ValHandle val) { t = value_type::DEFAULT; }
   void visitFor(ForHandle loop) { t = value_type::DEFAULT; }
   void visitConst(ConstHandle con) { t = value_type::DEFAULT; }
   void visitPrint(PrintHandle print) { t = value_type::DEFAULT; }
@@ -371,6 +380,9 @@ IRHandle ConstantFoldingPass::simplify(IRHandle node) {
 void ConstantFoldingPass::visitInt(IntHandle int_expr) {
   /// Pass
 }
+void ConstantFoldingPass::visitFloat(FloatHandle float_expr) {
+  /// Pass
+}
 
 void ConstantFoldingPass::visitAdd(AddHandle add) {
   ConstantFoldingEvaluator evaluator;
@@ -499,6 +511,10 @@ void ConstantFoldingPass::visitAssign(AssignmentHandle assign) {
 }
 
 void ConstantFoldingPass::visitTensor(TensorHandle tensor) {
+  /// Pass
+}
+
+void ConstantFoldingPass::visitVal(ValHandle val) {
   /// Pass
 }
 

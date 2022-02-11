@@ -54,7 +54,8 @@ void GEMM() {
         Variable k(0, 1024, 1);
         K = k.id;
         auto x = C(i, i) + i + j;
-        C(i, j) = C(i, j) + A(i, k) * B(k, j);
+        // C(i, j) = C(i, j) + A(i, k) * B(k, j);
+        C(i, j) += A(i, k) * B(k, j);
       }
     }
   }
@@ -148,6 +149,10 @@ void BLUR() {
   // prog.AutoTune("RandomSearch");
 
   prog.GenerateC();
+}
+
+void BlackSholes() {
+  // TODO
 }
 
 int main() {

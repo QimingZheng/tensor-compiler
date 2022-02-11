@@ -35,6 +35,7 @@ class LoopVectorization : public Pass, public IRNotImplementedVisitor {
   }
 
   void visitInt(IntHandle int_expr) override;
+  void visitFloat(FloatHandle float_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
   void visitMul(MulHandle mul) override;

@@ -6,6 +6,10 @@ void AffineCheck::visitInt(IntHandle int_expr) {
   // PASS
   isAffine = true;
 }
+void AffineCheck::visitFloat(FloatHandle float_expr) {
+  // PASS
+  isAffine = false;
+}
 void AffineCheck::visitAdd(AddHandle add) {
   if (!firstTimeEntering) {
     auto ret = IsAffineIRHandle::runPass(
@@ -98,6 +102,18 @@ void AffineCheck::visitTensor(TensorHandle tensor) {
   /// Pass
   isAffine = true;
 }
+void AffineCheck::visitVal(ValHandle val) {
+  /// Pass
+  if (!firstTimeEntering) {
+    isAffine = false;
+  }
+}
+
+void AffineCheck::visitDecl(DeclHandle decl) {
+  /// Pass
+  isAffine = true;
+}
+
 void AffineCheck::visitFor(ForHandle loop) {
   {
     auto ret = IsAffineIRHandle::runPass(std::shared_ptr<IsAffineIRHandle::Arg>(

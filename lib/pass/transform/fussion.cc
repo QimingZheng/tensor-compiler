@@ -32,6 +32,10 @@ void FussionTransform::visitInt(IntHandle int_expr) {
   /// Pass
 }
 
+void FussionTransform::visitFloat(FloatHandle float_expr) {
+  /// Pass
+}
+
 void FussionTransform::visitAdd(AddHandle add) {
   if (!searching_) {
     add->lhs = replace_if_match(add->lhs);
@@ -92,6 +96,22 @@ void FussionTransform::visitAssign(AssignmentHandle assign) {
 
 void FussionTransform::visitTensor(TensorHandle tensor) {
   /// Pass
+}
+
+void FussionTransform::visitVal(ValHandle val) {
+  /// Pass
+  if (!searching_) {
+    for (int i = 0; i < val->enclosing_looping_vars_.size(); i++) {
+      val->enclosing_looping_vars_[i] =
+          replace_if_match(val->enclosing_looping_vars_[i]);
+    }
+  }
+}
+
+void FussionTransform::visitDecl(DeclHandle decl) {
+  if (!searching_) {
+    decl->decl.accept(this);
+  }
 }
 
 void FussionTransform::visitFor(ForHandle loop) {

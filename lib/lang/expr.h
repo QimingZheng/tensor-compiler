@@ -23,6 +23,7 @@ class Expr {
   IRHandle GetIRHandle() const { return handle_; }
 
   Expr(int x) : handle_(IntNode::make(x)) {}
+  Expr(float x) : handle_(FloatNode::make(x)) {}
 };
 
 Expr operator+(const Expr &a, const Expr &b);
@@ -52,6 +53,22 @@ class Access : public Expr {
   Access(const Expr tensor, const std::vector<Expr> &indices);
 
   Assignment operator=(const Expr &rhs) const { return Assignment(*this, rhs); }
+  Assignment operator+=(const Expr &rhs) const {
+    return Assignment(*this,
+                      Expr(AddNode::make(GetIRHandle(), rhs.GetIRHandle())));
+  }
+  Assignment operator-=(const Expr &rhs) const {
+    return Assignment(*this,
+                      Expr(SubNode::make(GetIRHandle(), rhs.GetIRHandle())));
+  }
+  Assignment operator*=(const Expr &rhs) const {
+    return Assignment(*this,
+                      Expr(MulNode::make(GetIRHandle(), rhs.GetIRHandle())));
+  }
+  Assignment operator/=(const Expr &rhs) const {
+    return Assignment(*this,
+                      Expr(DivNode::make(GetIRHandle(), rhs.GetIRHandle())));
+  }
 };
 
 ///
@@ -68,6 +85,33 @@ class Tensor : public Expr {
   template <typename... Index>
   const Access operator()(const Index &...indices) const {
     return static_cast<const Tensor *>(this)->operator()({indices...});
+  }
+};
+
+class Value : public Expr {
+ public:
+  IRNodeKey id;
+
+  Value();
+  // Both declare a value and create an assignment statement.
+  Value &operator=(const Expr &rhs);
+
+  Assignment operator=(const Expr &rhs) const { return Assignment(*this, rhs); }
+  Assignment operator+=(const Expr &rhs) const {
+    return Assignment(*this,
+                      Expr(AddNode::make(GetIRHandle(), rhs.GetIRHandle())));
+  }
+  Assignment operator-=(const Expr &rhs) const {
+    return Assignment(*this,
+                      Expr(SubNode::make(GetIRHandle(), rhs.GetIRHandle())));
+  }
+  Assignment operator*=(const Expr &rhs) const {
+    return Assignment(*this,
+                      Expr(MulNode::make(GetIRHandle(), rhs.GetIRHandle())));
+  }
+  Assignment operator/=(const Expr &rhs) const {
+    return Assignment(*this,
+                      Expr(DivNode::make(GetIRHandle(), rhs.GetIRHandle())));
   }
 };
 

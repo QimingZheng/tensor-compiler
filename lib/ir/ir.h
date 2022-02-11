@@ -14,7 +14,6 @@ namespace polly {
 
 enum IRNodeType {
   INT = 0,
-  // FLOAT = 13,
   ADD = 1,
   SUB = 2,
   MUL = 3,
@@ -31,6 +30,10 @@ enum IRNodeType {
   PRINT = 12,
   FUNC = 13,
 
+  FLOAT,
+  VALUE,
+  DECLARATION,
+
   MIN,
   MAX,
 
@@ -46,7 +49,7 @@ enum IRNodeType {
 };
 
 class IntNode;
-// class Floatnode;
+class FloatNode;
 class AddNode;
 class SubNode;
 class MulNode;
@@ -57,6 +60,9 @@ class VarNode;
 class AccessNode;
 class TensorNode;
 class ConstNode;
+
+class ValNode;
+class DeclNode;
 
 class ForNode;
 class PrintNode;
@@ -85,6 +91,7 @@ typedef std::shared_ptr<DivNode> DivHandle;
 typedef std::shared_ptr<ModNode> ModHandle;
 typedef std::shared_ptr<VarNode> VarHandle;
 typedef std::shared_ptr<IntNode> IntHandle;
+typedef std::shared_ptr<FloatNode> FloatHandle;
 typedef std::shared_ptr<TensorNode> TensorHandle;
 typedef std::shared_ptr<AccessNode> AccessHandle;
 typedef std::shared_ptr<AssignmentNode> AssignmentHandle;
@@ -92,6 +99,9 @@ typedef std::shared_ptr<ForNode> ForHandle;
 typedef std::shared_ptr<ConstNode> ConstHandle;
 typedef std::shared_ptr<PrintNode> PrintHandle;
 typedef std::shared_ptr<FuncNode> FuncHandle;
+
+typedef std::shared_ptr<ValNode> ValHandle;
+typedef std::shared_ptr<DeclNode> DeclHandle;
 
 typedef std::shared_ptr<MinNode> MinHandle;
 typedef std::shared_ptr<MaxNode> MaxHandle;
@@ -117,6 +127,7 @@ class IRNodeKeyGen {
   int vec_id = 0;
   int id = 0;
   int method_id = 0;
+  int val_id = 0;
 
  protected:
   static IRNodeKeyGen *generator;
@@ -134,6 +145,7 @@ class IRNodeKeyGen {
   std::string YieldMethodName() {
     return "func_" + std::to_string(method_id++);
   }
+  std::string YieldValKey() { return "x" + std::to_string(val_id++); }
 };
 
 class IRNode {
@@ -329,6 +341,24 @@ class IntNode : public IRNode {
   }
 };
 
+class FloatNode : public IRNode {
+ private:
+  FloatNode() {}
+  FloatNode(float x) : value(x) {}
+
+ public:
+  float value;
+
+  static IRHandle make(float x);
+
+  IRNodeType Type() const override { return IRNodeType::FLOAT; }
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return value == static_cast<const FloatNode *>(other)->value;
+  }
+};
+
 class TensorNode : public IRNode {
  private:
   TensorNode() {}
@@ -344,6 +374,43 @@ class TensorNode : public IRNode {
     if (other == nullptr) return false;
     if (Type() != other->Type()) return false;
     return id == static_cast<const TensorNode *>(other)->id;
+  }
+};
+
+class ValNode : public IRNode {
+ private:
+  ValNode() {}
+
+ public:
+  IRNodeKey id;
+  std::vector<IRHandle> enclosing_looping_vars_;
+
+  static IRHandle make(const IRNodeKey id,
+                       std::vector<IRHandle> enclosing_looping_vars);
+
+  IRNodeType Type() const override { return IRNodeType::VALUE; }
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return id == static_cast<const ValNode *>(other)->id;
+  }
+};
+
+class DeclNode : public IRNode {
+ private:
+  DeclNode() {}
+
+ public:
+  IRNodeKey id;
+  IRHandle decl;
+
+  static IRHandle make(const IRNodeKey id, IRHandle decl);
+
+  IRNodeType Type() const override { return IRNodeType::DECLARATION; }
+  bool equals(const IRNode *other) override {
+    if (other == nullptr) return false;
+    if (Type() != other->Type()) return false;
+    return id == static_cast<const DeclNode *>(other)->id;
   }
 };
 
@@ -561,11 +628,6 @@ class LtNode : public BinaryNode {};
 class EqNode : public BinaryNode {};
 // !=
 class NeqNode : public BinaryNode {};
-
-class FloatNode : public IRNode {
- public:
-  float value;
-};
 
 class VecNode : public IRNode {
  public:

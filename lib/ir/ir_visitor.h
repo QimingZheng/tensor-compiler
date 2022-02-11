@@ -18,6 +18,7 @@ class IRVisitor {
  public:
   virtual void visit(IRHandle expr);
   virtual void visitInt(IntHandle int_expr) = 0;
+  virtual void visitFloat(FloatHandle float_expr) = 0;
   virtual void visitAdd(AddHandle add) = 0;
   virtual void visitSub(SubHandle sub) = 0;
   virtual void visitMul(MulHandle mul) = 0;
@@ -27,6 +28,8 @@ class IRVisitor {
   virtual void visitAssign(AssignmentHandle assign) = 0;
   virtual void visitAccess(AccessHandle access) = 0;
   virtual void visitTensor(TensorHandle tensor) = 0;
+  virtual void visitVal(ValHandle val) = 0;
+  virtual void visitDecl(DeclHandle decl) = 0;
   virtual void visitFor(ForHandle loop) = 0;
   virtual void visitConst(ConstHandle con) = 0;
   virtual void visitPrint(PrintHandle print) = 0;
@@ -50,6 +53,9 @@ class IRVisitor {
 class IRSimpleVisitor : public IRVisitor {
  public:
   void visitInt(IntHandle int_expr) override { helper(IRHandle(int_expr)); }
+  void visitFloat(FloatHandle float_expr) override {
+    helper(IRHandle(float_expr));
+  }
   void visitAdd(AddHandle add) override { helper(IRHandle(add)); }
   void visitSub(SubHandle sub) override { helper(IRHandle(sub)); }
   void visitMul(MulHandle mul) override { helper(IRHandle(mul)); }
@@ -61,6 +67,8 @@ class IRSimpleVisitor : public IRVisitor {
     helper(IRHandle(assign));
   }
   void visitTensor(TensorHandle tensor) override { helper(IRHandle(tensor)); }
+  void visitVal(ValHandle val) override { helper(IRHandle(val)); }
+  void visitDecl(DeclHandle decl) override { helper(IRHandle(decl)); }
   void visitFor(ForHandle loop) override { helper(IRHandle(loop)); }
   void visitConst(ConstHandle con) override { helper(IRHandle(con)); }
   void visitPrint(PrintHandle print) override { helper(IRHandle(print)); }
@@ -95,6 +103,10 @@ class IRRecursiveVisitor : public IRVisitor {
   void visitInt(IntHandle int_expr) override {
     enter(IRHandle(int_expr));
     exit(IRHandle(int_expr));
+  }
+  void visitFloat(FloatHandle float_expr) override {
+    enter(IRHandle(float_expr));
+    exit(IRHandle(float_expr));
   }
   void visitAdd(AddHandle add) override {
     enter(IRHandle(add));
@@ -149,6 +161,17 @@ class IRRecursiveVisitor : public IRVisitor {
   void visitTensor(TensorHandle tensor) override {
     enter(IRHandle(tensor));
     exit(IRHandle(tensor));
+  }
+  void visitVal(ValHandle val) override {
+    enter(IRHandle(val));
+    for (int i = 0; i < val->enclosing_looping_vars_.size(); i++)
+      val->enclosing_looping_vars_[i].accept(this);
+    exit(IRHandle(val));
+  }
+  void visitDecl(DeclHandle decl) override {
+    enter(IRHandle(decl));
+    decl->decl.accept(this);
+    exit(IRHandle(decl));
   }
   void visitFor(ForHandle loop) override {
     enter(IRHandle(loop));
@@ -251,6 +274,7 @@ class IRNotImplementedVisitor : public IRVisitor {
   IRNotImplementedVisitor(std::string errorMsg = "visit method Not Implemented")
       : errorMsg(errorMsg) {}
   void visitInt(IntHandle int_expr) override { throw_exception("Int"); }
+  void visitFloat(FloatHandle float_expr) override { throw_exception("Float"); }
   void visitAdd(AddHandle add) override { throw_exception("Add"); }
   void visitSub(SubHandle sub) override { throw_exception("Sub"); }
   void visitMul(MulHandle mul) override { throw_exception("Mul"); }
@@ -262,6 +286,8 @@ class IRNotImplementedVisitor : public IRVisitor {
     throw_exception("Assignment");
   }
   void visitTensor(TensorHandle tensor) override { throw_exception("Tensor"); }
+  void visitVal(ValHandle val) override { throw_exception("Val"); }
+  void visitDecl(DeclHandle decl) override { throw_exception("Decl"); }
   void visitFor(ForHandle loop) override { throw_exception("Loop"); }
   void visitConst(ConstHandle con) override { throw_exception("Constant"); }
   void visitPrint(PrintHandle print) override { throw_exception("Print"); }
@@ -298,6 +324,7 @@ class IRNotImplementedVisitor : public IRVisitor {
 class IRPrinterVisitor : public IRNotImplementedVisitor {
  public:
   void visitInt(IntHandle int_expr) override;
+  void visitFloat(FloatHandle float_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
   void visitMul(MulHandle mul) override;
@@ -307,6 +334,8 @@ class IRPrinterVisitor : public IRNotImplementedVisitor {
   void visitAccess(AccessHandle access) override;
   void visitAssign(AssignmentHandle assign) override;
   void visitTensor(TensorHandle tensor) override;
+  void visitVal(ValHandle val) override;
+  void visitDecl(DeclHandle decl) override;
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;
@@ -343,6 +372,7 @@ class IRMutatorVisitor : public IRNotImplementedVisitor {
   T _replace_subnode_helper(T op_node, bool skipReplace = false);
 
   void visitInt(IntHandle int_expr) override;
+  void visitFloat(FloatHandle float_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
   void visitMul(MulHandle mul) override;
@@ -352,6 +382,8 @@ class IRMutatorVisitor : public IRNotImplementedVisitor {
   void visitAccess(AccessHandle access) override;
   void visitAssign(AssignmentHandle assign) override;
   void visitTensor(TensorHandle tensor) override;
+  void visitVal(ValHandle val) override;
+  void visitDecl(DeclHandle decl) override;
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;

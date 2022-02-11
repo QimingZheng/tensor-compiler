@@ -25,6 +25,7 @@ class JitModule : public IRNotImplementedVisitor {
   void execute() { visit(module_.GetRoot()); }
 
   void visitInt(IntHandle int_expr) override;
+  void visitFloat(FloatHandle float_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
   void visitMul(MulHandle mul) override;
@@ -34,6 +35,8 @@ class JitModule : public IRNotImplementedVisitor {
   void visitAccess(AccessHandle access) override;
   void visitAssign(AssignmentHandle assign) override;
   void visitTensor(TensorHandle tensor) override;
+  void visitVal(ValHandle val) override;
+  void visitDecl(DeclHandle decl) override;
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;

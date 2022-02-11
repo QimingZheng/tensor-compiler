@@ -32,6 +32,10 @@ class UnrollEvaluator : public IRNotImplementedVisitor {
     t = value_type::INT;
     v.int_value = int_expr->value;
   }
+  void visitFloat(FloatHandle float_expr) {
+    t = value_type::FLOAT;
+    v.float_value = float_expr->value;
+  }
 
   void visitAdd(AddHandle add) {
     t = value_type::DEFAULT;
@@ -152,6 +156,7 @@ class UnrollEvaluator : public IRNotImplementedVisitor {
   void visitAccess(AccessHandle access) { t = value_type::DEFAULT; }
   void visitAssign(AssignmentHandle assign) { t = value_type::DEFAULT; }
   void visitTensor(TensorHandle tensor) { t = value_type::DEFAULT; }
+  void visitVal(ValHandle val) { t = value_type::DEFAULT; }
   void visitFor(ForHandle loop) { t = value_type::DEFAULT; }
   void visitConst(ConstHandle con) { t = value_type::DEFAULT; }
   void visitPrint(PrintHandle print) { t = value_type::DEFAULT; }
@@ -160,6 +165,10 @@ class UnrollEvaluator : public IRNotImplementedVisitor {
 
 void LoopUnroll::visitInt(IntHandle int_expr) {
   tape_.push(IntNode::make(int_expr->value));
+}
+
+void LoopUnroll::visitFloat(FloatHandle float_expr) {
+  tape_.push(FloatNode::make(float_expr->value));
 }
 
 void LoopUnroll::visitAdd(AddHandle add) {
@@ -249,9 +258,23 @@ void LoopUnroll::visitTensor(TensorHandle tensor) {
   tape_.push(TensorNode::make(tensor->id, tensor->shape));
 }
 
+void LoopUnroll::visitVal(ValHandle val) { tape_.push(dict[val->id]); }
+
+void LoopUnroll::visitDecl(DeclHandle decl) {
+  auto val = ValNode::make(IRNodeKeyGen::GetInstance()->YieldValKey(),
+                           decl->decl.as<ValNode>()->enclosing_looping_vars_);
+  dict[decl->decl.as<ValNode>()->id] = val;
+  tape_.push(
+      DeclNode::make(IRNodeKeyGen::GetInstance()->YieldStatementKey(), val));
+}
+
 void LoopUnroll::visitFor(ForHandle loop) {
   bool isInnerMostLoop = true;
   for (int i = 0; i < loop->body.size(); i++) {
+    if (loop->body[i].Type() == IRNodeType::DECLARATION) {
+      dict[loop->body[i].as<DeclNode>()->decl.as<ValNode>()->id] =
+          loop->body[i].as<DeclNode>()->decl;
+    }
     if (loop->body[i].Type() == IRNodeType::FOR) {
       isInnerMostLoop = false;
       loop->body[i].accept(this);
@@ -301,6 +324,10 @@ void LoopUnroll::visitPrint(PrintHandle print) {
 
 void LoopUnroll::visitFunc(FuncHandle func) {
   for (int i = 0; i < func->body.size(); i++) {
+    if (func->body[i].Type() == IRNodeType::DECLARATION) {
+      dict[func->body[i].as<DeclNode>()->decl.as<ValNode>()->id] =
+          func->body[i].as<DeclNode>()->decl;
+    }
     func->body[i].accept(this);
   }
 }

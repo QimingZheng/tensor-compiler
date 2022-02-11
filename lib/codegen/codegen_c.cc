@@ -92,6 +92,8 @@ void CodeGenC::create_method(std::string method_name,
 
 void CodeGenC::visitInt(IntHandle int_expr) { oss << int_expr->value; }
 
+void CodeGenC::visitFloat(FloatHandle float_expr) { oss << float_expr->value; }
+
 void CodeGenC::visitAdd(AddHandle add) {
   oss << "(";
   add->lhs.accept(this);
@@ -159,6 +161,14 @@ void CodeGenC::visitAssign(AssignmentHandle assign) {
 }
 
 void CodeGenC::visitTensor(TensorHandle tensor) { oss << tensor->id; }
+
+void CodeGenC::visitVal(ValHandle val) { oss << val->id; }
+
+void CodeGenC::visitDecl(DeclHandle decl) {
+  oss << "float ";
+  decl->decl.accept(this);
+  oss << ";\n";
+}
 
 class OutterLoopCollectionHelper : public IRRecursiveVisitor {
  public:

@@ -8,6 +8,12 @@ void JitModule::visitInt(IntHandle int_expr) {
   return;
 }
 
+void JitModule::visitFloat(FloatHandle float_expr) {
+  v.float_value = float_expr->value;
+  t = value_type::FLOAT;
+  return;
+}
+
 void JitModule::visitAdd(AddHandle add) {
   add->lhs.accept(this);
   value lhs = v;
@@ -152,22 +158,33 @@ void JitModule::visitAccess(AccessHandle access) {
 void JitModule::visitAssign(AssignmentHandle assign) {
   assign->rhs.accept(this);
   float assigned_value = v.float_value;
-  // Assert lhs must be a tensor access
-  assert(assign->lhs.Type() == IRNodeType::ACCESS);
-  int offset = 0;
+  switch (assign->lhs.Type()) {
+    case IRNodeType::ACCESS: {
+      // Assert lhs must be a tensor access
+      int offset = 0;
 
-  auto access = assign->lhs.as<AccessNode>();
+      auto access = assign->lhs.as<AccessNode>();
 
-  for (int i = 0; i < access->indices.size(); i++) {
-    access->indices[i].accept(this);
-    if (t != value_type::INT) {
-      throw std::runtime_error("cannot access a tensor with float indices");
+      for (int i = 0; i < access->indices.size(); i++) {
+        access->indices[i].accept(this);
+        if (t != value_type::INT) {
+          throw std::runtime_error("cannot access a tensor with float indices");
+        }
+        offset =
+            offset * tensor_shapes_[access->tensor.as<TensorNode>()->id][i] +
+            v.int_value;
+      }
+      assign->lhs.as<AccessNode>()->tensor.accept(this);
+      tensor_ptr[offset] = assigned_value;
+      break;
     }
-    offset = offset * tensor_shapes_[access->tensor.as<TensorNode>()->id][i] +
-             v.int_value;
+    case IRNodeType::VALUE: {
+      symbols_[assign->lhs.as<ValNode>()->id].float_value = assigned_value;
+      break;
+    }
+    default:
+      break;
   }
-  assign->lhs.as<AccessNode>()->tensor.accept(this);
-  tensor_ptr[offset] = assigned_value;
 }
 
 void JitModule::visitTensor(TensorHandle tensor) {
@@ -183,6 +200,18 @@ void JitModule::visitTensor(TensorHandle tensor) {
   }
   tensor_ptr = tensors_[tensor->id];
 }
+
+void JitModule::visitVal(ValHandle val) {
+  if (symbols_.find(val->id) == symbols_.end()) {
+    // left the value undefined.
+    symbols_[val->id].float_value = __FLT_MAX__;
+  } else {
+    t = value_type::FLOAT;
+    v = symbols_[val->id];
+  }
+}
+
+void JitModule::visitDecl(DeclHandle decl) { decl->decl.accept(this); }
 
 void JitModule::visitFor(ForHandle loop) {
   loop->looping_var_.accept(this);

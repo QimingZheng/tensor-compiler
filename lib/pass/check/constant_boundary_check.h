@@ -42,6 +42,7 @@ class ConstantBoundaryCheck : public Pass, public IRNotImplementedVisitor {
   }
 
   void visitInt(IntHandle int_expr) override;
+  void visitFloat(FloatHandle float_expr) override;
   void visitAdd(AddHandle add) override;
   void visitSub(SubHandle sub) override;
   void visitMul(MulHandle mul) override;
@@ -51,6 +52,7 @@ class ConstantBoundaryCheck : public Pass, public IRNotImplementedVisitor {
   void visitAccess(AccessHandle access) override;
   void visitAssign(AssignmentHandle assign) override;
   void visitTensor(TensorHandle tensor) override;
+  void visitVal(ValHandle val) override;
   void visitFor(ForHandle loop) override;
   void visitConst(ConstHandle con) override;
   void visitPrint(PrintHandle print) override;

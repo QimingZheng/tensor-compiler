@@ -23,6 +23,10 @@ void IRMutatorVisitor::visitInt(IntHandle int_expr) {
   // PASS
 }
 
+void IRMutatorVisitor::visitFloat(FloatHandle float_expr) {
+  // PASS
+}
+
 void IRMutatorVisitor::visitAdd(AddHandle add) {
   assert(add != nullptr);
   add->lhs = _replace_subnode_helper(add->lhs);
@@ -76,6 +80,17 @@ void IRMutatorVisitor::visitAssign(AssignmentHandle assign) {
 
 void IRMutatorVisitor::visitTensor(TensorHandle tensor) {
   // PASS
+}
+
+void IRMutatorVisitor::visitVal(ValHandle val) {
+  for (int i = 0; i < val->enclosing_looping_vars_.size(); i++) {
+    val->enclosing_looping_vars_[i] =
+        _replace_subnode_helper(val->enclosing_looping_vars_[i]);
+  }
+}
+
+void IRMutatorVisitor::visitDecl(DeclHandle decl) {
+  decl->decl = _replace_subnode_helper(decl->decl);
 }
 
 void IRMutatorVisitor::visitFor(ForHandle loop) {

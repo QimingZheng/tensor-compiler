@@ -26,6 +26,10 @@ class SyncParallelHelper : public IRNotImplementedVisitor {
   void visitInt(IntHandle int_expr) override {
     /// Pass
   }
+  void visitFloat(FloatHandle float_expr) override {
+    /// Pass
+  }
+
   void visitAdd(AddHandle add) override {
     add->lhs = replace_if_match(add->lhs);
     add->rhs = replace_if_match(add->rhs);
@@ -69,6 +73,10 @@ class SyncParallelHelper : public IRNotImplementedVisitor {
   }
 
   void visitTensor(TensorHandle tensor) override {
+    /// Pass
+  }
+
+  void visitVal(ValHandle val) override {
     /// Pass
   }
 

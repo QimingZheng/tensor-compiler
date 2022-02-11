@@ -10,6 +10,12 @@ Assignment::Assignment(const Expr lhs, const Expr &rhs) {
   Program::GetInstance()->AddStmt(this);
 }
 
+Declaration::Declaration(const Expr decl){
+  handle_ = DeclNode::make(IRNodeKeyGen::GetInstance()->YieldStatementKey(),
+                           decl.GetIRHandle());
+  Program::GetInstance()->AddStmt(this);
+}
+
 Print::Print(const Expr print) {
   handle_ = PrintNode::make(IRNodeKeyGen::GetInstance()->YieldStatementKey(),
                             print.GetIRHandle());
