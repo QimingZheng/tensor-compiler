@@ -24,7 +24,8 @@ class RandomSearchStrategy : public SearchStrategy {
 
   int search_budget_;
 
-  IRModule Search(IRModule module = IRModule()) override;
+  IRModule Search(IRModule module, ArchSpec spec,
+                  std::string program_name) override;
 
  private:
   IRHandle GetRandomLoop(std::unordered_set<IRHandle, IRHandleHash> &node_set) {

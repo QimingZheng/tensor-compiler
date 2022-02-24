@@ -11,7 +11,6 @@
 #include "common.h"
 #include "ir/ir.h"
 #include "ir/ir_visitor.h"
-// #include "ir/ir_check_pass.h"
 #include "expr.h"
 #include "stmt.h"
 #include "codegen/codegen.h"
@@ -75,9 +74,11 @@ class Program {
  protected:
   static Program *singleton_;
   std::string value_;
+  std::string program_name_;
 
  public:
-  Program() {
+  Program(std::string program_name = "undefined")
+      : program_name_(program_name) {
     if (singleton_ != nullptr)
       throw std::runtime_error("A program is already created\n");
     singleton_ = this;
@@ -160,23 +161,16 @@ class Program {
 
   bool SetUnroll();
 
-  /// The following interfaces directly execute schedules.
-  bool Reorder(const std::string i, const std::string j);
-
-  bool Fuse(const std::string i, const std::string j);
-
-  // Divide the i loop into `tiles` tiles.
-  bool Split(const std::string i, Expr tiles);
-
-  bool Unroll();
-
   bool Vectorize(const std::string i, int vectorLength) { return false; }
 
-  void AutoTune(std::string searching_strategy = "BeamSearch") {
+  void AutoTune(std::string searching_strategy = "BeamSearch",
+                int random_search_steps = 100,
+                ArchSpec arch = ArchSpec(ArchSpec::ArchType::CPU)) {
     if (searching_strategy == "BeamSearch")
-      module_ = scheduler_.BeamSearch(module_);
+      module_ = scheduler_.BeamSearch(module_, arch, program_name_);
     else if (searching_strategy == "RandomSearch")
-      module_ = scheduler_.RandomSearch(module_);
+      module_ = scheduler_.RandomSearch(module_, random_search_steps, arch,
+                                        program_name_);
   }
 
   void IRGen() {
@@ -210,7 +204,8 @@ class Program {
     // ConstantFoldingPass::runPass(std::shared_ptr<ConstantFoldingPass::Arg>(
     //     new ConstantFoldingPass::Arg(module_.GetRoot())));
     CodeGenC codegen;
-    std::cout << codegen.genCode(module_.GetRoot(), module_.GetTensors());
+    std::cout << codegen.genCode(module_.GetRoot(), module_.GetTensors(),
+                                 program_name_);
   }
 
   void GenerateCuda() {

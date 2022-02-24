@@ -72,7 +72,12 @@ class CodeGenC : public IRVisitor {
     parallel_loop_count = 0;
     parallelized = false;
   }
-  std::string genCode(IRHandle program, std::vector<IRHandle> &tensors);
+  std::string genCode(IRHandle program, std::vector<IRHandle> &tensors,
+                      std::string program_name);
+
+  std::string genTensors(std::vector<IRHandle> &tensors);
+  std::string genTensorParam(std::vector<IRHandle> &tensors);
+
   void visitInt(IntHandle int_expr) override;
   void visitFloat(FloatHandle float_expr) override;
   void visitAdd(AddHandle add) override;

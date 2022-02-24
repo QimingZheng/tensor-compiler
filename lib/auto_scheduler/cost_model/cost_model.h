@@ -11,6 +11,7 @@
 #include "common.h"
 #include "ir/ir_module.h"
 #include "codegen/codegen.h"
+#include "arch_spec.h"
 
 namespace polly {
 
@@ -19,22 +20,67 @@ class CostModel {
  public:
   CostModel() {}
 
-  float Evaluate(IRModule space) {
-    std::string costModelFileName = ".polly_cost_model.cc";
-    std::ofstream f;
-    f.open(costModelFileName);
-    CodeGenC codegen;
-    f << codegen.genCode(space.GetRoot(), space.GetTensors());
-    f.close();
+  float Evaluate(IRModule space, ArchSpec spec, std::string program_name) {
+    std::string res;
 
-    // Compile
+    switch (spec.type_) {
+      case ArchSpec::ArchType::CPU: {
+        std::string costModelFileName = ".polly_cost_model.cc";
+        std::ofstream f;
+        f.open(costModelFileName);
+        {
+          CodeGenC codegen;
+          f << codegen.genCode(space.GetRoot(), space.GetTensors(),
+                               program_name);
+        }
+        {
+          CodeGenC codegen;
+          f << codegen.genTensors(space.GetTensors());
+        }
+        f << "int main() {\n";
+        {
+          CodeGenC codegen;
+          f << "  " << program_name << "("
+            << codegen.genTensorParam(space.GetTensors()) << ");\n";
+        }
 
-    auto res = executeCommands(
-        "g++ --std=c++11 -O3 -mfma -fopenmp -o .main .polly_cost_model.cc");
+        f << "  struct timeval start, end;\n";
+        f << "  gettimeofday(&start, NULL);\n";
+        f << "  for (int step = 0; step < 3; step ++) {\n";
 
-    // Execute & get running time
-    res = executeCommands("./.main");
-    std::cout << res;
+        {
+          CodeGenC codegen;
+          f << "    " << program_name << "("
+            << codegen.genTensorParam(space.GetTensors()) << ");\n";
+        }
+        f << "  }\n";
+        // timing unit: ms
+        f << "  gettimeofday(&end, NULL);\n";
+        f << "  printf(\"%.6f\\n\", ((end.tv_sec - start.tv_sec) * 1000L + "
+             "(end.tv_usec - start.tv_usec) * 1.0 / 1000L) / 3.0);\n";
+
+        f << "}\n";
+        f.close();
+
+        // Compile
+
+        res = executeCommands(
+            "g++ --std=c++11 -O3 -mfma -fopenmp -o .main .polly_cost_model.cc");
+
+        // Execute & get running time
+        res = executeCommands("timeout 400 ./.main");
+        break;
+      }
+      default:
+        throw std::runtime_error("Not supported architecture.");
+    }
+    std::cout << "time: " << res;
+    if (res == "") {
+      CodeGenC codegen;
+      std::cout << codegen.genCode(space.GetRoot(), space.GetTensors(),
+                                   program_name);
+      return 1000000000.0;
+    }
 
     float runtime = atof(res.c_str());
     return runtime;

@@ -48,7 +48,8 @@ class BeamSearchStrategy : public SearchStrategy {
   std::vector<IRModule> Expand(IRModule module);
 
   void RandomSearch(IRModule &module);
-  IRModule Search(IRModule module = IRModule()) override;
+  IRModule Search(IRModule module, ArchSpec spec,
+                  std::string program_name) override;
 
  private:
   IRHandle GetRandomLoop(std::unordered_set<IRHandle, IRHandleHash> &node_set) {

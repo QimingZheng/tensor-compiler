@@ -16,6 +16,7 @@
 namespace polly {
 class SearchStrategy {
  public:
-  virtual IRModule Search(IRModule module) = 0;
+  virtual IRModule Search(IRModule module, ArchSpec spec,
+                          std::string program_name) = 0;
 };
 }  // namespace polly

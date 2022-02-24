@@ -3,7 +3,7 @@
 namespace polly {
 
 void BeamSearchStrategy::RandomSearch(IRModule &module) {
-  int seed = rand() % 4;
+  int seed = rand() % 5;
   int max_trial = 10;
   while (max_trial--) {
     auto cloned_module = module.CreateSubSpace();
@@ -57,7 +57,8 @@ void BeamSearchStrategy::RandomSearch(IRModule &module) {
   }
 }
 
-IRModule BeamSearchStrategy::Search(IRModule module) {
+IRModule BeamSearchStrategy::Search(IRModule module, ArchSpec spec,
+                                    std::string program_name) {
   if (module.GetRoot() != NullIRHandle) {
     best_module_ = module;
     candidates.clear();
@@ -72,34 +73,17 @@ IRModule BeamSearchStrategy::Search(IRModule module) {
     }
     for (int i = 0; i < childrens.size(); i++) {
       RandomSearch(childrens[i].first);
-      // int seed = 1 + rand() % 1;
-      // switch (seed) {
-      //   // case 0: {
-      //   //   childrens[i].first.RandomSplit();
-      //   //   break;
-      //   // }
-      //   case 1: {
-      //     childrens[i].first.RandomReorder();
-      //     break;
-      //   }
-      //   // case 2: {
-      //   //   childrens[i].first.RandomFuse();
-      //   //   break;
-      //   // }
-      //   default:
-      //     throw std::runtime_error("out of random bound");
-      // }
     }
     CostModel model;
     std::transform(
         childrens.begin(), childrens.end(), childrens.begin(),
         [&](const std::pair<IRModule, float> &x) -> std::pair<IRModule, float> {
+          return {x.first, model.Evaluate(x.first, spec, program_name)};
           IRModule ori = x.first;
           auto cloned = ori.CreateSubSpace();
 
           Mutator::Parallelize(cloned.GetRoot());
-          return {x.first, model.Evaluate(cloned)};
-          // return {x.first, model.Evaluate(x.first)};
+          return {x.first, model.Evaluate(cloned, spec, program_name)};
         });
     std::sort(childrens.begin(), childrens.end(),
               [&](const std::pair<IRModule, float> &x,

@@ -2,7 +2,8 @@
 
 namespace polly {
 
-IRModule RandomSearchStrategy::Search(IRModule module) {
+IRModule RandomSearchStrategy::Search(IRModule module, ArchSpec spec,
+                                      std::string program_name) {
   while (search_budget_--) {
     int seed = rand() % 5;
     int max_trial = 10;

@@ -1,2 +1,5 @@
 .vscode
 bazel-*
+__pycache__
+dnn_cost_model/data/
+dnn_cost_model/log.txt

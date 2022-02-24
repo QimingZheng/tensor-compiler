@@ -8,5 +8,6 @@ cc_library(
     ],
     visibility = [
         "//test:__subpackages__",
+        "//dnn_cost_model:__subpackages__",
     ],
 )

@@ -2,12 +2,8 @@
 
 namespace polly {
 
-std::string CodeGenC::genCode(IRHandle program,
-                              std::vector<IRHandle> &tensors) {
-  program_ = program;
-
-  oss << C_Heaader;
-  // oss << C_Runtime_Deps;
+std::string CodeGenC::genTensors(std::vector<IRHandle> &tensors) {
+  oss.clear();
   for (int i = 0; i < tensors.size(); i++) {
     tensor_name.push_back(tensors[i].as<TensorNode>()->id);
     tensor_shape.push_back(tensors[i].as<TensorNode>()->shape);
@@ -16,33 +12,39 @@ std::string CodeGenC::genCode(IRHandle program,
       oss << "[" << tensors[i].as<TensorNode>()->shape[j] << "]";
     oss << ";\n";
   }
+  return oss.str();
+}
 
-  // std::ostringstream parallel_method_declarations;
-  // std::swap(oss, parallel_method_declarations);
+std::string CodeGenC::genTensorParam(std::vector<IRHandle> &tensors) {
+  oss.clear();
+  for (int i = 0; i < tensors.size(); i++) {
+    if (i > 0) oss << ", ";
+    oss << tensors[i].as<TensorNode>()->id;
+  }
+  return oss.str();
+}
 
-  oss << "int main() {\n";
-  // oss << "  ThreadDim dim({16, 1});\n";
-  // oss << "  ThreadPool::Initialize(dim);\n";
-  oss << "  struct timeval start, end;\n";
-  oss << "  gettimeofday(&start, NULL);\n";
+std::string CodeGenC::genCode(IRHandle program, std::vector<IRHandle> &tensors,
+                              std::string program_name) {
+  program_ = program;
+
+  oss << C_Heaader;
+
+  oss << "void " << program_name << "(";
+
+  for (int i = 0; i < tensors.size(); i++) {
+    if (i > 0) oss << ", ";
+    tensor_name.push_back(tensors[i].as<TensorNode>()->id);
+    tensor_shape.push_back(tensors[i].as<TensorNode>()->shape);
+    oss << "float " << tensors[i].as<TensorNode>()->id;
+    for (int j = 0; j < tensors[i].as<TensorNode>()->shape.size(); j++)
+      oss << "[" << tensors[i].as<TensorNode>()->shape[j] << "]";
+  }
+
+  oss << ") {\n";
   visit(program);
-  // timing unit: ms
-  oss << "  gettimeofday(&end, NULL);\n";
-  oss << "  printf(\"%.6f\\n\", (end.tv_sec - start.tv_sec) * 1000L + "
-         "(end.tv_usec - start.tv_usec) * 1.0 / 1000L);\n";
   oss << "}\n";
-  // while (methods_.size()) {
-  //   auto arguments = methods_.back();
-  //   methods_.pop_back();
-  //   create_method(arguments.method_name, tensor_name,
-  //   arguments.loop_var_names,
-  //                 arguments.level, arguments.parallel_loop);
-  // }
-  // swap(oss, parallel_method_declarations);
-  // for (int i = 0; i < method_decls_.size(); i++) {
-  //   oss << method_decls_[i] << "\n";
-  // }
-  // oss << parallel_method_declarations.str();
+
   return oss.str();
 }
 
@@ -199,59 +201,6 @@ class OutterLoopCollectionHelper : public IRRecursiveVisitor {
 
 void CodeGenC::visitFor(ForHandle loop) {
   VarHandle loop_var = loop->looping_var_.as<VarNode>();
-  /*
-    if (loop->annotation.parallelization) {
-      auto meth_name = IRNodeKeyGen::GetInstance()->YieldMethodName();
-
-      parallel_loop_count += 1;
-      // multi-threading region.
-      oss << getIndent();
-      oss << "// Barrier begin\n";
-
-      oss << getIndent();
-      oss << "{\n";
-
-      indent += 1;
-
-      oss << getIndent();
-      oss << "std::vector<std::future<void>> ret;\n";
-
-      oss << getIndent();
-      oss << "for (int w = 0; w < " << worker_size << "; w++) {\n";
-      oss << getIndent() << "\t";
-      oss << "ret.push_back(ThreadPool::GetThreadingLevel("
-          << parallel_loop_count - 1 << ")->submit(" << meth_name << ", ";
-      for (int i = 0; i < tensor_name.size(); i++) {
-        oss << tensor_name[i] << ", ";
-      }
-      auto outter_loop_vars =
-          OutterLoopCollectionHelper(program_, IRHandle(loop)).outter_loops;
-      for (int i = 0; i < outter_loop_vars.size(); i++) {
-        oss << outter_loop_vars[i] << ", ";
-      }
-      oss << worker_size << ", w));\n";
-
-      oss << getIndent();
-      oss << "}\n";
-
-      oss << getIndent();
-      oss << "for (int w = 0; w < " << worker_size << "; w++) {\n";
-      oss << getIndent() << "\t";
-      oss << "ret[w].get();\n";
-      oss << getIndent();
-      oss << "}\n";
-
-      indent -= 1;
-      oss << getIndent();
-      oss << "}\n";
-      oss << getIndent();
-      oss << "// Barrier end\n";
-      methods_.push_back(method_arguments(meth_name, outter_loop_vars,
-                                          outter_loop_vars.size(), worker_size,
-                                          IRHandle(loop)));
-      return;
-    }
-  */
 
   bool do_parallelization = loop->annotation.parallelization && !parallelized;
 

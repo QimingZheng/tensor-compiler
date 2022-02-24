@@ -34,14 +34,16 @@ class AutoScheduler {
   /// maximum of candidates at the same time
   int candidate_size_;
 
-  IRModule BeamSearch(IRModule module) {
+  IRModule BeamSearch(IRModule module, ArchSpec spec,
+                      std::string program_name) {
     BeamSearchStrategy bs(4, 4, 10);
-    return bs.Search(module);
+    return bs.Search(module, spec, program_name);
   }
 
-  IRModule RandomSearch(IRModule module) {
-    RandomSearchStrategy rs;
-    return rs.Search(module);
+  IRModule RandomSearch(IRModule module, int random_search_steps, ArchSpec spec,
+                        std::string program_name) {
+    RandomSearchStrategy rs(random_search_steps);
+    return rs.Search(module, spec, program_name);
   }
 
  private:

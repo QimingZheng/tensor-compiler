@@ -113,8 +113,8 @@ void CONV() {
   }
   srand((unsigned)time(NULL));
 
-  // prog.AutoTune("BeamSearch");
-  prog.AutoTune("RandomSearch");
+  prog.AutoTune("BeamSearch");
+  // prog.AutoTune("RandomSearch");
 
   prog.GenerateC();
 }
@@ -156,8 +156,8 @@ void BlackSholes() {
 }
 
 int main() {
-  GEMM();
-  // LU();
+  // GEMM();
+  LU();
   // CONV();
   // BLUR();
   return 0;

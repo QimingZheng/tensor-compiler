@@ -86,49 +86,10 @@ class IRModule {
   /// Extract all IRNodes from a program.
   std::unordered_set<IRHandle, IRHandleHash> GetIRNodes();
 
-  bool Reorder(const std::string i, const std::string j);
-  bool Fuse(const std::string i, const std::string j, const std::string fuse);
-  // Divide the i loop into `tiles` tiles.
-  bool Split(const std::string i, IRHandle tiles, const std::string i_outter,
-             const std::string i_inner);
-  bool Unroll();
-
   /// Create Schedules With these Interfaces.
   bool CreateSplitSchedule(std::string axis);
   bool CreateReorderSchedule(std::string axis1, std::string axis2);
   bool CreateFuseSchedule(std::string axis1, std::string axix2);
-
-  void RandomReorder() {
-    if (reorderSchedules.size() == 0) return;
-    int r = rand() % reorderSchedules.size();
-    Reorder(reorderSchedules[r].first, reorderSchedules[r].second);
-  }
-
-  void RandomFuse() {
-    if (fuseSchedules.size() == 0) return;
-    int r = rand() % fuseSchedules.size();
-    Fuse(fuseSchedules[r].first, fuseSchedules[r].second,
-         fuseSchedules[r].first + "_" + fuseSchedules[r].second);
-  }
-  void RandomSplit() {
-    if (splitSchedules.size() == 0) return;
-    int r = rand() % splitSchedules.size();
-    std::string splitAxis = splitSchedules[r];
-
-    std::vector<int> divisors = {128, 64, 32, 16, 8, 4, 2};
-    auto rng = std::default_random_engine{rand()};
-    std::shuffle(divisors.begin(), divisors.end(), rng);
-    for (auto i : divisors) {
-      auto ret = DivisibleBoundaryCheck::runPass(
-          std::shared_ptr<DivisibleBoundaryCheck::Arg>(
-              new DivisibleBoundaryCheck::Arg(GetLoop(splitAxis), i)));
-      if (!PassRet::as<DivisibleBoundaryCheck::Ret>(ret)->isDivisibleBoundary)
-        continue;
-      IRHandle tiles = IntNode::make(i);
-      Split(splitAxis, tiles, splitAxis + "_outter", splitAxis + "_inner");
-      return;
-    }
-  }
 
   IRHandle GetLoop(std::string loopVarId) { return find_loop_var(loopVarId); }
 
@@ -139,12 +100,6 @@ class IRModule {
   IRHandle _find_loop_var(IRHandle cur, const std::string loop_var_id);
 
   int isNestedLoop(IRHandle outter, IRHandle inner);
-
-  void evolveSplitSchedules(std::string axis, std::string axis1,
-                            std::string axis2);
-  void evolveReorderSchedules(std::string axis1, std::string axis2);
-  void evolveFuseSchedules(std::string axis1, std::string axis2,
-                           std::string axis);
 
   std::map<std::string, IRHandle> irHandleDict_;
 
