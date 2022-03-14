@@ -64,7 +64,32 @@ IRModule BeamSearchStrategy::Search(IRModule module, ArchSpec spec,
     candidates.clear();
     candidates.push_back(best_module_);
   }
-  while (search_budget_--) {
+
+  float progress = 0.0;
+  int t = 0;
+  best_performance_ = 1e9;
+  int barWidth = 40;
+
+  while (t < search_budget_) {
+    {
+      // Display Progress Bar
+      t++;
+      progress = t * 1.0 / search_budget_;
+      std::cout << "[";
+      int pos = barWidth * progress;
+      for (int i = 0; i < barWidth; ++i) {
+        if (i < pos)
+          std::cout << "=";
+        else if (i == pos)
+          std::cout << ">";
+        else
+          std::cout << " ";
+      }
+      std::cout << "] " << int(progress * 100.0) << "% " << best_performance_
+                << " ms\r";
+      std::cout.flush();
+    }
+
     std::vector<std::pair<IRModule, float>> childrens;
     for (int i = 0; i < candidates.size(); i++) {
       for (int j = 0; j < beam_search_width_; j++) {
@@ -92,6 +117,7 @@ IRModule BeamSearchStrategy::Search(IRModule module, ArchSpec spec,
               });
     if (childrens.begin()->second < best_performance_) {
       best_module_ = childrens.begin()->first.CreateSubSpace();
+      best_performance_ = childrens.begin()->second;
     }
     candidates.clear();
     std::transform(childrens.begin(), childrens.end(),

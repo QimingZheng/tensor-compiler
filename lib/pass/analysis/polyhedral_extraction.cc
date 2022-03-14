@@ -14,8 +14,9 @@ void PolyhedralExtraction::visitInt(IntHandle int_expr) {
 }
 
 void PolyhedralExtraction::visitFloat(FloatHandle float_expr) {
-  throw std::runtime_error(
-      "Shall not visit a float node when extract polyhedral model");
+  workspace.clear();
+  // throw std::runtime_error(
+  //     "Shall not visit a float node when extract polyhedral model");
 }
 
 void PolyhedralExtraction::visitAdd(AddHandle add) {

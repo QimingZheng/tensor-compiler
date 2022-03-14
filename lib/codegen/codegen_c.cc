@@ -94,7 +94,9 @@ void CodeGenC::create_method(std::string method_name,
 
 void CodeGenC::visitInt(IntHandle int_expr) { oss << int_expr->value; }
 
-void CodeGenC::visitFloat(FloatHandle float_expr) { oss << float_expr->value; }
+void CodeGenC::visitFloat(FloatHandle float_expr) {
+  oss << "(float)" << float_expr->value;
+}
 
 void CodeGenC::visitAdd(AddHandle add) {
   oss << "(";
@@ -115,9 +117,9 @@ void CodeGenC::visitSub(SubHandle sub) {
 void CodeGenC::visitMul(MulHandle mul) {
   oss << "(";
   mul->lhs.accept(this);
-  oss << ")";
+  // oss << ")";
   oss << " * ";
-  oss << "(";
+  // oss << "(";
   mul->rhs.accept(this);
   oss << ")";
 }
@@ -125,9 +127,9 @@ void CodeGenC::visitMul(MulHandle mul) {
 void CodeGenC::visitDiv(DivHandle div) {
   oss << "(";
   div->lhs.accept(this);
-  oss << ")";
+  // oss << ")";
   oss << " / ";
-  oss << "(";
+  // oss << "(";
   div->rhs.accept(this);
   oss << ")";
 }
@@ -135,9 +137,9 @@ void CodeGenC::visitDiv(DivHandle div) {
 void CodeGenC::visitMod(ModHandle mod) {
   oss << "(";
   mod->lhs.accept(this);
-  oss << ")";
+  // oss << ")";
   oss << " % ";
-  oss << "(";
+  // oss << "(";
   mod->rhs.accept(this);
   oss << ")";
 }
@@ -259,7 +261,7 @@ void CodeGenC::visitFunc(FuncHandle func) {
 }
 
 void CodeGenC::visitMin(MinHandle min) {
-  oss << "min(";
+  oss << "std::min(";
   min->lhs.accept(this);
   oss << ", ";
   min->rhs.accept(this);
@@ -267,7 +269,7 @@ void CodeGenC::visitMin(MinHandle min) {
 }
 
 void CodeGenC::visitMax(MaxHandle max) {
-  oss << "max(";
+  oss << "std::max(";
   max->lhs.accept(this);
   oss << ", ";
   max->rhs.accept(this);

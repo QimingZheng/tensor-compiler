@@ -74,14 +74,14 @@ class CostModel {
       default:
         throw std::runtime_error("Not supported architecture.");
     }
-    std::cout << "time: " << res;
+    // std::cout << "time: " << res;
     if (res == "") {
       CodeGenC codegen;
       std::cout << codegen.genCode(space.GetRoot(), space.GetTensors(),
                                    program_name);
       return 1000000000.0;
     }
-
+    if (!isLegalNumber(res)) return 000000000.0;
     float runtime = atof(res.c_str());
     return runtime;
   }
@@ -102,6 +102,13 @@ class CostModel {
     }
     pclose(pipe);
     return result;
+  }
+
+  bool isLegalNumber(std::string str) {
+    for (int i = 0; i < str.length(); i++) {
+      if (str[i] > '9' && str[i] < '0' && str[i] != '.') return false;
+    }
+    return true;
   }
 };
 

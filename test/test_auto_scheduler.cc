@@ -157,8 +157,8 @@ void BlackSholes() {
 
 int main() {
   // GEMM();
-  LU();
-  // CONV();
+  // LU();
+  CONV();
   // BLUR();
   return 0;
 }

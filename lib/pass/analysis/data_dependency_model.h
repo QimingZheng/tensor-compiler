@@ -41,13 +41,13 @@ class DataDependencyModel {
 
   int GetDepth() { return depth; }
 
- private:
-  solver::AccessMap BuildAccessMap(solver::context &ctx, Statement &st,
-                                   ArrayAccess &access);
+  static solver::AccessMap BuildAccessMap(solver::context &ctx, Statement &st,
+                                          ArrayAccess &access);
 
   PolyhedralModel model;
   int depth = -1;
 
+ private:
   // solver::context ctx;
 };
 

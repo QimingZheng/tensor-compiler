@@ -29,6 +29,8 @@ const std::string C_Heaader = R"(
 #include <immintrin.h>
 #include <omp.h>
 #include <sys/time.h>
+#include <math.h>
+#include <iostream>
 )";
 
 /*!

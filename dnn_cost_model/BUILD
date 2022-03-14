@@ -6,3 +6,11 @@ cc_binary(
         "//lib:polly",
     ],
 )
+cc_binary(
+    name="gbt_feature_extract",
+    srcs=["gbt_feature_extract.cc"],
+    linkopts = ["-lgmp"],
+    deps=[
+        "//lib:polly",
+    ],
+)

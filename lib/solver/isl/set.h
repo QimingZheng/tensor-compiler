@@ -33,6 +33,9 @@ class basic_set : public object<isl_basic_set> {
   static basic_set universe(const space &s) {
     return isl_basic_set_universe(s.copy());
   }
+  // static basic_set null(const space &s) {
+  //   return isl_basic_set_empty(s.copy());
+  // }
   void remove_redundancies() {
     m_object = isl_basic_set_remove_redundancies(m_object);
   }
@@ -40,6 +43,12 @@ class basic_set : public object<isl_basic_set> {
     m_object = isl_basic_set_set_tuple_name(m_object, name.c_str());
   }
   void add_constraint(const constraint &c);
+  size_t get_size() {
+    isl_set *s = isl_set_from_basic_set(copy());
+    size_t ret = isl_set_size(s);
+    isl_set_free(s);
+    return ret;
+  }
 };
 
 class set : public object<isl_set> {
@@ -47,6 +56,8 @@ class set : public object<isl_set> {
   set(isl_set *ptr) : object(ptr) {}
   set(context &ctx, const std::string &text)
       : object(ctx, isl_set_read_from_str(ctx.get(), text.c_str())) {}
+  set(const basic_set &bs)
+      : object(bs.ctx(), isl_set_from_basic_set(bs.copy())) {}
   bool is_empty() { return IslBool2Bool(isl_set_is_empty(m_object), "empty"); }
   bool is_plain_universe() const { return isl_set_plain_is_universe(get()); }
   map operator*(set s);
@@ -57,6 +68,8 @@ class set : public object<isl_set> {
   static set universe(const space &s) { return isl_set_universe(s.copy()); }
 
   void add_constraint(const constraint &c);
+
+  size_t get_size() { return isl_set_size(m_object); }
 };
 
 class union_set : public object<isl_union_set> {
