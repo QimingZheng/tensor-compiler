@@ -27,6 +27,11 @@ class GBTFeatureExtract : public PolyhedralExtraction {
   std::map<IRNodeKey, std::map<IRNodeKey, float>>
       loop_feature_array_reuse_ratio;
 
+  std::map<IRNodeKey, std::vector<IRNodeKey>> tree_structure;
+  std::map<IRNodeKey, int> node_id_map;
+
+  IRNodeKey root = "root";
+
   std::set<IRNodeKey> array_keys;
 
   std::ofstream f;
@@ -37,27 +42,57 @@ class GBTFeatureExtract : public PolyhedralExtraction {
       : module_(module) {
     f.open(json_output_file, std::ios_base::app);
     visit(module_.GetRoot());
+    f << "{";
+    f << "\"nodes\":[";
+    node_id_map[root] = 0;
+    for (auto loop_node : loop_feature_iter_number) {
+      f << "{";
+      f << "\"feature\": [";
+      f << log(loop_node.second);
+      f << "]},";
+      int id = node_id_map.size();
+      node_id_map[loop_node.first] = id;
+    }
 
-    std::vector<float> beta;
-    std::vector<float> R;
-    for (auto b : beta) {
-      int i = 0, j = 0;
-      for (auto it : loop_feature_iter_number) {
-        i += 1;
-        j = 0;
-        for () {
-        }
+    for (auto comp_node : loop_feature_array_access_count) {
+      auto key = comp_node.first;
+      f << "{";
+      f << "\"feature\": [";
+      // f << comp_node.second.size() << ",";
+      size_t total_count = 0;
+      for (auto ac : comp_node.second) {
+        total_count += ac.second;
       }
-      for (auto it : loop_feature_array_access_count) {
+      f << log(total_count) << ",";
+      size_t actual_count = 0;
+      for (auto ac : comp_node.second) {
+        actual_count +=
+            loop_feature_array_reuse_ratio[key][ac.first] * ac.second;
       }
-      for (auto it : loop_feature_array_reuse_ratio) {
+      f << actual_count * 1.0 / total_count;
+      f << "]},";
+    }
+    f << "],";
+
+    f << "\"edges\":[";
+
+    std::queue<IRNodeKey> q;
+    q.push(root);
+    while (!q.empty()) {
+      auto head = q.front();
+      q.pop();
+      for (auto c : tree_structure[head]) {
+        q.push(c);
+        f << "[" << node_id_map[head] << "," << node_id_map[c] << "],";
       }
     }
-    for (auto x : R) {
-      f << x << ",";
-    }
-    f << CostModel().Evaluate(module_, ArchSpec(ArchSpec::ArchType::CPU),
-                              "undefined");
+    f << "],";
+
+    f << "\"cost\":";
+
+    f << log(CostModel().Evaluate(module_, ArchSpec(ArchSpec::ArchType::CPU),
+                                  "undefined"));
+    f << "}";
     f << "\n";
   }
 
@@ -93,6 +128,8 @@ class GBTFeatureExtract : public PolyhedralExtraction {
   }
 
   void visitFor(ForHandle loop) override {
+    tree_structure[loop->looping_var_.as<VarNode>()->id] =
+        std::vector<IRNodeKey>();
     workspace.clear();
     loop->looping_var_.as<VarNode>()->min.accept(this);
     auto min_ws = workspace;
@@ -122,6 +159,10 @@ class GBTFeatureExtract : public PolyhedralExtraction {
 
     int before_size = model.statements_.size();
     for (int i = 0; i < loop->body.size(); i++) {
+      if (loop->body[i].Type() == IRNodeType::FOR) {
+        tree_structure[loop->looping_var_.as<VarNode>()->id].push_back(
+            loop->body[i].as<ForNode>()->looping_var_.as<VarNode>()->id);
+      }
       progContext.push_back(i);
       loop->body[i].accept(this);
       progContext.pop_back();
@@ -166,6 +207,20 @@ class GBTFeatureExtract : public PolyhedralExtraction {
               array_name,
               1 - (1.0f * all_accessed_elem.get_size()) / (all_access_coount)));
       array_keys.insert(array_name);
+    }
+  }
+
+  void visitFunc(FuncHandle func) {
+    tree_structure[root] = std::vector<IRNodeKey>();
+    progContext.clear();
+    for (int i = 0; i < func->body.size(); i++) {
+      if (func->body[i].Type() == IRNodeType::FOR) {
+        tree_structure[root].push_back(
+            func->body[i].as<ForNode>()->looping_var_.as<VarNode>()->id);
+      }
+      progContext.push_back(i);
+      func->body[i].accept(this);
+      progContext.pop_back();
     }
   }
 

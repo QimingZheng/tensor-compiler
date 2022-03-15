@@ -36,44 +36,21 @@ class Program {
   IRModule module_;
 
  private:
+  /// The outter nesting loops that encloses current bodies.
   std::stack<IRHandle> loopScopes_;
 
+  /// A temporary variable used to represent the current loop.
   IRHandle current_loop_;
 
+  /// The auto scheduler used to tune program.
   AutoScheduler scheduler_;
 
-  /// Find the for-loop that uses var `loop_var_name` as its looping var.
-  // IRHandle find_loop_var(IRHandle cur, const std::string loop_var_name) {
-  //   ForHandle curFor = cur.as<ForNode>();
-  //   if (curFor == nullptr) return NullIRHandle;
-  //   if (curFor->looping_var_.as<VarNode>()->name == loop_var_name) {
-  //     return cur;
-  //   }
-  //   for (int i = 0; i < curFor->body.size(); i++) {
-  //     if (curFor->body[i].Type() == IRNodeType::FOR) {
-  //       IRHandle ret = find_loop_var(curFor->body[i], loop_var_name);
-  //       if (ret != NullIRHandle) return ret;
-  //     }
-  //   }
-  //   return NullIRHandle;
-  // }
-
-  int isNestedLoop(IRHandle outter, IRHandle inner) {
-    ForHandle outterFor = outter.as<ForNode>();
-    ForHandle innerFor = inner.as<ForNode>();
-    if (outterFor == nullptr) return false;
-    if (innerFor == nullptr) return false;
-    for (int i = 0; i < outterFor->body.size(); i++) {
-      if (outterFor->body[i].Type() == IRNodeType::FOR) {
-        if (outterFor->body[i].equals(inner)) return i;
-      }
-    }
-    return -1;
-  }
-
  protected:
+  /// The singleton instance.
   static Program *singleton_;
+  /// ???
   std::string value_;
+  /// The name of the program, e.g. matmatmul, lu_decomposition, 2dconvolution
   std::string program_name_;
 
  public:
@@ -90,6 +67,8 @@ class Program {
 
   static Program *GetInstance();
 
+  // Every time an Expr::Variable is created, it will call the enter loop to
+  // create a new level of looping.
   bool EnterLoop(const Variable *var) {
     if (module_.GetRoot() == NullIRHandle) {
       module_.GetRoot() = FuncNode::make({});
@@ -105,17 +84,9 @@ class Program {
     }
     current_loop_ = loopScopes_.top();
 
-    // if (workspace_.GetRoot() == NullIRHandle) {
-    //   workspace_.GetRoot() = ForNode::make(var->GetIRHandle());
-    //   loopScopes_.push(workspace_.GetRoot());
-    // } else {
-    //   IRHandle loop = ForNode::make(var->GetIRHandle());
-    //   loopScopes_.push(loop);
-    //   current_loop_.as<ForNode>()->Insert(loop);
-    // }
-    // current_loop_ = loopScopes_.top();
     return false;
   }
+  // Get the outter looping vars of current body.
   std::vector<IRHandle> GetLoopingVars() {
     std::vector<IRHandle> ret;
     for (int i = 0; i < loopScopes_.size(); i++) {
@@ -129,6 +100,8 @@ class Program {
     return ret;
   }
 
+  // Every time a Stmt is created, it will call the AddStmt to
+  // insert a statment to current scope.
   bool AddStmt(Stmt *stmt) {
     if (module_.GetRoot() == NullIRHandle) {
       module_.GetRoot() = FuncNode::make({});
@@ -141,6 +114,8 @@ class Program {
     return false;
   }
 
+  /// When an Expr::Variable is deconstructed, it means that the loop level has
+  /// finished, just return to its parent looping scope.
   bool ExitLoop(const Variable *var) {
     loopScopes_.pop();
     if (!loopScopes_.empty()) current_loop_ = loopScopes_.top();

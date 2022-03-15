@@ -7,11 +7,12 @@ import dgl.function as fn
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 
-from gcn_data_loader import SyntheticData
+from gcn_data_loader import GCNData, SyntheticData
 
 SSTBatch = namedtuple('SSTBatch', ['graph', 'label'])
 
-trainset = SyntheticData()
+# trainset = SyntheticData()
+trainset = GCNData('train.json')
 tiny_set = trainset.trees
 
 graph = dgl.batch(tiny_set)
@@ -60,12 +61,12 @@ class TreeLSTM(nn.Module):
 
 device = th.device('cpu')
 # hyper parameters
-feat_size = 16
-hidden_size = 128
-dropout = 0.5
-lr = 0.05
-weight_decay = 1e-4
-epochs = 10
+feat_size = 2
+hidden_size = 16
+dropout = 0.2
+lr = 0.1
+weight_decay = 1e-5
+epochs = 1000
 
 # create the model
 model = TreeLSTM(feat_size, hidden_size, dropout)
@@ -98,12 +99,9 @@ for epoch in range(epochs):
         g = batch.graph
         n = g.number_of_nodes()
         logits = model(batch)
-        logp = F.log_softmax(logits, 1)
-        loss = F.nll_loss(logp, batch.label, reduction='sum')
-        optimizer.zero_grad()
+        loss = F.mse_loss(logits, batch.label, reduction='mean')
         loss.backward()
         optimizer.step()
-        pred = th.argmax(logits, 1)
-        acc = float(th.sum(th.eq(batch.label, pred))) / len(batch.label)
-        print("Epoch {:05d} | Step {:05d} | Loss {:.4f} | Acc {:.4f} |".format(
-            epoch, step, loss.item(), acc))
+        err = th.sum(th.abs(logits - batch.label))
+        print("Epoch {:05d} | Step {:05d} | Loss {:.4f} | Err {:.4f}".format(
+            epoch, step, loss.item(), err))
