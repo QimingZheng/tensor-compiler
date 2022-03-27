@@ -67,7 +67,8 @@ void GEMM() {
   prog.SetReorder(I, J);
   prog.SetReorder(J, K);
   // prog.AutoTune("RandomSearch");
-  prog.AutoTune("BeamSearch");
+  // prog.AutoTune("BeamSearch");
+  prog.AutoTune("HeuristicSearch");
 
   prog.GenerateC();
 }
@@ -156,9 +157,9 @@ void BlackSholes() {
 }
 
 int main() {
-  // GEMM();
+  GEMM();
   // LU();
-  CONV();
+  // CONV();
   // BLUR();
   return 0;
 }

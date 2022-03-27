@@ -146,6 +146,8 @@ class Program {
     else if (searching_strategy == "RandomSearch")
       module_ = scheduler_.RandomSearch(module_, random_search_steps, arch,
                                         program_name_);
+    else if (searching_strategy == "HeuristicSearch")
+      module_ = scheduler_.HeuristicSearch(module_, arch, program_name_);
   }
 
   void IRGen() {

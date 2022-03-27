@@ -32,6 +32,7 @@
 #include <mutex>
 #include <future>
 #include <queue>
+#include <regex>
 // #include <barrier>
 
 namespace polly {

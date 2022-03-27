@@ -14,6 +14,7 @@
 #include "ir/ir_module.h"
 #include "search_strategy/beam_search.h"
 #include "search_strategy/naive_random_search.h"
+#include "search_strategy/heuristic_search.h"
 
 namespace polly {
 
@@ -44,6 +45,12 @@ class AutoScheduler {
                         std::string program_name) {
     RandomSearchStrategy rs(random_search_steps);
     return rs.Search(module, spec, program_name);
+  }
+
+  IRModule HeuristicSearch(IRModule module, ArchSpec spec,
+                           std::string program_name) {
+    HeuristicSearchStrategy hs(4, 10);
+    return hs.Search(module, spec, program_name);
   }
 
  private:

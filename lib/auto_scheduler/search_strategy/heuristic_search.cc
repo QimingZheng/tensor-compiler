@@ -1,17 +1,19 @@
-#include "beam_search.h"
+#include "heuristic_search.h"
+#include "auto_scheduler/cost_model/cost_model.h"
+#include "auto_scheduler/cost_model/arch_spec.h"
 
 namespace polly {
 
-void BeamSearchStrategy::RandomSearch(SearchNodeHandle parent,
-                                      SearchNodeHandle child) {
+void HeuristicSearchStrategy::Expand(SearchNodeHandle &parent,
+                                     SearchNodeHandle &child,
+                                     std::string action) {
   IRModule &module = child->module;
-  // SearchNodeID search_node_id;
-  int seed = rand() % 5;
+
   int max_trial = 10;
   while (max_trial--) {
     auto cloned_module = module.CreateSubSpace();
     auto nodes = cloned_module.GetIRNodes();
-    if (seed == 0) {
+    if (action == "fission") {
       // Fission
       auto loop = GetRandomLoop(nodes);
       if (Mutator::Fission(cloned_module.GetRoot(), loop)) {
@@ -20,7 +22,7 @@ void BeamSearchStrategy::RandomSearch(SearchNodeHandle parent,
         break;
       }
     }
-    if (seed == 1) {
+    if (action == "fussion") {
       // Fussion
       auto first_loop = GetRandomLoop(nodes);
       auto second_loop = GetRandomLoop(nodes);
@@ -30,7 +32,7 @@ void BeamSearchStrategy::RandomSearch(SearchNodeHandle parent,
         break;
       }
     }
-    if (seed == 2) {
+    if (action == "split") {
       // Split
       auto toSplit = GetRandomLoop(nodes);
 
@@ -45,18 +47,17 @@ void BeamSearchStrategy::RandomSearch(SearchNodeHandle parent,
         break;
       }
     }
-    if (seed == 3) {
+    if (action == "reorder") {
       // Reorder
       auto first_loop = GetRandomLoop(nodes);
       auto second_loop = GetRandomLoop(nodes);
       if (Mutator::Reorder(cloned_module.GetRoot(), first_loop, second_loop)) {
         module = cloned_module;
         tree->RegisterBranch(parent, child, "Reorder");
-
         break;
       }
     }
-    if (seed == 4) {
+    if (action == "parallel") {
       // Parallelize
       if (Mutator::Parallelize(cloned_module.GetRoot())) {
         module = cloned_module;
@@ -67,8 +68,8 @@ void BeamSearchStrategy::RandomSearch(SearchNodeHandle parent,
   }
 }
 
-IRModule BeamSearchStrategy::Search(IRModule module, ArchSpec spec,
-                                    std::string program_name) {
+IRModule HeuristicSearchStrategy::Search(IRModule module, ArchSpec spec,
+                                         std::string program_name) {
   std::shared_ptr<SearchNode> root(new SearchNode(module));
   if (module.GetRoot() != NullIRHandle) {
     best_module_ = module;
@@ -105,42 +106,77 @@ IRModule BeamSearchStrategy::Search(IRModule module, ArchSpec spec,
 
     std::vector<SearchNodeHandle> childrens;
 
+    std::vector<std::pair<std::string, float>> action_gammas = {
+        {"fission", .7f}, {"fussion", .7f}, {"split", 1.2f},
+        {"reorder", .9f}, {"parallel", 1.f},
+    };
+
+    float discount = .1f;
+
     for (int i = 0; i < candidates.size(); i++) {
-      for (int j = 0; j < beam_search_width_; j++) {
+      for (auto action : action_gammas) {
         childrens.push_back(candidates[i]->derive());
       }
     }
     for (int i = 0; i < childrens.size(); i++) {
-      RandomSearch(candidates[i / beam_search_width_], childrens[i]);
+      Expand(candidates[i / action_gammas.size()], childrens[i],
+             action_gammas[i % action_gammas.size()].first);
     }
     CostModel model;
     std::transform(childrens.begin(), childrens.end(), childrens.begin(),
                    [&](SearchNodeHandle &x) -> SearchNodeHandle {
-                     //  SearchNode ret(x);
                      x->performance =
                          model.Evaluate(x->module, spec, program_name);
                      tree->RecordPerf(x, x->performance);
                      return x;
                    });
 
-    std::sort(childrens.begin(), childrens.end(),
-              [&](const SearchNodeHandle &x, const SearchNodeHandle &y) {
-                return x->performance < y->performance;
-              });
-
-    if ((*childrens.begin())->performance < best_performance_) {
-      best_module_ = (*childrens.begin())->module.CreateSubSpace();
-      best_performance_ = (*childrens.begin())->performance;
+    float candidate_best_perf = __FLT_MAX__;
+    auto candidate_best = (*childrens.begin());
+    for (auto c : childrens) {
+      if (candidate_best_perf > c->performance) {
+        candidate_best_perf = std::min(candidate_best_perf, c->performance);
+        candidate_best = c;
+      }
     }
+
+    for (int i = 0; i < childrens.size(); i++) {
+      auto c = childrens[i];
+      c->steps_counter += 1;
+      c->accumulated_heuristics -=
+          pow(action_gammas[i % action_gammas.size()].second, c->steps_counter);
+      c->accumulated_costs = discount * (c->accumulated_costs) +
+                             log(c->performance / candidate_best_perf);
+    }
+
+    if (candidate_best->performance < best_performance_) {
+      best_module_ = candidate_best->module.CreateSubSpace();
+      best_performance_ = candidate_best->performance;
+    }
+
     candidates.clear();
+
     std::transform(childrens.begin(), childrens.end(),
                    std::back_inserter(candidates),
                    [](const SearchNodeHandle &x) { return x; });
 
+    std::sort(childrens.begin(), childrens.end(),
+              [&](const SearchNodeHandle &x, const SearchNodeHandle &y) {
+                return x->accumulated_heuristics + x->accumulated_costs <
+                       y->accumulated_heuristics + y->accumulated_costs;
+              });
+
     candidates.resize(candidate_size_);
+    {
+      CodeGenC gen;
+      std::cout << gen.genCode((*candidates.begin())->module.GetRoot(),
+                               (*candidates.begin())->module.GetTensors(),
+                               program_name);
+    }
   }
   Mutator::Parallelize(best_module_.GetRoot());
   SearchHistoryLog log(tree, "log.json");
   return best_module_;
 }
+
 }  // namespace polly
