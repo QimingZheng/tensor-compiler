@@ -86,6 +86,16 @@ class IRModule {
   /// Extract all IRNodes from a program.
   std::unordered_set<IRHandle, IRHandleHash> GetIRNodes();
 
+  /// Extract all For Loop IRNodes.
+  std::unordered_set<IRHandle, IRHandleHash> GetForNodes();
+
+  /// Statistics Info Store.
+  /// 1. Split Info
+  std::unordered_map<IRHandle, float, IRHandleHash> split_info;
+  /// 2. Parallelization Info
+  /// 3. Reorder Info
+  // std::unordered_map<std::pair<IRHandle, IRHandle>, float> reorder_info;
+
   /// Create Schedules With these Interfaces.
   bool CreateSplitSchedule(std::string axis);
   bool CreateReorderSchedule(std::string axis1, std::string axis2);

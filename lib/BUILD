@@ -5,9 +5,14 @@ cc_library(
     includes = ["."],
     deps = [
         "@isl//:isl",
+        # "@org_tensorflow//tensorflow:tensorflow_framework",
+        # "@tensorflow//tensorflow/core:tensorflow",
+        # "@tensorflow//tensorflow/tools/cc_package:build_cc_package",
+        "@org_tensorflow//tensorflow/core:lib",
     ],
     visibility = [
         "//test:__subpackages__",
         "//dnn_cost_model:__subpackages__",
     ],
+    copts = ["-std=c++14"],
 )

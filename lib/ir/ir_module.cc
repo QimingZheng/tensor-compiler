@@ -80,4 +80,16 @@ std::unordered_set<IRHandle, IRHandleHash> IRModule::GetIRNodes() {
   return ret;
 }
 
+std::unordered_set<IRHandle, IRHandleHash> IRModule::GetForNodes() {
+  auto all = GetIRNodes();
+
+  std::unordered_set<IRHandle, IRHandleHash> ret;
+  for (auto n : all) {
+    if (n.Type() == IRNodeType::FOR) {
+      ret.insert(n);
+    }
+  }
+  return ret;
+}
+
 }  // namespace polly
